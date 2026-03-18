@@ -551,3 +551,4 @@ C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\obj\Debug\net8.0\refint\A
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\obj\Debug\net8.0\App.API.pdb
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\obj\Debug\net8.0\App.API.genruntimeconfig.cache
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\obj\Debug\net8.0\ref\App.API.dll
+C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\obj\Debug\net8.0\App.API.sourcelink.json

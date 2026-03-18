@@ -56,3 +56,4 @@ C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.Business\obj\Debug\net8.0\App
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.Business\obj\Debug\net8.0\refint\App.Business.dll
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.Business\obj\Debug\net8.0\App.Business.pdb
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.Business\obj\Debug\net8.0\ref\App.Business.dll
+C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.Business\obj\Debug\net8.0\App.Business.sourcelink.json
