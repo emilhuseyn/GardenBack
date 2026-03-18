@@ -1,0 +1,125 @@
+﻿using App.Business.DTOs.Groups;
+using App.Business.Services.Interfaces;
+using App.Core.Entities;
+using App.Core.Exceptions.Commons;
+using App.DAL.UnitOfWork;
+using AutoMapper;
+
+namespace App.Business.Services.Implementations
+{
+    /// <summary>
+    /// Handles group management operations.
+    /// </summary>
+    public class GroupService : IGroupService
+    {
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+
+        public GroupService(IUnitOfWork unitOfWork, IMapper mapper)
+        {
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
+        }
+
+        /// <summary>
+        /// Creates a new group.
+        /// </summary>
+        public async Task<GroupResponse> CreateGroupAsync(CreateGroupRequest dto)
+        {
+            if (!await _unitOfWork.Divisions.ExistsAsync(dto.DivisionId))
+                throw new EntityNotFoundException($"{dto.DivisionId} ID-li bölmə tapılmadı.");
+
+            var group = _mapper.Map<Group>(dto);
+            await _unitOfWork.Groups.AddAsync(group);
+            await _unitOfWork.SaveChangesAsync();
+
+            var created = await _unitOfWork.Groups.GetByIdAsync(
+                g => g.Id == group.Id,
+                g => g.Division,
+                g => g.Teacher);
+
+            return _mapper.Map<GroupResponse>(created);
+        }
+
+        /// <summary>
+        /// Updates an existing group.
+        /// </summary>
+        public async Task<GroupResponse> UpdateGroupAsync(int id, UpdateGroupRequest dto)
+        {
+            var group = await _unitOfWork.Groups.GetByIdAsync(id)
+                ?? throw new EntityNotFoundException($"{id} ID-li qrup tapılmadı.");
+
+            if (dto.Name != null) group.Name = dto.Name;
+            if (dto.DivisionId.HasValue) group.DivisionId = dto.DivisionId.Value;
+            if (dto.TeacherId != null) group.TeacherId = dto.TeacherId;
+            if (dto.MaxChildCount.HasValue) group.MaxChildCount = dto.MaxChildCount.Value;
+            if (dto.AgeCategory != null) group.AgeCategory = dto.AgeCategory;
+            if (dto.Language != null) group.Language = dto.Language;
+
+            await _unitOfWork.Groups.UpdateAsync(group);
+            await _unitOfWork.SaveChangesAsync();
+
+            var updated = await _unitOfWork.Groups.GetByIdAsync(
+                g => g.Id == id,
+                g => g.Division,
+                g => g.Teacher);
+
+            return _mapper.Map<GroupResponse>(updated);
+        }
+
+        /// <summary>
+        /// Gets a group's full details including children list.
+        /// </summary>
+        public async Task<GroupDetailResponse> GetGroupByIdAsync(int id)
+        {
+            var group = await _unitOfWork.Groups.GetByIdAsync(
+                g => g.Id == id,
+                g => g.Division,
+                g => g.Teacher,
+                g => g.Children)
+                ?? throw new EntityNotFoundException($"{id} ID-li qrup tapılmadı.");
+
+                            return _mapper.Map<GroupDetailResponse>(group);
+        }
+
+        /// <summary>
+        /// Gets all groups with details.
+        /// </summary>
+        public async Task<IEnumerable<GroupResponse>> GetAllGroupsAsync()
+        {
+            var groups = await _unitOfWork.Groups.GetGroupsWithDetailsAsync();
+            return _mapper.Map<IEnumerable<GroupResponse>>(groups);
+        }
+
+        /// <summary>
+        /// Gets groups filtered by division.
+        /// </summary>
+        public async Task<IEnumerable<GroupResponse>> GetGroupsByDivisionAsync(int divisionId)
+        {
+            var groups = await _unitOfWork.Groups.GetGroupsByDivisionAsync(divisionId);
+            return _mapper.Map<IEnumerable<GroupResponse>>(groups);
+        }
+
+        /// <summary>
+        /// Assigns a teacher to a group.
+        /// </summary>
+        public async Task AssignTeacherAsync(int groupId, string teacherId)
+        {
+            var group = await _unitOfWork.Groups.GetByIdAsync(groupId)
+                ?? throw new EntityNotFoundException($"{groupId} ID-li qrup tapılmadı.");
+
+            group.TeacherId = teacherId;
+            await _unitOfWork.Groups.UpdateAsync(group);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Soft-deletes a group.
+        /// </summary>
+        public async Task DeleteGroupAsync(int id)
+        {
+            await _unitOfWork.Groups.SoftDeleteAsync(id);
+            await _unitOfWork.SaveChangesAsync();
+        }
+    }
+}

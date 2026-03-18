@@ -1,0 +1,47 @@
+using App.Core.Entities;
+using App.DAL.Presistence;
+using App.DAL.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
+
+namespace App.DAL.Repositories.Abstractions
+{
+    public class AttendanceRepository : Repository<Attendance>, IAttendanceRepository
+    {
+        public AttendanceRepository(AppDbContext context) : base(context) { }
+
+        public async Task<IEnumerable<Attendance>> GetDailyAttendanceAsync(DateOnly date)
+        {
+            return await DbSet
+                .Where(a => a.Date == date)
+                .Include(a => a.Child)
+                    .ThenInclude(c => c.Group)
+                .Include(a => a.RecordedBy)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Attendance>> GetMonthlyAttendanceAsync(int month, int year)
+        {
+            return await DbSet
+                .Where(a => a.Date.Month == month && a.Date.Year == year)
+                .Include(a => a.Child)
+                    .ThenInclude(c => c.Group)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Attendance>> GetChildAttendanceAsync(int childId, DateOnly from, DateOnly to)
+        {
+            return await DbSet
+                .Where(a => a.ChildId == childId && a.Date >= from && a.Date <= to)
+                .OrderBy(a => a.Date)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Attendance>> GetGroupAttendanceAsync(int groupId, DateOnly date)
+        {
+            return await DbSet
+                .Where(a => a.Date == date && a.Child.GroupId == groupId)
+                .Include(a => a.Child)
+                .ToListAsync();
+        }
+    }
+}

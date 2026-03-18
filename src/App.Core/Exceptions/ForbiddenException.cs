@@ -1,0 +1,7 @@
+namespace App.Core.Exceptions
+{
+    public class ForbiddenException : Exception
+    {
+        public ForbiddenException(string message = "Giriş qadağandır.") : base(message) { }
+    }
+}

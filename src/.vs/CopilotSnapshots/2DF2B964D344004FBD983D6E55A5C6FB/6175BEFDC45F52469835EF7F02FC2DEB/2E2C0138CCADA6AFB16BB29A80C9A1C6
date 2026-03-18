@@ -1,0 +1,156 @@
+﻿using App.Business.Services.Interfaces;
+using App.Core.Entities;
+using App.Core.Enums;
+using App.DAL.UnitOfWork;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using System.Text;
+using System.Text.Json;
+
+namespace App.Business.Services.Implementations
+{
+    public class NotificationService : INotificationService
+    {
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly ILogger<NotificationService> _logger;
+        private readonly HttpClient _httpClient;
+        private readonly string _whatsAppServiceUrl;
+
+        public NotificationService(
+            IUnitOfWork unitOfWork,
+            ILogger<NotificationService> logger,
+            IHttpClientFactory httpClientFactory,
+            IConfiguration configuration)
+        {
+            _unitOfWork         = unitOfWork;
+            _logger             = logger;
+            _httpClient         = httpClientFactory.CreateClient("WhatsApp");
+            _whatsAppServiceUrl = configuration["WhatsApp:ServiceUrl"] ?? "http://localhost:3001";
+        }
+
+        /// <summary>Bir uşağın borcunu yoxlayır, gecikibsə WhatsApp mesajı göndərir.</summary>
+        public async Task SendPaymentReminderAsync(int childId)
+        {
+            var child = await _unitOfWork.Children.GetByIdAsync(childId);
+            if (child == null) return;
+
+            var debts = (await _unitOfWork.Payments.GetPaymentsByChildAsync(childId))
+                .Where(p => p.Status != PaymentStatus.Paid).ToList();
+
+            if (!debts.Any()) return;
+
+            var totalDebt = debts.Sum(p => p.FinalAmount - p.PaidAmount);
+            var months    = string.Join(", ", debts.Select(d => $"{d.Month}/{d.Year}"));
+            var message   = BuildDebtMessage(
+                child.ParentFullName,
+                $"{child.FirstName} {child.LastName}",
+                totalDebt,
+                months);
+
+            await SendWhatsAppAsync(child.ParentPhone, message, childId);
+        }
+
+        /// <summary>Bütün borclu valideynlərə toplu xatırlatma göndərir.</summary>
+        public async Task SendBulkRemindersToDebtorsAsync()
+        {
+            var debts   = await _unitOfWork.Payments.GetDebtorsAsync();
+            var grouped = debts.GroupBy(p => p.ChildId).ToList();
+
+            _logger.LogInformation("WhatsApp: {Count} borcluya mesaj gonderilir...", grouped.Count);
+
+            foreach (var group in grouped)
+                await SendPaymentReminderAsync(group.Key);
+
+            _logger.LogInformation("WhatsApp: Toplu gondermə tamamlandi.");
+        }
+
+        /// <summary>Cari ay ödənilməmiş bütün uşaqlar üçün gecikmiş ödəniş bildirişi göndərir.</summary>
+        public async Task SendOverduePaymentAlertsAsync()
+        {
+            var now      = DateTime.UtcNow;
+            var payments = await _unitOfWork.Payments.GetMonthlyPaymentsAsync(now.Month, now.Year);
+            var overdue  = payments.Where(p => p.Status != PaymentStatus.Paid).ToList();
+
+            _logger.LogInformation("WhatsApp gecikmiş bildiriş: {Count} uşaq", overdue.Count);
+
+            foreach (var payment in overdue)
+            {
+                var child = payment.Child;
+                if (child == null) continue;
+
+                var remaining = payment.FinalAmount - payment.PaidAmount;
+                var message   = BuildOverdueMessage(
+                    child.ParentFullName,
+                    $"{child.FirstName} {child.LastName}",
+                    remaining,
+                    payment.Month,
+                    payment.Year);
+
+                await SendWhatsAppAsync(child.ParentPhone, message, child.Id);
+            }
+        }
+
+        // ──────────────────────────────────────────
+        // Private helpers
+        // ──────────────────────────────────────────
+
+        private async Task SendWhatsAppAsync(string toPhone, string message, int childId)
+        {
+            try
+            {
+                var body    = JsonSerializer.Serialize(new { phone = toPhone, message });
+                var content = new StringContent(body, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync($"{_whatsAppServiceUrl}/send", content);
+                var resBody  = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("WhatsApp gondərildi → {Phone}", toPhone);
+                    await LogNotificationAsync(toPhone, message, childId, isSuccessful: true);
+                }
+                else
+                {
+                    _logger.LogError("WhatsApp xeta: {Status} → {Body}", (int)response.StatusCode, resBody);
+                    await LogNotificationAsync(toPhone, message, childId, isSuccessful: false, error: resBody);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "WhatsApp servisine qoşulmaq olmadi → {Phone}", toPhone);
+                await LogNotificationAsync(toPhone, message, childId, isSuccessful: false, error: ex.Message);
+            }
+        }
+
+        private async Task LogNotificationAsync(
+            string phone, string message, int childId, bool isSuccessful, string? error = null)
+        {
+            var log = new SMSNotification
+            {
+                RecipientPhone = phone,
+                Message        = isSuccessful ? message : $"[XETA: {error}] {message}",
+                SentAt         = DateTime.UtcNow,
+                IsSuccessful   = isSuccessful,
+                ChildId        = childId
+            };
+
+            await _unitOfWork.Context.SMSNotifications.AddAsync(log);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        private static string BuildDebtMessage(
+            string parentName, string childName, decimal debt, string months)
+            => $"Hormətli {parentName},\n\n" +
+               $"\"{childName}\" adli uşağınızın odənişi gecikir:\n" +
+               $"Aylar: {months}\n" +
+               $"Umumi borc: {debt:F2} AZN\n\n" +
+               $"Zəhmət olmasa odeniş edin.\n\nBağ evi administrasiyasi";
+
+        private static string BuildOverdueMessage(
+            string parentName, string childName, decimal debt, int month, int year)
+            => $"Hormətli {parentName},\n\n" +
+               $"\"{childName}\" adli uşağınızın {month}/{year} ayliq odənişi gecikir.\n" +
+               $"Qalan borc: {debt:F2} AZN\n\n" +
+               $"Zəhmət olmasa odənişi tamamlayin.\n\nBağ evi administrasiyasi";
+    }
+}

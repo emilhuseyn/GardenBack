@@ -1,0 +1,7 @@
+﻿namespace App.Core.Exceptions
+{
+    public class UnauthorizedException : Exception
+    {
+        public UnauthorizedException(string message = "İcazəsiz giriş.") : base(message) { }
+    }
+}

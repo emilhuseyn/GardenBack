@@ -1,0 +1,191 @@
+﻿using App.Business.DTOs.Children;
+using App.Business.Services.Interfaces;
+using App.Core.Common;
+using App.Core.Entities;
+using App.Core.Enums;
+using App.Core.Exceptions.Commons;
+using App.DAL.UnitOfWork;
+using AutoMapper;
+
+namespace App.Business.Services.Implementations
+{
+    /// <summary>
+    /// Handles child management operations.
+    /// </summary>
+    public class ChildService : IChildService
+    {
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+
+        public ChildService(IUnitOfWork unitOfWork, IMapper mapper)
+        {
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
+        }
+
+        /// <summary>
+        /// Creates a new child record.
+        /// </summary>
+        public async Task<ChildResponse> CreateChildAsync(CreateChildRequest dto)
+        {
+            var groupExists = await _unitOfWork.Groups.ExistsAsync(dto.GroupId);
+            if (!groupExists)
+                throw new EntityNotFoundException($"Group with ID {dto.GroupId} not found.");
+
+            var child = _mapper.Map<Child>(dto);
+            child.RegistrationDate = DateTime.UtcNow;
+            child.Status = ChildStatus.Active;
+
+            await _unitOfWork.Children.AddAsync(child);
+            await _unitOfWork.SaveChangesAsync();
+
+            var created = await _unitOfWork.Children.GetByIdAsync(
+                c => c.Id == child.Id,
+                c => c.Group,
+                c => c.Group.Division);
+
+            return _mapper.Map<ChildResponse>(created);
+        }
+
+        /// <summary>
+        /// Updates an existing child record.
+        /// </summary>
+        public async Task<ChildResponse> UpdateChildAsync(int id, UpdateChildRequest dto)
+        {
+            var child = await _unitOfWork.Children.GetByIdAsync(id)
+                ?? throw new EntityNotFoundException($"Child with ID {id} not found.");
+
+            if (dto.FirstName != null) child.FirstName = dto.FirstName;
+            if (dto.LastName != null) child.LastName = dto.LastName;
+            if (dto.DateOfBirth.HasValue) child.DateOfBirth = dto.DateOfBirth.Value;
+            if (dto.GroupId.HasValue) child.GroupId = dto.GroupId.Value;
+            if (dto.ScheduleType.HasValue) child.ScheduleType = dto.ScheduleType.Value;
+            if (dto.MonthlyFee.HasValue) child.MonthlyFee = dto.MonthlyFee.Value;
+            if (dto.ParentFullName != null) child.ParentFullName = dto.ParentFullName;
+            if (dto.ParentPhone != null) child.ParentPhone = dto.ParentPhone;
+            if (dto.ParentEmail != null) child.ParentEmail = dto.ParentEmail;
+            if (dto.FaceIdToken != null) child.FaceIdToken = dto.FaceIdToken;
+
+            await _unitOfWork.Children.UpdateAsync(child);
+            await _unitOfWork.SaveChangesAsync();
+
+            var updated = await _unitOfWork.Children.GetByIdAsync(
+                c => c.Id == id,
+                c => c.Group,
+                c => c.Group.Division);
+
+            return _mapper.Map<ChildResponse>(updated);
+        }
+
+        /// <summary>
+        /// Gets a child's full details including attendance and payment summaries.
+        /// </summary>
+        public async Task<ChildDetailResponse> GetChildByIdAsync(int id)
+        {
+            var child = await _unitOfWork.Children.GetByIdAsync(
+                c => c.Id == id,
+                c => c.Group,
+                c => c.Group.Division,
+                c => c.Group.Teacher)
+                ?? throw new EntityNotFoundException($"Child with ID {id} not found.");
+
+            var response = _mapper.Map<ChildDetailResponse>(child);
+
+            var now = DateOnly.FromDateTime(DateTime.UtcNow);
+            var monthStart = new DateOnly(now.Year, now.Month, 1);
+            var attendances = await _unitOfWork.Attendances.GetChildAttendanceAsync(id, monthStart, now);
+            response.AttendanceDays = attendances.Count(a => a.IsPresent);
+            response.AbsentDays = attendances.Count(a => !a.IsPresent);
+
+            var payments = await _unitOfWork.Payments.GetPaymentsByChildAsync(id);
+            response.TotalDebt = payments
+                .Where(p => p.Status != PaymentStatus.Paid)
+                .Sum(p => p.FinalAmount - p.PaidAmount);
+
+            return response;
+        }
+
+        /// <summary>
+        /// Gets all children with filtering and pagination.
+        /// </summary>
+        public async Task<PagedResponse<ChildResponse>> GetAllChildrenAsync(ChildFilterRequest filter)
+        {
+            var children = await _unitOfWork.Children.GetChildrenWithDetailsAsync();
+            var query = children.AsQueryable();
+
+            if (filter.GroupId.HasValue)
+                query = query.Where(c => c.GroupId == filter.GroupId.Value);
+            if (filter.DivisionId.HasValue)
+                query = query.Where(c => c.Group.DivisionId == filter.DivisionId.Value);
+            if (!string.IsNullOrEmpty(filter.Status) && Enum.TryParse<ChildStatus>(filter.Status, true, out var status))
+                query = query.Where(c => c.Status == status);
+            if (!string.IsNullOrEmpty(filter.ScheduleType) && Enum.TryParse<ScheduleType>(filter.ScheduleType, true, out var schedType))
+                query = query.Where(c => c.ScheduleType == schedType);
+
+            var totalCount = query.Count();
+            var pageSize = Math.Clamp(filter.PageSize, 1, 100);
+            var page = Math.Max(filter.Page, 1);
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            var items = query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return new PagedResponse<ChildResponse>
+            {
+                Items = _mapper.Map<IEnumerable<ChildResponse>>(items),
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = totalPages,
+                HasNextPage = page < totalPages,
+                HasPreviousPage = page > 1
+            };
+        }
+
+        /// <summary>
+        /// Activates a child.
+        /// </summary>
+        public async Task ActivateChildAsync(int id)
+        {
+            var child = await _unitOfWork.Children.GetByIdAsync(id)
+                ?? throw new EntityNotFoundException($"Child with ID {id} not found.");
+
+            child.Status = ChildStatus.Active;
+            await _unitOfWork.Children.UpdateAsync(child);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Deactivates a child.
+        /// </summary>
+        public async Task DeactivateChildAsync(int id)
+        {
+            var child = await _unitOfWork.Children.GetByIdAsync(id)
+                ?? throw new EntityNotFoundException($"Child with ID {id} not found.");
+
+            child.Status = ChildStatus.Inactive;
+            await _unitOfWork.Children.UpdateAsync(child);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Soft-deletes a child.
+        /// </summary>
+        public async Task DeleteChildAsync(int id)
+        {
+            await _unitOfWork.Children.SoftDeleteAsync(id);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Searches children by name, parent name, or phone.
+        /// </summary>
+        public async Task<IEnumerable<ChildResponse>> SearchChildrenAsync(string term)
+        {
+            var children = await _unitOfWork.Children.SearchChildrenAsync(term);
+            return _mapper.Map<IEnumerable<ChildResponse>>(children);
+        }
+    }
+}

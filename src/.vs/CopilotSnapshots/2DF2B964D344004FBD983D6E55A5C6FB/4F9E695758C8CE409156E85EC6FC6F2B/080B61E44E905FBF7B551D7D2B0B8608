@@ -1,0 +1,44 @@
+﻿using App.Business.Services.Interfaces;
+using App.Core.Common;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace App.API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    [Authorize(Policy = "AdminOnly")]
+    public class NotificationsController : ControllerBase
+    {
+        private readonly INotificationService _notificationService;
+
+        public NotificationsController(INotificationService notificationService)
+        {
+            _notificationService = notificationService;
+        }
+
+        /// <summary>Bütün borclu valideynlərə WhatsApp xatırlatması göndərir.</summary>
+        [HttpPost("send-reminders")]
+        public async Task<IActionResult> SendBulkReminders()
+        {
+            await _notificationService.SendBulkRemindersToDebtorsAsync();
+            return Ok(ApiResponse<string>.SuccessResponse("WhatsApp xatırlatmaları göndərildi."));
+        }
+
+        /// <summary>Cari ay üzrə gecikmiş ödənişlər üçün bildiriş göndərir.</summary>
+        [HttpPost("send-overdue-alerts")]
+        public async Task<IActionResult> SendOverdueAlerts()
+        {
+            await _notificationService.SendOverduePaymentAlertsAsync();
+            return Ok(ApiResponse<string>.SuccessResponse("Gecikmiş ödəniş bildirişləri göndərildi."));
+        }
+
+        /// <summary>Konkret uşağın valideyninə xatırlatma göndərir.</summary>
+        [HttpPost("send-reminder/{childId}")]
+        public async Task<IActionResult> SendReminderToChild(int childId)
+        {
+            await _notificationService.SendPaymentReminderAsync(childId);
+            return Ok(ApiResponse<string>.SuccessResponse("Xatırlatma göndərildi."));
+        }
+    }
+}

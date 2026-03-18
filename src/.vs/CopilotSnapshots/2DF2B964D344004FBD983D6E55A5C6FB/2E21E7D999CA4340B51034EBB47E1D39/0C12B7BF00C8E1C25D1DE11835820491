@@ -1,0 +1,73 @@
+﻿using App.Business.DTOs.Attendance;
+using App.Business.Services.Interfaces;
+using App.Core.Common;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+
+namespace App.API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    [Authorize]
+    public class AttendanceController : ControllerBase
+    {
+        private readonly IAttendanceService _attendanceService;
+
+        public AttendanceController(IAttendanceService attendanceService)
+        {
+            _attendanceService = attendanceService;
+        }
+
+        [HttpGet("daily")]
+        public async Task<IActionResult> GetDailyReport([FromQuery] DateOnly date, [FromQuery] int? groupId)
+        {
+            var result = await _attendanceService.GetDailyReportAsync(date, groupId);
+            return Ok(ApiResponse<DailyAttendanceReport>.SuccessResponse(result));
+        }
+
+        [HttpGet("monthly")]
+        public async Task<IActionResult> GetMonthlyReport([FromQuery] int month, [FromQuery] int year, [FromQuery] int? groupId)
+        {
+            var result = await _attendanceService.GetMonthlyReportAsync(month, year, groupId);
+            return Ok(ApiResponse<MonthlyAttendanceReport>.SuccessResponse(result));
+        }
+
+        [HttpGet("child/{childId}")]
+        public async Task<IActionResult> GetChildAttendance(int childId, [FromQuery] DateOnly from, [FromQuery] DateOnly to)
+        {
+            var result = await _attendanceService.GetChildAttendanceAsync(childId, from, to);
+            return Ok(ApiResponse<IEnumerable<AttendanceResponse>>.SuccessResponse(result));
+        }
+
+        [HttpPost("mark")]
+        [Authorize(Policy = "TeacherAccess")]
+        public async Task<IActionResult> MarkAttendance([FromBody] BulkMarkAttendanceRequest dto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var results = new List<AttendanceResponse>();
+            foreach (var entry in dto.Entries)
+            {
+                var result = await _attendanceService.MarkAttendanceAsync(entry, userId);
+                results.Add(result);
+            }
+            return Ok(ApiResponse<List<AttendanceResponse>>.SuccessResponse(results, "Attendance marked."));
+        }
+
+        [HttpPatch("{id}/arrival")]
+        [Authorize(Policy = "TeacherAccess")]
+        public async Task<IActionResult> MarkArrival(int id, [FromBody] TimeOnly arrivalTime)
+        {
+            var result = await _attendanceService.MarkArrivalAsync(id, arrivalTime);
+            return Ok(ApiResponse<AttendanceResponse>.SuccessResponse(result));
+        }
+
+        [HttpPatch("{id}/departure")]
+        [Authorize(Policy = "TeacherAccess")]
+        public async Task<IActionResult> MarkDeparture(int id, [FromBody] TimeOnly departureTime)
+        {
+            var result = await _attendanceService.MarkDepartureAsync(id, departureTime);
+            return Ok(ApiResponse<AttendanceResponse>.SuccessResponse(result));
+        }
+    }
+}

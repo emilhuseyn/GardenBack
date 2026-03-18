@@ -1,0 +1,14 @@
+﻿namespace App.Business.Services.Interfaces
+{
+    public interface INotificationService
+    {
+        /// <summary>Bir uşağın valideyninə ödəniş xatırlatması göndərir.</summary>
+        Task SendPaymentReminderAsync(int childId);
+
+        /// <summary>Bütün borclu valideynlərə toplu xatırlatma göndərir.</summary>
+        Task SendBulkRemindersToDebtorsAsync();
+
+        /// <summary>Gecikmiş ödənişləri yoxlayır və WhatsApp bildirişi göndərir.</summary>
+        Task SendOverduePaymentAlertsAsync();
+    }
+}

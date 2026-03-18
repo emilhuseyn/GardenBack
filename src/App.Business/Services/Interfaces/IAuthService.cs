@@ -1,0 +1,65 @@
+using App.Business.DTOs.Auth;
+
+namespace App.Business.Services.Interfaces
+{
+    /// <summary>
+    /// Service for authentication and user management operations.
+    /// </summary>
+    public interface IAuthService
+    {
+        /// <summary>
+        /// Registers a new user and returns a JWT token.
+        /// </summary>
+        Task<AuthResponse> RegisterAsync(RegisterRequest dto);
+
+        /// <summary>
+        /// Authenticates a user and returns a JWT token.
+        /// </summary>
+        Task<AuthResponse> LoginAsync(LoginRequest dto);
+
+        /// <summary>
+        /// Gets the current authenticated user's profile.
+        /// </summary>
+        Task<UserResponse> GetCurrentUserAsync(string userId);
+
+        /// <summary>
+        /// Updates the current user's own profile. Role and IsActive cannot be changed.
+        /// </summary>
+        Task<UserResponse> UpdateProfileAsync(string userId, UpdateProfileRequest dto);
+
+        /// <summary>
+        /// Updates a user's profile information (Admin operation).
+        /// </summary>
+        Task UpdateUserAsync(string userId, UpdateUserRequest dto);
+
+        /// <summary>
+        /// Changes the user's password.
+        /// </summary>
+        Task ChangePasswordAsync(string userId, ChangePasswordRequest dto);
+
+        /// <summary>
+        /// Gets all users in the system.
+        /// </summary>
+        Task<IEnumerable<UserResponse>> GetAllUsersAsync();
+
+        /// <summary>
+        /// Gets users filtered by role (e.g., Teacher list for AdmissionStaff).
+        /// </summary>
+        Task<IEnumerable<UserResponse>> GetUsersByRoleAsync(string role);
+
+        /// <summary>
+        /// Gets a specific user by ID.
+        /// </summary>
+        Task<UserResponse> GetUserByIdAsync(string userId);
+
+        /// <summary>
+        /// Deletes a user.
+        /// </summary>
+        Task DeleteUserAsync(string userId);
+
+        /// <summary>
+        /// Permanently removes a user from the database.
+        /// </summary>
+        Task RemoveUserAsync(string userId);
+    }
+}

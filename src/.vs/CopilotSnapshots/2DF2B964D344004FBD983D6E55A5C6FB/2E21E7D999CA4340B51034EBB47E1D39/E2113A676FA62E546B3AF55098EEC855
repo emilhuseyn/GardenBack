@@ -1,0 +1,71 @@
+﻿using App.Business.DTOs.Children;
+using FluentValidation;
+
+namespace App.Business.Validators
+{
+    public class CreateChildValidator : AbstractValidator<CreateChildRequest>
+    {
+        public CreateChildValidator()
+        {
+            RuleFor(x => x.FirstName)
+                .NotEmpty().WithMessage("First name is required.")
+                .MaximumLength(100);
+
+            RuleFor(x => x.LastName)
+                .NotEmpty().WithMessage("Last name is required.")
+                .MaximumLength(100);
+
+            RuleFor(x => x.DateOfBirth)
+                .NotEmpty().WithMessage("Date of birth is required.")
+                .LessThan(DateTime.UtcNow).WithMessage("Date of birth must be in the past.")
+                .Must(dob => DateTime.UtcNow.Year - dob.Year is >= 1 and <= 7)
+                .WithMessage("Child must be between 1 and 7 years old.");
+
+            RuleFor(x => x.GroupId)
+                .GreaterThan(0).WithMessage("Group is required.");
+
+            RuleFor(x => x.MonthlyFee)
+                .GreaterThan(0).WithMessage("Monthly fee must be greater than 0.");
+
+            RuleFor(x => x.ParentFullName)
+                .NotEmpty().WithMessage("Parent full name is required.")
+                .MaximumLength(200);
+
+            RuleFor(x => x.ParentPhone)
+                .NotEmpty().WithMessage("Parent phone is required.")
+                .Matches(@"^\+994\d{9}$").WithMessage("Phone must be in Azerbaijani format (+994XXXXXXXXX).");
+
+            RuleFor(x => x.ParentEmail)
+                .EmailAddress().When(x => !string.IsNullOrEmpty(x.ParentEmail))
+                .WithMessage("Invalid email format.");
+
+            RuleFor(x => x.ScheduleType)
+                .IsInEnum().WithMessage("Invalid schedule type.");
+        }
+    }
+
+    public class UpdateChildValidator : AbstractValidator<UpdateChildRequest>
+    {
+        public UpdateChildValidator()
+        {
+            RuleFor(x => x.FirstName)
+                .MaximumLength(100)
+                .When(x => x.FirstName != null);
+
+            RuleFor(x => x.LastName)
+                .MaximumLength(100)
+                .When(x => x.LastName != null);
+
+            RuleFor(x => x.MonthlyFee)
+                .GreaterThan(0).When(x => x.MonthlyFee.HasValue)
+                .WithMessage("Monthly fee must be greater than 0.");
+
+            RuleFor(x => x.ParentPhone)
+                .Matches(@"^\+994\d{9}$").When(x => x.ParentPhone != null)
+                .WithMessage("Phone must be in Azerbaijani format (+994XXXXXXXXX).");
+
+            RuleFor(x => x.ParentEmail)
+                .EmailAddress().When(x => !string.IsNullOrEmpty(x.ParentEmail));
+        }
+    }
+}

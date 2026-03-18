@@ -1,0 +1,31 @@
+﻿{
+  "ConnectionStrings": {
+    "DefaultConnection": "server=localhost;database=Garden;user=root;password=8ZYONaANetsaf7Zsx;"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "JwtConfiguration": {
+    "Issuer": "http://localhost:5076/",
+    "Audience": "http://localhost:5076/",
+    "SecretKey": "KinderGarden_SuperSecret_Key_2024_Min32Chars!"
+  },
+  "Serilog": {
+    "MinimumLevel": { "Default": "Information" },
+    "WriteTo": [
+      { "Name": "Console" },
+      { "Name": "File", "Args": { "path": "Logs/log-.txt", "rollingInterval": "Day" } }
+    ]
+  },
+  "GreenApi": {
+    "IdInstance": "YOUR_ID_INSTANCE",
+    "ApiToken": "YOUR_API_TOKEN"
+  },
+  "Cors": {
+    "AllowedOrigins": [ "http://localhost:3000" ]
+  },
+  "AllowedHosts": "*"
+}

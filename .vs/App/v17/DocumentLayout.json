@@ -1,0 +1,489 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.api\\apidependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\apidependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.dal\\daldependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\daldependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.business\\businessdependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\businessdependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.api\\middlewares\\globalexceptionhandlermiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\middlewares\\globalexceptionhandlermiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.core\\exceptions\\commons\\entitynotfoundexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|solutionrelative:app.core\\exceptions\\commons\\entitynotfoundexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.business\\helpers\\enumschemafilter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\helpers\\enumschemafilter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.api\\app.api.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\app.api.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.business\\validators\\commons\\baseentityvalidator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\validators\\commons\\baseentityvalidator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.business\\helpers\\jwtgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\helpers\\jwtgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.business\\app.business.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\app.business.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.business\\dtos\\commons\\baseentitydto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\dtos\\commons\\baseentitydto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.dal\\repositories\\implementations\\repository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\repositories\\implementations\\repository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.dal\\presistence\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\presistence\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.dal\\presistence\\automatedmigration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\presistence\\automatedmigration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.dal\\presistence\\appdbcontextseed.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\presistence\\appdbcontextseed.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.dal\\app.dal.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\app.dal.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.dal\\repositories\\interfaces\\irepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\repositories\\interfaces\\irepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EF2F1779-80CD-492A-B5F8-9CAE159BEDE5}|App.Shared\\App.Shared.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.shared\\implementations\\claimservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EF2F1779-80CD-492A-B5F8-9CAE159BEDE5}|App.Shared\\App.Shared.csproj|solutionrelative:app.shared\\implementations\\claimservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EF2F1779-80CD-492A-B5F8-9CAE159BEDE5}|App.Shared\\App.Shared.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.shared\\interfaces\\iclaimservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EF2F1779-80CD-492A-B5F8-9CAE159BEDE5}|App.Shared\\App.Shared.csproj|solutionrelative:app.shared\\interfaces\\iclaimservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.core\\enums\\euserroles.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|solutionrelative:app.core\\enums\\euserroles.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.core\\entities\\identity\\appuser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|solutionrelative:app.core\\entities\\identity\\appuser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.core\\app.core.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|solutionrelative:app.core\\app.core.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.core\\entities\\commons\\iauditedentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|solutionrelative:app.core\\entities\\commons\\iauditedentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.core\\entities\\commons\\baseentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|solutionrelative:app.core\\entities\\commons\\baseentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\ilkin\\onedrive\\desktop\\app\\app.api\\controllers\\apicontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\controllers\\apicontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.API\\appsettings.json",
+              "RelativeDocumentMoniker": "App.API\\appsettings.json",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.API\\appsettings.json",
+              "RelativeToolTip": "App.API\\appsettings.json",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2024-07-19T19:57:30.34Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.API\\Program.cs",
+              "RelativeDocumentMoniker": "App.API\\Program.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.API\\Program.cs",
+              "RelativeToolTip": "App.API\\Program.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAYAAAAxAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:51:24.161Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "GlobalExceptionHandlerMiddleware.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.API\\Middlewares\\GlobalExceptionHandlerMiddleware.cs",
+              "RelativeDocumentMoniker": "App.API\\Middlewares\\GlobalExceptionHandlerMiddleware.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.API\\Middlewares\\GlobalExceptionHandlerMiddleware.cs",
+              "RelativeToolTip": "App.API\\Middlewares\\GlobalExceptionHandlerMiddleware.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAACIAAAAcAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:50:19.573Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "BusinessDependencyInjection.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Business\\BusinessDependencyInjection.cs",
+              "RelativeDocumentMoniker": "App.Business\\BusinessDependencyInjection.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Business\\BusinessDependencyInjection.cs",
+              "RelativeToolTip": "App.Business\\BusinessDependencyInjection.cs",
+              "ViewState": "AQIAAAkAAAAAAAAAAAAAABkAAAAmAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:47:17.376Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "DALDependencyInjection.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.DAL\\DALDependencyInjection.cs",
+              "RelativeDocumentMoniker": "App.DAL\\DALDependencyInjection.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.DAL\\DALDependencyInjection.cs",
+              "RelativeToolTip": "App.DAL\\DALDependencyInjection.cs",
+              "ViewState": "AQIAAAYAAAAAAAAAAAAAABUAAAAcAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:39:39.847Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "APIDependencyInjection.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.API\\APIDependencyInjection.cs",
+              "RelativeDocumentMoniker": "App.API\\APIDependencyInjection.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.API\\APIDependencyInjection.cs",
+              "RelativeToolTip": "App.API\\APIDependencyInjection.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAEwAAAAiAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:48:18.445Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "EntityNotFoundException.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Core\\Exceptions\\Commons\\EntityNotFoundException.cs",
+              "RelativeDocumentMoniker": "App.Core\\Exceptions\\Commons\\EntityNotFoundException.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Core\\Exceptions\\Commons\\EntityNotFoundException.cs",
+              "RelativeToolTip": "App.Core\\Exceptions\\Commons\\EntityNotFoundException.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAsAAAAFAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:50:54.277Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "EnumSchemaFilter.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Business\\Helpers\\EnumSchemaFilter.cs",
+              "RelativeDocumentMoniker": "App.Business\\Helpers\\EnumSchemaFilter.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Business\\Helpers\\EnumSchemaFilter.cs",
+              "RelativeToolTip": "App.Business\\Helpers\\EnumSchemaFilter.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABIAAAAkAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:49:55.315Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "App.API",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.API\\App.API.csproj",
+              "RelativeDocumentMoniker": "App.API\\App.API.csproj",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.API\\App.API.csproj",
+              "RelativeToolTip": "App.API\\App.API.csproj",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABgAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2024-07-19T19:48:54.417Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "BaseEntityValidator.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Business\\Validators\\Commons\\BaseEntityValidator.cs",
+              "RelativeDocumentMoniker": "App.Business\\Validators\\Commons\\BaseEntityValidator.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Business\\Validators\\Commons\\BaseEntityValidator.cs",
+              "RelativeToolTip": "App.Business\\Validators\\Commons\\BaseEntityValidator.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABMAAAAFAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:45:35.235Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "JWTGenerator.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Business\\Helpers\\JWTGenerator.cs",
+              "RelativeDocumentMoniker": "App.Business\\Helpers\\JWTGenerator.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Business\\Helpers\\JWTGenerator.cs",
+              "RelativeToolTip": "App.Business\\Helpers\\JWTGenerator.cs",
+              "ViewState": "AQIAAAcAAAAAAAAAAAAAACUAAAAfAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:42:49.468Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "BaseEntityDTO.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Business\\DTOs\\Commons\\BaseEntityDTO.cs",
+              "RelativeDocumentMoniker": "App.Business\\DTOs\\Commons\\BaseEntityDTO.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Business\\DTOs\\Commons\\BaseEntityDTO.cs",
+              "RelativeToolTip": "App.Business\\DTOs\\Commons\\BaseEntityDTO.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAoAAAAjAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:41:22.248Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "App.Business",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Business\\App.Business.csproj",
+              "RelativeDocumentMoniker": "App.Business\\App.Business.csproj",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Business\\App.Business.csproj",
+              "RelativeToolTip": "App.Business\\App.Business.csproj",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAB4AAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2024-07-19T19:27:17.011Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "AutomatedMigration.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.DAL\\Presistence\\AutomatedMigration.cs",
+              "RelativeDocumentMoniker": "App.DAL\\Presistence\\AutomatedMigration.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.DAL\\Presistence\\AutomatedMigration.cs",
+              "RelativeToolTip": "App.DAL\\Presistence\\AutomatedMigration.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABIAAABWAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:38:19.877Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "AppDbContextSeed.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.DAL\\Presistence\\AppDbContextSeed.cs",
+              "RelativeDocumentMoniker": "App.DAL\\Presistence\\AppDbContextSeed.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.DAL\\Presistence\\AppDbContextSeed.cs",
+              "RelativeToolTip": "App.DAL\\Presistence\\AppDbContextSeed.cs",
+              "ViewState": "AQIAAAMAAAAAAAAAAAAAABoAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:37:47.628Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "AppDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.DAL\\Presistence\\AppDbContext.cs",
+              "RelativeDocumentMoniker": "App.DAL\\Presistence\\AppDbContext.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.DAL\\Presistence\\AppDbContext.cs",
+              "RelativeToolTip": "App.DAL\\Presistence\\AppDbContext.cs",
+              "ViewState": "AQIAABIAAAAAAAAAAAAUwBkAAAAZAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:37:12.001Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "App.DAL",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.DAL\\App.DAL.csproj",
+              "RelativeDocumentMoniker": "App.DAL\\App.DAL.csproj",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.DAL\\App.DAL.csproj",
+              "RelativeToolTip": "App.DAL\\App.DAL.csproj",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAB0AAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2024-07-19T19:36:08.876Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "Repository.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.DAL\\Repositories\\Implementations\\Repository.cs",
+              "RelativeDocumentMoniker": "App.DAL\\Repositories\\Implementations\\Repository.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.DAL\\Repositories\\Implementations\\Repository.cs",
+              "RelativeToolTip": "App.DAL\\Repositories\\Implementations\\Repository.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABAAAAAfAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:34:55.474Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "IRepository.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.DAL\\Repositories\\Interfaces\\IRepository.cs",
+              "RelativeDocumentMoniker": "App.DAL\\Repositories\\Interfaces\\IRepository.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.DAL\\Repositories\\Interfaces\\IRepository.cs",
+              "RelativeToolTip": "App.DAL\\Repositories\\Interfaces\\IRepository.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABAAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:34:09.993Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "ClaimService.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Shared\\Implementations\\ClaimService.cs",
+              "RelativeDocumentMoniker": "App.Shared\\Implementations\\ClaimService.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Shared\\Implementations\\ClaimService.cs",
+              "RelativeToolTip": "App.Shared\\Implementations\\ClaimService.cs",
+              "ViewState": "AQIAAAMAAAAAAAAAAAAAABQAAAAhAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:31:54.771Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "IClaimService.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Shared\\Interfaces\\IClaimService.cs",
+              "RelativeDocumentMoniker": "App.Shared\\Interfaces\\IClaimService.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Shared\\Interfaces\\IClaimService.cs",
+              "RelativeToolTip": "App.Shared\\Interfaces\\IClaimService.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAsAAAAkAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:31:28.02Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "EUserRoles.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Core\\Enums\\EUserRoles.cs",
+              "RelativeDocumentMoniker": "App.Core\\Enums\\EUserRoles.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Core\\Enums\\EUserRoles.cs",
+              "RelativeToolTip": "App.Core\\Enums\\EUserRoles.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAsAAAANAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:30:03.023Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "App.Core",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Core\\App.Core.csproj",
+              "RelativeDocumentMoniker": "App.Core\\App.Core.csproj",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Core\\App.Core.csproj",
+              "RelativeToolTip": "App.Core\\App.Core.csproj",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAA8AAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2024-07-19T19:27:17.121Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "AppUser.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Core\\Entities\\Identity\\AppUser.cs",
+              "RelativeDocumentMoniker": "App.Core\\Entities\\Identity\\AppUser.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Core\\Entities\\Identity\\AppUser.cs",
+              "RelativeToolTip": "App.Core\\Entities\\Identity\\AppUser.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAA4AAAAsAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:26:26.483Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "IAuditedEntity.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Core\\Entities\\Commons\\IAuditedEntity.cs",
+              "RelativeDocumentMoniker": "App.Core\\Entities\\Commons\\IAuditedEntity.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Core\\Entities\\Commons\\IAuditedEntity.cs",
+              "RelativeToolTip": "App.Core\\Entities\\Commons\\IAuditedEntity.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAkAAAAFAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:26:06.102Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "BaseEntity.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Core\\Entities\\Commons\\BaseEntity.cs",
+              "RelativeDocumentMoniker": "App.Core\\Entities\\Commons\\BaseEntity.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.Core\\Entities\\Commons\\BaseEntity.cs",
+              "RelativeToolTip": "App.Core\\Entities\\Commons\\BaseEntity.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAoAAAAjAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:25:15.45Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "APIController.cs",
+              "DocumentMoniker": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.API\\Controllers\\APIController.cs",
+              "RelativeDocumentMoniker": "App.API\\Controllers\\APIController.cs",
+              "ToolTip": "C:\\Users\\ilkin\\OneDrive\\Desktop\\App\\App.API\\Controllers\\APIController.cs",
+              "RelativeToolTip": "App.API\\Controllers\\APIController.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAYAAAATAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-07-19T19:21:39.827Z",
+              "EditorCaption": ""
+            }
+          ]
+        },
+        {
+          "DockedWidth": 1114,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{0ad07096-bba9-4900-a651-0598d26f6d24}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

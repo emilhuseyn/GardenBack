@@ -1,0 +1,120 @@
+﻿using App.Business.DTOs.Attendance;
+using App.Business.Services.Interfaces;
+using App.Core.Common;
+using App.Core.Enums;
+using App.Core.Exceptions;
+using App.DAL.UnitOfWork;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+
+namespace App.API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    [Authorize(Policy = "AllStaff")]
+    public class AttendanceController : ControllerBase
+    {
+        private readonly IAttendanceService _attendanceService;
+        private readonly IUnitOfWork _unitOfWork;
+
+        public AttendanceController(IAttendanceService attendanceService, IUnitOfWork unitOfWork)
+        {
+            _attendanceService = attendanceService;
+            _unitOfWork = unitOfWork;
+        }
+
+        // Administrator, Mühasib, Müəllim, Qəbul üzrə əməkdaş — yalnız baxış
+        [HttpGet("daily")]
+        public async Task<IActionResult> GetDailyReport([FromQuery] DateOnly date, [FromQuery] int? groupId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var role = User.FindFirstValue(ClaimTypes.Role)!;
+
+            // Müəllim yalnız öz qrupunu görə bilər
+            if (role == EUserRole.Teacher.ToString())
+                groupId = await GetTeacherGroupIdAsync(userId);
+
+            var result = await _attendanceService.GetDailyReportAsync(date, groupId);
+            return Ok(ApiResponse<DailyAttendanceReport>.SuccessResponse(result));
+        }
+
+        [HttpGet("monthly")]
+        public async Task<IActionResult> GetMonthlyReport([FromQuery] int month, [FromQuery] int year, [FromQuery] int? groupId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var role = User.FindFirstValue(ClaimTypes.Role)!;
+
+            // Müəllim yalnız öz qrupunu görə bilər
+            if (role == EUserRole.Teacher.ToString())
+                groupId = await GetTeacherGroupIdAsync(userId);
+
+            var result = await _attendanceService.GetMonthlyReportAsync(month, year, groupId);
+            return Ok(ApiResponse<MonthlyAttendanceReport>.SuccessResponse(result));
+        }
+
+        [HttpGet("child/{childId}")]
+        public async Task<IActionResult> GetChildAttendance(int childId, [FromQuery] DateOnly from, [FromQuery] DateOnly to)
+        {
+            var result = await _attendanceService.GetChildAttendanceAsync(childId, from, to);
+            return Ok(ApiResponse<IEnumerable<AttendanceResponse>>.SuccessResponse(result));
+        }
+
+        // Administrator + Müəllim — davamiyyət yazma (müəllim yalnız öz qrupuna)
+        [HttpPost("mark")]
+        [Authorize(Policy = "AttendanceWrite")]
+        public async Task<IActionResult> MarkAttendance([FromBody] BulkMarkAttendanceRequest dto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var role = User.FindFirstValue(ClaimTypes.Role)!;
+
+            if (role == EUserRole.Teacher.ToString())
+                await ValidateTeacherGroupAccessAsync(userId, dto.Entries.Select(e => e.ChildId));
+
+            var results = new List<AttendanceResponse>();
+            foreach (var entry in dto.Entries)
+            {
+                var result = await _attendanceService.MarkAttendanceAsync(entry, userId);
+                results.Add(result);
+            }
+            return Ok(ApiResponse<List<AttendanceResponse>>.SuccessResponse(results, "Davamiyyət qeyd edildi."));
+        }
+
+        [HttpPatch("{id}/arrival")]
+        [Authorize(Policy = "AttendanceWrite")]
+        public async Task<IActionResult> MarkArrival(int id, [FromBody] TimeOnly arrivalTime)
+        {
+            var result = await _attendanceService.MarkArrivalAsync(id, arrivalTime);
+            return Ok(ApiResponse<AttendanceResponse>.SuccessResponse(result));
+        }
+
+        [HttpPatch("{id}/departure")]
+        [Authorize(Policy = "AttendanceWrite")]
+        public async Task<IActionResult> MarkDeparture(int id, [FromBody] TimeOnly departureTime)
+        {
+            var result = await _attendanceService.MarkDepartureAsync(id, departureTime);
+            return Ok(ApiResponse<AttendanceResponse>.SuccessResponse(result));
+        }
+
+        // Müəllimin qrupunu tapır
+        private async Task<int?> GetTeacherGroupIdAsync(string teacherId)
+        {
+            var groups = await _unitOfWork.Groups.GetGroupsByTeacherIdAsync(teacherId);
+            return groups.FirstOrDefault()?.Id;
+        }
+
+        // Müəllim yalnız öz qrupundakı uşaqların davamiyyətini qeyd edə bilər
+        private async Task ValidateTeacherGroupAccessAsync(string teacherId, IEnumerable<int> childIds)
+        {
+            var teacherGroups = await _unitOfWork.Groups.GetGroupsByTeacherIdAsync(teacherId);
+            var teacherGroupIds = teacherGroups.Select(g => g.Id).ToHashSet();
+
+            foreach (var childId in childIds)
+            {
+                var child = await _unitOfWork.Children.GetByIdAsync(childId);
+                if (child == null || !teacherGroupIds.Contains(child.GroupId))
+                    throw new ForbiddenException("Siz yalnız öz qrupunuzun davamiyyətini qeyd edə bilərsiniz.");
+            }
+        }
+    }
+}

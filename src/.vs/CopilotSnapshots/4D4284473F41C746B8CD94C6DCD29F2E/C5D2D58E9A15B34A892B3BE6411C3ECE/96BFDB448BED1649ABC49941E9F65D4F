@@ -1,0 +1,165 @@
+﻿const express = require('express');
+const qrcode  = require('qrcode');
+const fs      = require('fs');
+const path    = require('path');
+const { Client, LocalAuth } = require('whatsapp-web.js');
+
+const app = express();
+app.use(express.json());
+
+// ──────────────────────────────────────
+// WhatsApp client
+// ──────────────────────────────────────
+const client = new Client({
+    authStrategy: new LocalAuth({ dataPath: path.join(__dirname, '.wwebjs_auth') }),
+    webVersionCache: {
+        type: 'remote',
+        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.3000.1034912818-alpha.html'
+    },
+    puppeteer: {
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--disable-extensions',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+            '--no-first-run',
+            '--no-default-browser-check'
+        ]
+    }
+});
+
+let qrCodeData = null;
+let isReady    = false;
+
+client.on('qr', (qr) => {
+    qrCodeData = qr;
+    isReady    = false;
+    console.log('[WhatsApp] QR kod yaradıldı — /qr endpoint-dən scan edin');
+});
+
+client.on('ready', () => {
+    isReady    = true;
+    qrCodeData = null;
+    console.log('[WhatsApp] Qoşuldu ✅');
+});
+
+client.on('disconnected', (reason) => {
+    isReady = false;
+    console.log('[WhatsApp] Ayrıldı:', reason);
+});
+
+client.on('auth_failure', () => {
+    isReady    = false;
+    qrCodeData = null;
+    console.log('[WhatsApp] Autentifikasiya xətası — sessiyanı silib yenidən scan edin');
+});
+
+client.initialize().catch(err => {
+    console.error('[WhatsApp] Başlatma xətası:', err.message);
+});
+
+// ──────────────────────────────────────
+// Endpointlər
+// ──────────────────────────────────────
+
+// GET /status — bağlantı vəziyyəti
+app.get('/status', (req, res) => {
+    res.json({
+        connected: isReady,
+        hasQR:     !!qrCodeData && !isReady,
+        message:   isReady
+            ? 'WhatsApp qoşulub və hazırdır'
+            : qrCodeData
+                ? 'QR gözlənilir — scan edin'
+                : 'Başlanır...'
+    });
+});
+
+// GET /qr — QR kodu base64 şəkil kimi qaytarır
+app.get('/qr', async (req, res) => {
+    if (isReady)
+        return res.json({ connected: true, message: 'Artıq qoşulub' });
+    if (!qrCodeData)
+        return res.status(404).json({ message: 'QR hələ hazır deyil, bir az gözləyin' });
+
+    const qrImage = await qrcode.toDataURL(qrCodeData);
+    res.json({ qr: qrImage });
+});
+
+// POST /send — mesaj göndər
+// Gövdə: { "phone": "+994501234567", "message": "Mətn" }
+app.post('/send', async (req, res) => {
+    if (!isReady)
+        return res.status(503).json({ success: false, message: 'WhatsApp bağlı deyil.' });
+
+    const { phone, message } = req.body;
+    if (!phone || !message)
+        return res.status(400).json({ success: false, message: '"phone" və "message" tələb olunur.' });
+
+    try {
+        const chatId = formatPhone(phone);
+        if (!chatId)
+            return res.status(400).json({ success: false, message: `Yanlış telefon formatı: ${phone}` });
+
+        await client.sendMessage(chatId, message);
+        console.log(`[WhatsApp] Göndərildi → ${chatId}`);
+        res.json({ success: true, message: 'Mesaj göndərildi.' });
+    } catch (err) {
+        console.error('[WhatsApp] Göndərmə xətası:', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// DELETE /session — sessiyanı sil, fərqli nömrə ilə qoşulmaq üçün
+app.delete('/session', async (req, res) => {
+    try {
+        isReady    = false;
+        qrCodeData = null;
+
+        try { await client.destroy(); } catch {}
+
+        const authPath = path.join(__dirname, '.wwebjs_auth');
+        if (fs.existsSync(authPath))
+            fs.rmSync(authPath, { recursive: true, force: true });
+
+        setTimeout(() => {
+            client.initialize().catch(err =>
+                console.error('[WhatsApp] Yenidən başlatma xətası:', err.message));
+        }, 2000);
+
+        console.log('[WhatsApp] Sessiya silindi, yenidən başlanır...');
+        res.json({ success: true, message: 'Sessiya silindi. Yeni QR bir neçə saniyə ərzində hazır olacaq.' });
+    } catch (err) {
+        console.error('[WhatsApp] Sessiya silmə xətası:', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ──────────────────────────────────────
+// Telefon formatı köməkçisi
+// ──────────────────────────────────────
+function formatPhone(phone) {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length === 9)                               return `994${digits}@c.us`;
+    if (digits.length === 10 && digits.startsWith('0'))   return `994${digits.slice(1)}@c.us`;
+    if (digits.length === 12 && digits.startsWith('994')) return `${digits}@c.us`;
+    if (phone.startsWith('+') && digits.length >= 11)     return `${digits}@c.us`;
+    return null;
+}
+
+// ──────────────────────────────────────
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`[WhatsApp Servisi] http://localhost:${PORT}`);
+    console.log(`  Vəziyyət:    GET    /status`);
+    console.log(`  QR kod:      GET    /qr`);
+    console.log(`  Göndər:      POST   /send`);
+    console.log(`  Ayır:        DELETE /session`);
+});
+
+

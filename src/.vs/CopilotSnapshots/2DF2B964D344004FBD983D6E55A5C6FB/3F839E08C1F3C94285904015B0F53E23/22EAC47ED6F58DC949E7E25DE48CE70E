@@ -1,0 +1,64 @@
+﻿using App.Business.Services.Interfaces;
+using App.Core.Enums;
+using App.DAL.UnitOfWork;
+using Microsoft.Extensions.Logging;
+
+namespace App.Business.Services.Implementations
+{
+    /// <summary>
+    /// Handles SMS notification operations (optional Twilio integration).
+    /// </summary>
+    public class NotificationService : INotificationService
+    {
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly ILogger<NotificationService> _logger;
+
+        public NotificationService(IUnitOfWork unitOfWork, ILogger<NotificationService> logger)
+        {
+            _unitOfWork = unitOfWork;
+            _logger = logger;
+        }
+
+        /// <summary>
+        /// Sends a payment reminder to a child's parent.
+        /// </summary>
+        public async Task SendPaymentReminderAsync(int childId)
+        {
+            var child = await _unitOfWork.Children.GetByIdAsync(childId);
+            if (child == null) return;
+
+            var debts = (await _unitOfWork.Payments.GetPaymentsByChildAsync(childId))
+                .Where(p => p.Status != PaymentStatus.Paid);
+
+            var totalDebt = debts.Sum(p => p.FinalAmount - p.PaidAmount);
+
+            _logger.LogInformation(
+                "SMS Reminder: To={Phone}, Child={Name}, Debt={Amount:C}",
+                child.ParentPhone,
+                $"{child.FirstName} {child.LastName}",
+                totalDebt);
+
+            // TODO: Integrate with Twilio SDK
+            // var message = $"Hörmətli valideyn, {child.FirstName} {child.LastName} üçün {totalDebt:F2} AZN borcunuz var.";
+            // await _twilioClient.SendSmsAsync(child.ParentPhone, message);
+
+            await Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Sends bulk payment reminders to all debtors.
+        /// </summary>
+        public async Task SendBulkRemindersToDebtorsAsync()
+        {
+            var debts = await _unitOfWork.Payments.GetDebtorsAsync();
+            var childIds = debts.Select(d => d.ChildId).Distinct();
+
+            foreach (var childId in childIds)
+            {
+                await SendPaymentReminderAsync(childId);
+            }
+
+            _logger.LogInformation("Bulk SMS reminders sent to {Count} debtors.", childIds.Count());
+        }
+    }
+}

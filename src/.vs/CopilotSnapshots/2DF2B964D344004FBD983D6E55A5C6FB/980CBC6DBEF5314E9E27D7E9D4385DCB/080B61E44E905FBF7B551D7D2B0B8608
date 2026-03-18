@@ -1,0 +1,155 @@
+﻿using App.Business.Services.Interfaces;
+using App.Core.Common;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
+using System.Text.Json;
+
+namespace App.API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    [Authorize(Policy = "AdminOnly")]
+    public class NotificationsController : ControllerBase
+    {
+        private readonly INotificationService _notificationService;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IConfiguration _configuration;
+        private readonly IWebHostEnvironment _env;
+        private readonly string _whatsAppServiceUrl;
+
+        public NotificationsController(
+            INotificationService notificationService,
+            IHttpClientFactory httpClientFactory,
+            IConfiguration configuration,
+            IWebHostEnvironment env)
+        {
+            _notificationService = notificationService;
+            _httpClientFactory   = httpClientFactory;
+            _configuration       = configuration;
+            _env                 = env;
+            _whatsAppServiceUrl  = configuration["WhatsApp:ServiceUrl"] ?? "http://localhost:3001";
+        }
+
+        /// <summary>WhatsApp servisinin bağlantı vəziyyətini qaytarır.</summary>
+        [HttpGet("whatsapp/status")]
+        public async Task<IActionResult> GetWhatsAppStatus()
+        {
+            try
+            {
+                var client   = _httpClientFactory.CreateClient("WhatsApp");
+                client.Timeout = TimeSpan.FromSeconds(3);
+                var response = await client.GetAsync($"{_whatsAppServiceUrl}/status");
+                var body     = await response.Content.ReadAsStringAsync();
+                var json     = JsonSerializer.Deserialize<object>(body);
+                return Ok(ApiResponse<object>.SuccessResponse(json!));
+            }
+            catch
+            {
+                return Ok(ApiResponse<object>.SuccessResponse(new
+                {
+                    connected = false,
+                    hasQR    = false,
+                    running  = false,
+                    message  = "WhatsApp servisi işləmir."
+                }));
+            }
+        }
+
+        /// <summary>Node.js WhatsApp servisini avtomatik başladır ("Qoşul" düyməsi).</summary>
+        [HttpPost("whatsapp/start")]
+        public async Task<IActionResult> StartWhatsAppService()
+        {
+            // Artıq işləyib-işləmədiyini yoxla
+            try
+            {
+                var client = _httpClientFactory.CreateClient("WhatsApp");
+                client.Timeout = TimeSpan.FromSeconds(2);
+                var check = await client.GetAsync($"{_whatsAppServiceUrl}/status");
+                if (check.IsSuccessStatusCode)
+                    return Ok(ApiResponse<object>.SuccessResponse(
+                        new { started = true, message = "Servis artıq işləyir." }));
+            }
+            catch { /* işləmir, davam et */ }
+
+            // ContentRootPath-ə görə düzgün path hesabla
+            var relativePath = _configuration["WhatsApp:ServicePath"] ?? "..\\..\\whatsapp-service";
+            var absolutePath = Path.GetFullPath(Path.Combine(_env.ContentRootPath, relativePath));
+
+            if (!Directory.Exists(absolutePath))
+                return BadRequest(ApiResponse<string>.ErrorResponse(
+                    $"WhatsApp servis qovluğu tapılmadı: {absolutePath}"));
+
+            if (!Directory.Exists(Path.Combine(absolutePath, "node_modules")))
+                return BadRequest(ApiResponse<string>.ErrorResponse(
+                    $"node_modules tapılmadı. '{absolutePath}' qovluğunda 'npm install' işlədin."));
+
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName         = "node",
+                    Arguments        = "server.js",
+                    WorkingDirectory = absolutePath,
+                    UseShellExecute  = false,
+                    CreateNoWindow   = true
+                });
+
+                await Task.Delay(3000);
+
+                return Ok(ApiResponse<object>.SuccessResponse(new
+                {
+                    started = true,
+                    message = "WhatsApp servisi başladıldı. QR üçün /whatsapp/qr-ə müraciət edin."
+                }));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.ErrorResponse(
+                    $"Servis başladıla bilmədi: {ex.Message}"));
+            }
+        }
+
+        /// <summary>QR kodu base64 image kimi qaytarır.</summary>
+        [HttpGet("whatsapp/qr")]
+        public async Task<IActionResult> GetWhatsAppQr()
+        {
+            try
+            {
+                var client   = _httpClientFactory.CreateClient("WhatsApp");
+                var response = await client.GetAsync($"{_whatsAppServiceUrl}/qr");
+                var body     = await response.Content.ReadAsStringAsync();
+                var json     = JsonSerializer.Deserialize<object>(body);
+                return StatusCode((int)response.StatusCode, json);
+            }
+            catch
+            {
+                return StatusCode(503, new { message = "WhatsApp servisi əlçatan deyil." });
+            }
+        }
+
+        /// <summary>Bütün borclu valideynlərə WhatsApp xatırlatması göndərir.</summary>
+        [HttpPost("send-reminders")]
+        public async Task<IActionResult> SendBulkReminders()
+        {
+            await _notificationService.SendBulkRemindersToDebtorsAsync();
+            return Ok(ApiResponse<string>.SuccessResponse("WhatsApp xatırlatmaları göndərildi."));
+        }
+
+        /// <summary>Cari ay gecikmiş ödənişlər üçün bildiriş göndərir.</summary>
+        [HttpPost("send-overdue-alerts")]
+        public async Task<IActionResult> SendOverdueAlerts()
+        {
+            await _notificationService.SendOverduePaymentAlertsAsync();
+            return Ok(ApiResponse<string>.SuccessResponse("Gecikmiş ödəniş bildirişləri göndərildi."));
+        }
+
+        /// <summary>Konkret uşağın valideyninə xatırlatma göndərir.</summary>
+        [HttpPost("send-reminder/{childId}")]
+        public async Task<IActionResult> SendReminderToChild(int childId)
+        {
+            await _notificationService.SendPaymentReminderAsync(childId);
+            return Ok(ApiResponse<string>.SuccessResponse("Xatırlatma göndərildi."));
+        }
+    }
+}

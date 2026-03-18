@@ -1,0 +1,12 @@
+﻿using App.Core.Entities;
+
+namespace App.DAL.Repositories.Interfaces
+{
+    public interface IChildRepository : IRepository<Child>
+    {
+        Task<IEnumerable<Child>> GetChildrenWithDetailsAsync();
+        Task<IEnumerable<Child>> GetChildrenByGroupIdAsync(int groupId);
+        Task<IEnumerable<Child>> SearchChildrenAsync(string searchTerm);
+        Task<IEnumerable<Child>> GetActiveChildrenAsync();
+    }
+}

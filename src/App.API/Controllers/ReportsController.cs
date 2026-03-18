@@ -1,0 +1,45 @@
+using App.Business.DTOs.Reports;
+using App.Business.Services.Interfaces;
+using App.Core.Common;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace App.API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    [Authorize(Policy = "AdminOrAccountant")]
+    public class ReportsController : ControllerBase
+    {
+        private readonly IReportService _reportService;
+
+        public ReportsController(IReportService reportService)
+        {
+            _reportService = reportService;
+        }
+
+        // Administrator + Mühasib — maliyyə statistikası
+        [HttpGet("statistics")]
+        public async Task<IActionResult> GetStatistics()
+        {
+            var result = await _reportService.GetStatisticsSummaryAsync();
+            return Ok(ApiResponse<StatisticsSummaryResponse>.SuccessResponse(result));
+        }
+
+        [HttpGet("divisions/stats")]
+        public async Task<IActionResult> GetDivisionStats()
+        {
+            var result = await _reportService.GetDivisionStatisticsAsync();
+            return Ok(ApiResponse<IEnumerable<DivisionStatResponse>>.SuccessResponse(result));
+        }
+
+        // Administrator + Mühasib + Qəbul üzrə əməkdaş — uşaq sayı hesabatı
+        [HttpGet("children/active-inactive")]
+        [Authorize(Policy = "PaymentView")]
+        public async Task<IActionResult> GetActiveInactiveCount()
+        {
+            var result = await _reportService.GetActiveInactiveCountAsync();
+            return Ok(ApiResponse<ActiveInactiveReport>.SuccessResponse(result));
+        }
+    }
+}

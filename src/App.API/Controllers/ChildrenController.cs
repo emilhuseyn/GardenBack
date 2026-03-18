@@ -1,0 +1,86 @@
+using App.Business.DTOs.Children;
+using App.Business.Services.Interfaces;
+using App.Core.Common;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace App.API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    [Authorize(Policy = "AllStaff")]
+    public class ChildrenController : ControllerBase
+    {
+        private readonly IChildService _childService;
+
+        public ChildrenController(IChildService childService)
+        {
+            _childService = childService;
+        }
+
+        // Administrator, Mühasib, Müəllim, Qəbul üzrə əməkdaş — hamısı görə bilər
+        [HttpGet]
+        public async Task<IActionResult> GetAllChildren([FromQuery] ChildFilterRequest filter)
+        {
+            var result = await _childService.GetAllChildrenAsync(filter);
+            return Ok(ApiResponse<PagedResponse<ChildResponse>>.SuccessResponse(result));
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetChildById(int id)
+        {
+            var result = await _childService.GetChildByIdAsync(id);
+            return Ok(ApiResponse<ChildDetailResponse>.SuccessResponse(result));
+        }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchChildren([FromQuery] string term)
+        {
+            var result = await _childService.SearchChildrenAsync(term);
+            return Ok(ApiResponse<IEnumerable<ChildResponse>>.SuccessResponse(result));
+        }
+
+        // Administrator + Qəbul üzrə əməkdaş — əlavə, redaktə, status dəyişikliyi
+        [HttpPost]
+        [Authorize(Policy = "AdminOrAdmission")]
+        public async Task<IActionResult> CreateChild([FromBody] CreateChildRequest dto)
+        {
+            var result = await _childService.CreateChildAsync(dto);
+            return CreatedAtAction(nameof(GetChildById), new { id = result.Id },
+                ApiResponse<ChildResponse>.SuccessResponse(result, "Uşaq uğurla yaradıldı.", 201));
+        }
+
+        [HttpPut("{id}")]
+        [Authorize(Policy = "AdminOrAdmission")]
+        public async Task<IActionResult> UpdateChild(int id, [FromBody] UpdateChildRequest dto)
+        {
+            var result = await _childService.UpdateChildAsync(id, dto);
+            return Ok(ApiResponse<ChildResponse>.SuccessResponse(result, "Uşaq məlumatları yeniləndi."));
+        }
+
+        [HttpPatch("{id}/activate")]
+        [Authorize(Policy = "AdminOrAdmission")]
+        public async Task<IActionResult> ActivateChild(int id)
+        {
+            await _childService.ActivateChildAsync(id);
+            return Ok(ApiResponse<string>.SuccessResponse("Uşaq aktivləşdirildi."));
+        }
+
+        [HttpPatch("{id}/deactivate")]
+        [Authorize(Policy = "AdminOrAdmission")]
+        public async Task<IActionResult> DeactivateChild(int id)
+        {
+            await _childService.DeactivateChildAsync(id);
+            return Ok(ApiResponse<string>.SuccessResponse("Uşaq deaktiv edildi."));
+        }
+
+        // Yalnız Administrator — silmə
+        [HttpDelete("{id}")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> DeleteChild(int id)
+        {
+            await _childService.DeleteChildAsync(id);
+            return Ok(ApiResponse<string>.SuccessResponse("Uşaq silindi."));
+        }
+    }
+}

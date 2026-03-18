@@ -1,0 +1,98 @@
+﻿using Microsoft.OpenApi.Models;
+using App.Business;
+using App.Business.Services.Interfaces;
+using App.DAL;
+using App.API;
+using App.DAL.Presistence;
+using Hangfire;
+using Hangfire.MySql;
+using Serilog;
+
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
+    .MinimumLevel.Information()
+    .CreateLogger();
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog();
+
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHttpContextAccessor();
+
+builder.Services
+    .AddDataAccess(builder.Configuration)
+    .AddBusiness();
+
+builder.Services.AddSwagger();
+builder.Services.AddJwt(builder.Configuration);
+builder.Services.AddAuthorizationPolicies();
+builder.Services.AddCorsPolicy(builder.Configuration);
+
+// Hangfire
+var hangfireConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseStorage(new MySqlStorage(hangfireConnectionString, new MySqlStorageOptions
+    {
+        TablesPrefix = "Hangfire"
+    })));
+builder.Services.AddHangfireServer();
+
+var app = builder.Build();
+
+// Auto-migrate and seed
+using var scope = app.Services.CreateScope();
+await AutomatedMigration.MigrateAsync(scope.ServiceProvider);
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+app.UseCors("CorsPolicy");
+
+// Middlewares
+app.AddMiddlewares();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Hangfire Dashboard (Admin only)
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new Hangfire.Dashboard.LocalRequestsOnlyAuthorizationFilter() }
+});
+
+// Register recurring jobs
+RecurringJob.AddOrUpdate<IPaymentService>(
+    "generate-monthly-debts",
+    s => s.GenerateMonthlyDebtsAsync(DateTime.Now.Month, DateTime.Now.Year),
+    Cron.Monthly(1, 0, 1));
+
+RecurringJob.AddOrUpdate<IAttendanceService>(
+    "process-attendance-flags",
+    s => s.AutoDetectLateAndEarlyLeave(),
+    Cron.Daily(18, 30));
+
+// Hər ayın 5-i saat 10:00-da gecikmiş ödəniş bildirişi (WhatsApp)
+RecurringJob.AddOrUpdate<INotificationService>(
+    "send-overdue-whatsapp-alerts",
+    s => s.SendOverduePaymentAlertsAsync(),
+    "0 10 5 * *");
+
+// Hər ayın 10-u saat 10:00-da ikinci xatırlatma
+RecurringJob.AddOrUpdate<INotificationService>(
+    "send-overdue-whatsapp-alerts-reminder",
+    s => s.SendOverduePaymentAlertsAsync(),
+    "0 10 10 * *");
+
+app.MapControllers();
+
+app.Run();

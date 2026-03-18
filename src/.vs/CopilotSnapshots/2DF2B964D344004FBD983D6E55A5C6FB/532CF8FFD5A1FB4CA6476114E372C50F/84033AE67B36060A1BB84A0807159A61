@@ -1,0 +1,121 @@
+﻿const express = require('express');
+const qrcode  = require('qrcode');
+const { Client, LocalAuth } = require('whatsapp-web.js');
+
+const app = express();
+app.use(express.json());
+
+// ──────────────────────────────────────
+// WhatsApp client
+// ──────────────────────────────────────
+const client = new Client({
+    authStrategy: new LocalAuth({ dataPath: './.wwebjs_auth' }),
+    puppeteer: {
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    }
+});
+
+let qrCodeData = null;
+let isReady    = false;
+
+client.on('qr', (qr) => {
+    qrCodeData = qr;
+    isReady    = false;
+    console.log('[WhatsApp] QR kod yaradıldı — /qr endpoint-dən scan edin');
+});
+
+client.on('ready', () => {
+    isReady    = true;
+    qrCodeData = null;
+    console.log('[WhatsApp] Qoşuldu ✅');
+});
+
+client.on('disconnected', (reason) => {
+    isReady = false;
+    console.log('[WhatsApp] Ayrıldı:', reason);
+});
+
+client.on('auth_failure', () => {
+    isReady = false;
+    console.log('[WhatsApp] Auth xətası — sessiyani silib yenidən scan edin');
+});
+
+client.initialize();
+
+// ──────────────────────────────────────
+// Endpoints
+// ──────────────────────────────────────
+
+// GET /status — bağlantı vəziyyəti
+app.get('/status', (req, res) => {
+    res.json({
+        connected: isReady,
+        hasQR: !!qrCodeData,
+        message: isReady
+            ? 'WhatsApp qoşulub və hazırdır'
+            : qrCodeData
+                ? 'QR kod gözlənilir — /qr endpoint-dən scan edin'
+                : 'Başlanır...'
+    });
+});
+
+// GET /qr — QR kodu base64 image kimi qaytarır
+app.get('/qr', async (req, res) => {
+    if (isReady) {
+        return res.json({ connected: true, message: 'Artıq qoşulub, QR lazım deyil' });
+    }
+    if (!qrCodeData) {
+        return res.status(404).json({ message: 'QR hələ hazır deyil, bir az gözləyin' });
+    }
+    const qrImage = await qrcode.toDataURL(qrCodeData);
+    res.json({ qr: qrImage });
+});
+
+// POST /send — mesaj göndər
+// Body: { "phone": "+994501234567", "message": "Salam" }
+app.post('/send', async (req, res) => {
+    if (!isReady) {
+        return res.status(503).json({ success: false, message: 'WhatsApp bağlı deyil. /qr ilə scan edin.' });
+    }
+
+    const { phone, message } = req.body;
+
+    if (!phone || !message) {
+        return res.status(400).json({ success: false, message: '"phone" və "message" tələb olunur.' });
+    }
+
+    try {
+        const chatId = formatPhone(phone);
+        if (!chatId) {
+            return res.status(400).json({ success: false, message: `Yanlış telefon formatı: ${phone}` });
+        }
+
+        await client.sendMessage(chatId, message);
+        console.log(`[WhatsApp] Göndərildi → ${chatId}`);
+        res.json({ success: true, message: 'Mesaj göndərildi.' });
+    } catch (err) {
+        console.error('[WhatsApp] Xəta:', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ──────────────────────────────────────
+// Helper
+// ──────────────────────────────────────
+function formatPhone(phone) {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length === 9)                              return `994${digits}@c.us`;
+    if (digits.length === 10 && digits.startsWith('0'))  return `994${digits.slice(1)}@c.us`;
+    if (digits.length === 12 && digits.startsWith('994')) return `${digits}@c.us`;
+    if (phone.startsWith('+') && digits.length >= 11)    return `${digits}@c.us`;
+    return null;
+}
+
+// ──────────────────────────────────────
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`[WhatsApp Service] http://localhost:${PORT}`);
+    console.log(`  Status: http://localhost:${PORT}/status`);
+    console.log(`  QR:     http://localhost:${PORT}/qr`);
+});

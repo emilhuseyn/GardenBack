@@ -1,0 +1,50 @@
+﻿using App.Business.DTOs.Schedule;
+using App.Business.Services.Interfaces;
+using App.Core.Exceptions.Commons;
+using App.DAL.UnitOfWork;
+using AutoMapper;
+
+namespace App.Business.Services.Implementations
+{
+    /// <summary>
+    /// Handles schedule configuration operations.
+    /// </summary>
+    public class ScheduleConfigService : IScheduleConfigService
+    {
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+
+        public ScheduleConfigService(IUnitOfWork unitOfWork, IMapper mapper)
+        {
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
+        }
+
+        /// <summary>
+        /// Gets all schedule configurations.
+        /// </summary>
+        public async Task<IEnumerable<ScheduleConfigResponse>> GetAllConfigsAsync()
+        {
+            var configs = await _unitOfWork.ScheduleConfigs.GetAllAsync();
+            return _mapper.Map<IEnumerable<ScheduleConfigResponse>>(configs);
+        }
+
+        /// <summary>
+        /// Updates a schedule configuration.
+        /// </summary>
+        public async Task<ScheduleConfigResponse> UpdateScheduleAsync(int id, UpdateScheduleRequest dto, string updatedById)
+        {
+            var config = await _unitOfWork.ScheduleConfigs.GetByIdAsync(id)
+                ?? throw new EntityNotFoundException($"Schedule config with ID {id} not found.");
+
+            config.StartTime = dto.StartTime;
+            config.EndTime = dto.EndTime;
+            config.UpdatedById = updatedById;
+
+            await _unitOfWork.ScheduleConfigs.UpdateAsync(config);
+            await _unitOfWork.SaveChangesAsync();
+
+            return _mapper.Map<ScheduleConfigResponse>(config);
+        }
+    }
+}

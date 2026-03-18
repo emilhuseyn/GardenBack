@@ -1,0 +1,308 @@
+﻿using App.Business.DTOs.Payments;
+using App.Business.Services.Interfaces;
+using App.Core.Common;
+using App.Core.Entities;
+using App.Core.Enums;
+using App.Core.Exceptions.Commons;
+using App.DAL.UnitOfWork;
+using AutoMapper;
+
+namespace App.Business.Services.Implementations
+{
+    /// <summary>
+    /// Handles payment and billing operations.
+    /// </summary>
+    public class PaymentService : IPaymentService
+    {
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+        private readonly INotificationService _notificationService;
+
+        public PaymentService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService)
+        {
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
+            _notificationService = notificationService;
+        }
+
+        /// <summary>
+        /// Generates debt records for the current month. Used by Hangfire to avoid
+        /// capturing DateTime.Now at job-registration time.
+        /// </summary>
+        public Task GenerateCurrentMonthDebtsAsync()
+        {
+            var now = DateTime.Now;
+            return GenerateMonthlyDebtsAsync(now.Month, now.Year);
+        }
+
+        /// <summary>
+        /// Generates monthly debt records for all active children.
+        /// </summary>
+        public async Task GenerateMonthlyDebtsAsync(int month, int year)
+        {
+            var activeChildren = await _unitOfWork.Children.GetActiveChildrenAsync();
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                foreach (var child in activeChildren)
+                {
+                    var existing = (await _unitOfWork.Payments
+                        .FindAsync(p => p.ChildId == child.Id && p.Month == month && p.Year == year))
+                        .FirstOrDefault();
+
+                    if (existing != null) continue;
+
+                    var payment = new Payment
+                    {
+                        ChildId = child.Id,
+                        Month = month,
+                        Year = year,
+                        OriginalAmount = child.MonthlyFee,
+                        FinalAmount = child.MonthlyFee,
+                        PaidAmount = 0,
+                        Status = PaymentStatus.Debt,
+                        DiscountType = DiscountType.None,
+                        DiscountValue = 0,
+                        RecordedById = "system"
+                    };
+
+                    await _unitOfWork.Payments.AddAsync(payment);
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
+            }
+            catch
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Records a payment against a child's debt.
+        /// If no payment record exists for the given month/year, one is created automatically.
+        /// </summary>
+        public async Task<PaymentResponse> RecordPaymentAsync(RecordPaymentRequest dto, string recordedById)
+        {
+            var payment = (await _unitOfWork.Payments
+                .FindAsync(p => p.ChildId == dto.ChildId && p.Month == dto.Month && p.Year == dto.Year))
+                .FirstOrDefault();
+
+            if (payment == null)
+            {
+                var child = await _unitOfWork.Children.GetByIdAsync(dto.ChildId)
+                    ?? throw new EntityNotFoundException($"{dto.ChildId} ID-li uşaq tapılmadı.");
+
+                payment = new Payment
+                {
+                    ChildId = dto.ChildId,
+                    Month = dto.Month,
+                    Year = dto.Year,
+                    OriginalAmount = child.MonthlyFee,
+                    FinalAmount = child.MonthlyFee,
+                    PaidAmount = 0,
+                    Status = PaymentStatus.Debt,
+                    DiscountType = DiscountType.None,
+                    DiscountValue = 0,
+                    RecordedById = recordedById
+                };
+
+                await _unitOfWork.Payments.AddAsync(payment);
+                await _unitOfWork.SaveChangesAsync();
+            }
+
+            if (payment.Status == PaymentStatus.Paid)
+                throw new Core.Exceptions.ValidationException($"Bu ödəniş artıq tam ödənilib. ({payment.Month}/{payment.Year})");
+
+            var remaining = payment.FinalAmount - payment.PaidAmount;
+            if (dto.Amount > remaining)
+                throw new Core.Exceptions.ValidationException(
+                    $"Ödəniş məbləği ({dto.Amount:F2} AZN) qalan borcu ({remaining:F2} AZN) aşa bilməz.");
+
+            payment.PaidAmount += dto.Amount;
+            payment.PaymentDate = DateTime.UtcNow;
+            payment.RecordedById = recordedById;
+            payment.Notes = dto.Notes;
+
+            if (payment.PaidAmount >= payment.FinalAmount)
+                payment.Status = PaymentStatus.Paid;
+            else if (payment.PaidAmount > 0)
+                payment.Status = PaymentStatus.PartiallyPaid;
+
+            await _unitOfWork.Payments.UpdateAsync(payment);
+            await _unitOfWork.SaveChangesAsync();
+
+            var result = await _unitOfWork.Payments.GetByIdAsync(
+                p => p.Id == payment.Id,
+                p => p.Child,
+                p => p.Child.Group);
+
+            return _mapper.Map<PaymentResponse>(result);
+        }
+
+        /// <summary>
+        /// Applies a discount to an existing payment.
+        /// </summary>
+        public async Task<PaymentResponse> ApplyDiscountAsync(int paymentId, DiscountRequest dto)
+        {
+            var payment = await _unitOfWork.Payments.GetByIdAsync(
+                p => p.Id == paymentId,
+                p => p.Child,
+                p => p.Child.Group)
+                ?? throw new EntityNotFoundException($"{paymentId} ID-li ödəniş tapılmadı.");
+
+            payment.DiscountType = dto.DiscountType;
+            payment.DiscountValue = dto.DiscountValue;
+            payment.FinalAmount = CalculateFinalAmount(payment.OriginalAmount, dto.DiscountType, dto.DiscountValue);
+
+            if (payment.PaidAmount >= payment.FinalAmount)
+                payment.Status = PaymentStatus.Paid;
+            else if (payment.PaidAmount > 0)
+                payment.Status = PaymentStatus.PartiallyPaid;
+            else
+                payment.Status = PaymentStatus.Debt;
+
+            await _unitOfWork.Payments.UpdateAsync(payment);
+            await _unitOfWork.SaveChangesAsync();
+
+            return _mapper.Map<PaymentResponse>(payment);
+        }
+
+        /// <summary>
+        /// Gets all children with unpaid debts.
+        /// </summary>
+        public async Task<IEnumerable<DebtorListItem>> GetDebtorsAsync()
+        {
+            var debts = await _unitOfWork.Payments.GetDebtorsAsync();
+
+            return debts
+                .GroupBy(p => p.ChildId)
+                .Select(g =>
+                {
+                    var first = g.First();
+                    return new DebtorListItem
+                    {
+                        ChildId = g.Key,
+                        ChildFullName = $"{first.Child.FirstName} {first.Child.LastName}",
+                        GroupName = first.Child.Group?.Name ?? string.Empty,
+                        DivisionName = first.Child.Group?.Division?.Name ?? string.Empty,
+                        ParentPhone = first.Child.ParentPhone,
+                        TotalDebt = g.Sum(p => p.FinalAmount - p.PaidAmount),
+                        UnpaidMonths = _mapper.Map<List<PaymentResponse>>(g.ToList())
+                    };
+                });
+        }
+
+        /// <summary>
+        /// Gets payment history for a specific child.
+        /// </summary>
+        public async Task<IEnumerable<PaymentResponse>> GetChildPaymentHistoryAsync(int childId)
+        {
+            var payments = await _unitOfWork.Payments.GetPaymentsByChildAsync(childId);
+            return _mapper.Map<IEnumerable<PaymentResponse>>(payments);
+        }
+
+        /// <summary>
+        /// Gets a filtered, paged list of payments.
+        /// </summary>
+        public async Task<PagedResponse<PaymentResponse>> GetFilteredPaymentsAsync(PaymentFilterRequest filter)
+        {
+            var pageSize = Math.Clamp(filter.PageSize, 1, 100);
+            var page     = Math.Max(filter.Page, 1);
+
+            PaymentStatus? status = Enum.TryParse<PaymentStatus>(filter.Status, true, out var s) ? s : null;
+
+            var (items, totalCount) = await _unitOfWork.Payments.GetFilteredAsync(
+                filter.ChildId, filter.GroupId, filter.DivisionId,
+                status, filter.Month, filter.Year,
+                page, pageSize);
+
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            return new PagedResponse<PaymentResponse>
+            {
+                Items           = _mapper.Map<IEnumerable<PaymentResponse>>(items),
+                TotalCount      = totalCount,
+                Page            = page,
+                PageSize        = pageSize,
+                TotalPages      = totalPages,
+                HasNextPage     = page < totalPages,
+                HasPreviousPage = page > 1
+            };
+        }
+
+        /// <summary>
+        /// Gets the daily cash collection report.
+        /// </summary>
+        public async Task<DailyCashReport> GetDailyCashReportAsync(DateOnly date)
+        {
+            var payments = await _unitOfWork.Payments.GetDailyCollectionAsync(date);
+            return new DailyCashReport
+            {
+                Date = date,
+                TotalCollected = payments.Sum(p => p.PaidAmount),
+                PaymentCount = payments.Count(),
+                Payments = _mapper.Map<List<PaymentResponse>>(payments)
+            };
+        }
+
+        /// <summary>
+        /// Gets the monthly cash report.
+        /// </summary>
+        public async Task<MonthlyCashReport> GetMonthlyCashReportAsync(int month, int year)
+        {
+            var payments = await _unitOfWork.Payments.GetMonthlyPaymentsAsync(month, year);
+            return BuildMonthlyCashReport(payments, month, year);
+        }
+
+        /// <summary>
+        /// Gets income report for a specific group.
+        /// </summary>
+        public async Task<MonthlyCashReport> GetGroupIncomeReportAsync(int groupId, int month, int year)
+        {
+            var payments = await _unitOfWork.Payments.GetPaymentsByGroupAsync(groupId, month, year);
+            return BuildMonthlyCashReport(payments, month, year);
+        }
+
+        /// <summary>
+        /// Gets income report for a specific division.
+        /// </summary>
+        public async Task<MonthlyCashReport> GetDivisionIncomeReportAsync(int divisionId, int month, int year)
+        {
+            var payments = await _unitOfWork.Payments.GetMonthlyPaymentsAsync(month, year);
+            var filtered = payments.Where(p => p.Child.Group?.DivisionId == divisionId);
+            return BuildMonthlyCashReport(filtered, month, year);
+        }
+
+        /// <summary>
+        /// Calculates the final amount after discount.
+        /// </summary>
+        public decimal CalculateFinalAmount(decimal original, DiscountType type, decimal value)
+        {
+            return type switch
+            {
+                DiscountType.Percentage => original - (original * value / 100),
+                DiscountType.Fixed => original - value,
+                _ => original
+            };
+        }
+
+        private static MonthlyCashReport BuildMonthlyCashReport(IEnumerable<Payment> payments, int month, int year)
+        {
+            var list = payments.ToList();
+            return new MonthlyCashReport
+            {
+                Month = month,
+                Year = year,
+                TotalExpected = list.Sum(p => p.FinalAmount),
+                TotalCollected = list.Sum(p => p.PaidAmount),
+                TotalDebt = list.Sum(p => p.FinalAmount - p.PaidAmount),
+                PaidCount = list.Count(p => p.Status == PaymentStatus.Paid),
+                PartialCount = list.Count(p => p.Status == PaymentStatus.PartiallyPaid),
+                DebtCount = list.Count(p => p.Status == PaymentStatus.Debt)
+            };
+        }
+    }
+}
