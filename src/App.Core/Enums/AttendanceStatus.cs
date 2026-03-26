@@ -5,9 +5,9 @@ namespace App.Core.Enums
     /// </summary>
     public enum AttendanceStatus
     {
-        Present = 1,      // Uşaq iştirak edib
-        Absent = 2,       // Uşaq iştirak etməyib
-        Excused = 3,      // Uşaq üzrlü səbəbdən iştirak etməyib
-        NotCounted = 4    // Bu gün statistikaya daxil edilmir (bayram və ya xüsusi gün)
+        Present = 1,        // Uşaq iştirak edib
+        Absent = 2,         // Uşaq iştirak etməyib
+        Excused = 3,        // Üzrlü səbəb (xəstəlik, məzun, s.)
+        NotCounted = 4      // Bu gün statistikaya daxil edilmir (bayram və ya xüsusi gün)
     }
 }
