@@ -47,5 +47,20 @@ namespace App.Business.Services.Interfaces
         /// Searches children by name, parent name, or phone.
         /// </summary>
         Task<IEnumerable<ChildResponse>> SearchChildrenAsync(string term);
+
+        /// <summary>
+        /// Activates multiple children at once.
+        /// </summary>
+        Task ActivateChildrenAsync(List<int> ids);
+
+        /// <summary>
+        /// Deactivates multiple children at once.
+        /// </summary>
+        Task DeactivateChildrenAsync(List<int> ids);
+
+        /// <summary>
+        /// Soft-deletes multiple children at once.
+        /// </summary>
+        Task DeleteChildrenAsync(List<int> ids);
     }
 }

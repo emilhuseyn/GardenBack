@@ -257,14 +257,14 @@ namespace App.DAL.Presistence
                 foreach (var day in days)
                 {
                     bool isToday = day == today;
-                    if (rnd.Next(100) < 15) { list.Add(new Attendance { ChildId=child.Id, Date=day, IsPresent=false, RecordedById=adminId }); continue; }
+                    if (rnd.Next(100) < 15) { list.Add(new Attendance { ChildId=child.Id, Date=day, Status=AttendanceStatus.Absent, RecordedById=adminId }); continue; }
 
                     bool isLate  = rnd.Next(100) < 12;
                     var  arrival = isLate ? cfg.StartTime.AddMinutes(rnd.Next(10,50)) : cfg.StartTime.AddMinutes(-rnd.Next(0,10));
                     TimeOnly? depart = null; bool isEarly = false;
                     if (!isToday) { isEarly=rnd.Next(100)<8; depart=isEarly?cfg.EndTime.AddMinutes(-rnd.Next(30,90)):cfg.EndTime.AddMinutes(rnd.Next(0,15)); }
 
-                    list.Add(new Attendance { ChildId=child.Id, Date=day, IsPresent=true, ArrivalTime=arrival, DepartureTime=depart, IsLate=isLate, IsEarlyLeave=isEarly, RecordedById=adminId });
+                    list.Add(new Attendance { ChildId=child.Id, Date=day, Status=AttendanceStatus.Present, ArrivalTime=arrival, DepartureTime=depart, IsLate=isLate, IsEarlyLeave=isEarly, RecordedById=adminId });
                 }
             }
 
