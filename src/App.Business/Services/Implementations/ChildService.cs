@@ -94,8 +94,8 @@ namespace App.Business.Services.Implementations
             var now = DateOnly.FromDateTime(DateTime.UtcNow);
             var monthStart = new DateOnly(now.Year, now.Month, 1);
             var attendances = await _unitOfWork.Attendances.GetChildAttendanceAsync(id, monthStart, now);
-            response.AttendanceDays = attendances.Count(a => a.IsPresent);
-            response.AbsentDays = attendances.Count(a => !a.IsPresent);
+            response.AttendanceDays = attendances.Count(a => a.Status == AttendanceStatus.Present);
+            response.AbsentDays = attendances.Count(a => a.Status == AttendanceStatus.Absent);
 
             var payments = await _unitOfWork.Payments.GetPaymentsByChildAsync(id);
             response.TotalDebt = payments

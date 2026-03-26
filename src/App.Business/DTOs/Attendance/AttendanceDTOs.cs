@@ -1,10 +1,12 @@
+using App.Core.Enums;
+
 namespace App.Business.DTOs.Attendance
 {
     public class MarkAttendanceRequest
     {
         public int ChildId { get; set; }
         public DateOnly Date { get; set; }
-        public bool IsPresent { get; set; }
+        public AttendanceStatus Status { get; set; } = AttendanceStatus.Present;
         public TimeOnly? ArrivalTime { get; set; }
         public TimeOnly? DepartureTime { get; set; }
         public string? Notes { get; set; }
@@ -24,7 +26,7 @@ namespace App.Business.DTOs.Attendance
         public DateOnly Date { get; set; }
         public TimeOnly? ArrivalTime { get; set; }
         public TimeOnly? DepartureTime { get; set; }
-        public bool IsPresent { get; set; }
+        public AttendanceStatus Status { get; set; } = AttendanceStatus.Present;
         public bool IsLate { get; set; }
         public bool IsEarlyLeave { get; set; }
         public string? Notes { get; set; }

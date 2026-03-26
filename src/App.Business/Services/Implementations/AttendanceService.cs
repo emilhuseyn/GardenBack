@@ -37,7 +37,7 @@ namespace App.Business.Services.Implementations
 
             if (existing != null)
             {
-                existing.IsPresent = dto.IsPresent;
+                existing.Status = dto.Status;
                 existing.ArrivalTime = dto.ArrivalTime;
                 existing.DepartureTime = dto.DepartureTime;
                 existing.Notes = dto.Notes;
@@ -75,7 +75,7 @@ namespace App.Business.Services.Implementations
                 ?? throw new EntityNotFoundException($"{attendanceId} ID-li davamiyyət qeydi tapılmadı.");
 
             attendance.ArrivalTime = arrivalTime;
-            attendance.IsPresent = true;
+            attendance.Status = AttendanceStatus.Present;
             await _unitOfWork.Attendances.UpdateAsync(attendance);
             await _unitOfWork.SaveChangesAsync();
 
@@ -115,8 +115,8 @@ namespace App.Business.Services.Implementations
             {
                 Date = date,
                 TotalChildren = entries.Count,
-                PresentCount = entries.Count(e => e.IsPresent),
-                AbsentCount = entries.Count(e => !e.IsPresent),
+                PresentCount = entries.Count(e => e.Status == AttendanceStatus.Present),
+                AbsentCount = entries.Count(e => e.Status == AttendanceStatus.Absent),
                 LateCount = entries.Count(e => e.IsLate),
                 Entries = entries
             };
@@ -143,8 +143,8 @@ namespace App.Business.Services.Implementations
                     ChildId = group.Key,
                     ChildFullName = $"{first.Child.FirstName} {first.Child.LastName}",
                     GroupName = first.Child.Group?.Name ?? string.Empty,
-                    PresentDays = group.Count(a => a.IsPresent),
-                    AbsentDays = group.Count(a => !a.IsPresent),
+                    PresentDays = group.Count(a => a.Status == AttendanceStatus.Present),
+                    AbsentDays = group.Count(a => a.Status == AttendanceStatus.Absent),
                     LateDays = group.Count(a => a.IsLate),
                     EarlyLeaveDays = group.Count(a => a.IsEarlyLeave)
                 });
@@ -179,7 +179,7 @@ namespace App.Business.Services.Implementations
             var fullDayConfig = await _unitOfWork.ScheduleConfigs.GetByScheduleTypeAsync(ScheduleType.FullDay);
             var halfDayConfig = await _unitOfWork.ScheduleConfigs.GetByScheduleTypeAsync(ScheduleType.HalfDay);
 
-            foreach (var attendance in attendances.Where(a => a.IsPresent))
+            foreach (var attendance in attendances.Where(a => a.Status == AttendanceStatus.Present))
             {
                 var child = attendance.Child;
                 var config = child.ScheduleType == ScheduleType.FullDay ? fullDayConfig : halfDayConfig;
