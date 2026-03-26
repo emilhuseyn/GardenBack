@@ -33,5 +33,318 @@ Bu layihə uşaq bağçası üçün ödəniş, bildiriş və idarəetmə sistemi
 - Hər gün saat 20:00-da ödəniş günü yaxınlaşan valideynlərə xatırlatma
 - Ödəniş qeydə alındıqda dərhal təsdiqləmə mesajı
 
+---
+
+## 📋 FRONT END DOKUMENTASIYASI
+
+### Davamiyyət Sistemi (Attendance)
+
+#### 1. AttendanceStatus Enum Dəyərləri
+
+```json
+{
+  "Present": 1,        // Uşaq iştirak edib
+  "Absent": 2,         // Uşaq iştirak etməyib
+  "Excused": 3,        // Üzrlü səbəb (xəstəlik, məzun, s.)
+  "NotCounted": 4      // Statistikaya daxil edilmir (bayram, xüsusi gün)
+}
+```
+
+#### 2. Davamiyyəti Qeyd Etmə
+
+**Endpoint:** `POST /api/attendances`
+
+**Request Body:**
+```json
+{
+  "childId": 1,
+  "date": "2025-03-20",
+  "status": 1,           // AttendanceStatus enum dəyəri (1=Present, 2=Absent, 3=Excused, 4=NotCounted)
+  "arrivalTime": "08:30",
+  "departureTime": "15:30",
+  "notes": "Xəstə idi"
+}
+```
+
+**Response:**
+```json
+{
+  "data": {
+    "id": 101,
+    "childId": 1,
+    "childFullName": "Əhməd Hüseynov",
+    "groupName": "A Qrupu",
+    "date": "2025-03-20",
+    "arrivalTime": "08:30",
+    "departureTime": "15:30",
+    "status": 1,
+    "isLate": false,
+    "isEarlyLeave": false,
+    "notes": "Xəstə idi"
+  },
+  "message": "Davamiyyət qeyd olundu.",
+  "statusCode": 200
+}
+```
+
+#### 3. Toplu Davamiyyəti Qeyd Etmə
+
+**Endpoint:** `POST /api/attendances/bulk`
+
+**Request Body:**
+```json
+{
+  "entries": [
+    {
+      "childId": 1,
+      "date": "2025-03-20",
+      "status": 1,
+      "arrivalTime": "08:30",
+      "departureTime": "15:30"
+    },
+    {
+      "childId": 2,
+      "date": "2025-03-20",
+      "status": 2,
+      "notes": "Xəstəliyə görə"
+    }
+  ]
+}
+```
+
+#### 4. Gəliş Saatını Qeyd Etmə
+
+**Endpoint:** `PATCH /api/attendances/{attendanceId}/arrival`
+
+**Request Body:**
+```json
+{
+  "arrivalTime": "08:45"
+}
+```
+
+#### 5. Gidiş Saatını Qeyd Etmə
+
+**Endpoint:** `PATCH /api/attendances/{attendanceId}/departure`
+
+**Request Body:**
+```json
+{
+  "departureTime": "15:15"
+}
+```
+
+#### 6. Gündəlik Davamiyyət Hesabatı
+
+**Endpoint:** `GET /api/reports/attendance/daily?date=2025-03-20&groupId=1`
+
+**Response:**
+```json
+{
+  "data": {
+    "date": "2025-03-20",
+    "totalChildren": 15,
+    "presentCount": 12,
+    "absentCount": 2,
+    "lateCount": 1,
+    "entries": [
+      {
+        "id": 101,
+        "childId": 1,
+        "childFullName": "Əhməd Hüseynov",
+        "status": 1,      // Present
+        "isLate": false,
+        "isEarlyLeave": false
+      }
+    ]
+  },
+  "statusCode": 200
+}
+```
+
+#### 7. Aylıq Davamiyyət Hesabatı
+
+**Endpoint:** `GET /api/reports/attendance/monthly?month=3&year=2025&groupId=1`
+
+**Response:**
+```json
+{
+  "data": {
+    "month": 3,
+    "year": 2025,
+    "totalWorkDays": 22,
+    "children": [
+      {
+        "childId": 1,
+        "childFullName": "Əhməd Hüseynov",
+        "groupName": "A Qrupu",
+        "presentDays": 20,
+        "absentDays": 1,
+        "lateDays": 1,
+        "earlyLeaveDays": 0
+      }
+    ]
+  },
+  "statusCode": 200
+}
+```
+
+#### 8. Uşağın Davamiyyət Tarixçəsi
+
+**Endpoint:** `GET /api/attendances/child/{childId}?from=2025-03-01&to=2025-03-31`
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": 101,
+      "childId": 1,
+      "childFullName": "Əhməd Hüseynov",
+      "date": "2025-03-20",
+      "status": 1,
+      "arrivalTime": "08:30",
+      "departureTime": "15:30",
+      "isLate": false,
+      "isEarlyLeave": false
+    }
+  ],
+  "statusCode": 200
+}
+```
+
+---
+
+### Children Sistemi
+
+#### Toplu Uşaqları Aktiv/Deaktiv/Silmə
+
+**Endpoint:** `POST /api/children/activate-bulk`
+```json
+{
+  "ids": [1, 2, 3]
+}
+```
+**Response:** `{ "message": "Uşaqlar aktiv edildi." }`
+
+**Endpoint:** `POST /api/children/deactivate-bulk`
+```json
+{
+  "ids": [1, 2, 3]
+}
+```
+**Response:** `{ "message": "Uşaqlar deaktiv edildi." }`
+
+**Endpoint:** `POST /api/children/delete-bulk`
+```json
+{
+  "ids": [1, 2, 3]
+}
+```
+**Response:** `{ "message": "Uşaqlar silindi." }`
+
+---
+
+### Ödəniş Sistemi (Payments)
+
+#### Ödəniş Qeyd Etmə
+
+**Endpoint:** `POST /api/payments/record`
+
+**Request Body:**
+```json
+{
+  "childId": 1,
+  "month": 3,
+  "year": 2025,
+  "amount": 50.00,
+  "notes": "Nəğd ödəniş"
+}
+```
+
+**Response:**
+```json
+{
+  "data": {
+    "id": 501,
+    "childId": 1,
+    "month": 3,
+    "year": 2025,
+    "originalAmount": 50.00,
+    "finalAmount": 50.00,
+    "paidAmount": 50.00,
+    "status": "Paid",
+    "paymentDate": "2025-03-20T10:30:00Z"
+  },
+  "message": "Ödəniş uğurla qeyd olundu. Valideynə təsdiqləmə mesajı göndərildi."
+}
+```
+
+---
+
+### Bildiriş Sistemi (Notifications)
+
+#### Valideynə Ödəniş Xatırlatması
+
+**Endpoint:** `POST /api/notifications/send-reminder/{childId}`
+
+**Response:** `{ "sent": 1, "failed": 0, "errors": [] }`
+
+#### Yarın Ödəniş Günü Olanlara Xatırlatma (Avtomatik)
+
+Hər gün saat 20:00-da bu şəxsi icra olunur. Uşağın qeydiyyat günü (Creation Date) ilə yarının tarixi əks olunursa, valideynə xatırlatma göndərilir.
+
+**Misal:**
+- Uşaq 18 mart tarixində əlavə olunubsa → hər ayın 17-də xatırlatma göndərilir
+- Uşaq 10 yanvar tarixində əlavə olunubsa → hər ayın 9-da xatırlatma göndərilir
+
+---
+
+## 🔧 Front İçin Praktiki İpuçları
+
+### 1. Status Dəyişəni Üçün Helper Function
+```typescript
+const getAttendanceStatusLabel = (status: number): string => {
+  const statuses: Record<number, string> = {
+    1: "İştirak edib",
+    2: "İştirak etməyib",
+    3: "Üzrlü",
+    4: "Hesablanmır"
+  };
+  return statuses[status] || "Naməlum";
+};
+```
+
+### 2. Davamiyyət Yüzdəsini Hesabla
+```typescript
+const attendancePercentage = (presentDays: number, totalWorkDays: number): number => {
+  if (totalWorkDays === 0) return 0;
+  return Math.round((presentDays / totalWorkDays) * 100);
+};
+```
+
+### 3. Status Rəngləri (Tavsiyə)
+- **Present (1):** Yaşıl (#10B981)
+- **Absent (2):** Qırmızı (#EF4444)
+- **Excused (3):** Sarı (#F59E0B)
+- **NotCounted (4):** Boz (#9CA3AF)
+
+### 4. API Error Handling
+```typescript
+try {
+  const response = await fetch('/api/attendances', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    console.error(error.message);
+  }
+} catch (error) {
+  console.error("Network error:", error);
+}
+```
+
 ## Lisenziya
 MIT
