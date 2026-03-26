@@ -1,5 +1,6 @@
 using App.Core.Entities.Commons;
 using App.Core.Entities.Identity;
+using App.Core.Enums;
 
 namespace App.Core.Entities
 {
@@ -9,7 +10,7 @@ namespace App.Core.Entities
         public DateOnly Date { get; set; }
         public TimeOnly? ArrivalTime { get; set; }
         public TimeOnly? DepartureTime { get; set; }
-        public bool IsPresent { get; set; }
+        public AttendanceStatus Status { get; set; } = AttendanceStatus.Present;
         public bool IsLate { get; set; }
         public bool IsEarlyLeave { get; set; }
         public string? Notes { get; set; }
