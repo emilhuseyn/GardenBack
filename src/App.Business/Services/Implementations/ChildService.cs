@@ -111,7 +111,7 @@ namespace App.Business.Services.Implementations
         public async Task<PagedResponse<ChildResponse>> GetAllChildrenAsync(ChildFilterRequest filter)
         {
             var children = await _unitOfWork.Children.GetChildrenWithDetailsAsync();
-            var query = children.AsQueryable();
+            var query = children.AsQueryable().Where(x=>x.IsDeleted==false);
 
             if (filter.GroupId.HasValue)
                 query = query.Where(c => c.GroupId == filter.GroupId.Value);
@@ -186,6 +186,52 @@ namespace App.Business.Services.Implementations
         {
             var children = await _unitOfWork.Children.SearchChildrenAsync(term);
             return _mapper.Map<IEnumerable<ChildResponse>>(children);
+        }
+
+        /// <summary>
+        /// Deactivates a list of children.
+        /// </summary>
+        public async Task DeactivateChildrenAsync(List<int> ids)
+        {
+            foreach (var id in ids)
+            {
+                var child = await _unitOfWork.Children.GetByIdAsync(id);
+                if (child != null)
+                {
+                    child.Status = ChildStatus.Inactive;
+                    await _unitOfWork.Children.UpdateAsync(child);
+                }
+            }
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Activates a list of children.
+        /// </summary>
+        public async Task ActivateChildrenAsync(List<int> ids)
+        {
+            foreach (var id in ids)
+            {
+                var child = await _unitOfWork.Children.GetByIdAsync(id);
+                if (child != null)
+                {
+                    child.Status = ChildStatus.Active;
+                    await _unitOfWork.Children.UpdateAsync(child);
+                }
+            }
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Soft-deletes a list of children.
+        /// </summary>
+        public async Task DeleteChildrenAsync(List<int> ids)
+        {
+            foreach (var id in ids)
+            {
+                await _unitOfWork.Children.SoftDeleteAsync(id);
+            }
+            await _unitOfWork.SaveChangesAsync();
         }
     }
 }
