@@ -53,14 +53,17 @@ namespace App.Business.Services.Implementations
             await _unitOfWork.SaveChangesAsync();
 
             var result = (await _unitOfWork.Attendances.FindAsync(
-                a => a.ChildId == dto.ChildId && a.Date == dto.Date)).First();
+                a => a.ChildId == dto.ChildId && a.Date == dto.Date)).FirstOrDefault();
 
-            var response = await _unitOfWork.Attendances.GetByIdAsync(
+            if (result == null)
+                throw new EntityNotFoundException($"Davamiyyət qeydi yaradıla bilmədi.");
+
+            var response = await _unitOfWork.Attendances.GetAllAsync(
                 a => a.Id == result.Id,
                 a => a.Child,
                 a => a.Child.Group);
 
-            return _mapper.Map<AttendanceResponse>(response);
+            return _mapper.Map<AttendanceResponse>(response.FirstOrDefault());
         }
 
         /// <summary>

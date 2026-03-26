@@ -32,6 +32,8 @@ namespace App.DAL.Repositories.Abstractions
         {
             return await DbSet
                 .Where(a => a.ChildId == childId && a.Date >= from && a.Date <= to)
+                .Include(a => a.Child)
+                    .ThenInclude(c => c.Group)
                 .OrderBy(a => a.Date)
                 .ToListAsync();
         }
@@ -41,6 +43,7 @@ namespace App.DAL.Repositories.Abstractions
             return await DbSet
                 .Where(a => a.Date == date && a.Child.GroupId == groupId)
                 .Include(a => a.Child)
+                    .ThenInclude(c => c.Group)
                 .ToListAsync();
         }
     }
