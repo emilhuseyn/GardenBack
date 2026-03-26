@@ -2,9 +2,11 @@ using App.Business.DTOs.Attendance;
 using App.Business.Services.Interfaces;
 using App.Core.Entities;
 using App.Core.Enums;
+using App.Core.Exceptions;
 using App.Core.Exceptions.Commons;
 using App.DAL.UnitOfWork;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 
 namespace App.Business.Services.Implementations
 {
@@ -27,9 +29,17 @@ namespace App.Business.Services.Implementations
         /// </summary>
         public async Task<AttendanceResponse> MarkAttendanceAsync(MarkAttendanceRequest dto, string recordedById)
         {
+            if (string.IsNullOrEmpty(recordedById))
+                throw new Core.Exceptions.ValidationException(new[] { "Qeydiyyatçı ID mövcud deyil." });
+
             var childExists = await _unitOfWork.Children.ExistsAsync(dto.ChildId);
             if (!childExists)
                 throw new EntityNotFoundException($"{dto.ChildId} ID-li uşaq tapılmadı.");
+
+            // Verify that the user exists in the database
+            var userExists = await _unitOfWork.Context.Users.AnyAsync(u => u.Id == recordedById);
+            if (!userExists)
+                throw new EntityNotFoundException($"Qeydiyyatçı istifadəçi ({recordedById}) tapılmadı.");
 
             var existing = (await _unitOfWork.Attendances
                 .FindAsync(a => a.ChildId == dto.ChildId && a.Date == dto.Date))

@@ -65,7 +65,10 @@ namespace App.API.Controllers
         [Authorize(Policy = "AttendanceWrite")]
         public async Task<IActionResult> MarkAttendance([FromBody] BulkMarkAttendanceRequest dto)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                throw new UnauthorizedException("User authentication failed. Please log in again.");
+
             var role = User.FindFirstValue(ClaimTypes.Role)!;
 
             if (role == EUserRole.Teacher.ToString())
