@@ -544,7 +544,6 @@ C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\obj\Debug\net8.0\staticwe
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\obj\Debug\net8.0\staticwebassets.development.json
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\obj\Debug\net8.0\staticwebassets.build.endpoints.json
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\obj\Debug\net8.0\swae.build.ex.cache
-C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\obj\Debug\net8.0\App.API.csproj.Up2Date
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\obj\Debug\net8.0\App.API.dll
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\obj\Debug\net8.0\refint\App.API.dll
@@ -552,3 +551,8 @@ C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\obj\Debug\net8.0\App.API.
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\obj\Debug\net8.0\App.API.genruntimeconfig.cache
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\obj\Debug\net8.0\ref\App.API.dll
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\obj\Debug\net8.0\App.API.sourcelink.json
+C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\bin\Debug\net8.0\DocumentFormat.OpenXml.dll
+C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\bin\Debug\net8.0\DocumentFormat.OpenXml.Framework.dll
+C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\bin\Debug\net8.0\System.IO.Packaging.dll
+C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.API\bin\Debug\net8.0\Templates\Razilashma_Template.docx

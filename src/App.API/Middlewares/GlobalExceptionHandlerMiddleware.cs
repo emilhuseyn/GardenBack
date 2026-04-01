@@ -32,7 +32,16 @@ namespace App.API.Middlewares
         private static Task HandleException(HttpContext context, Exception ex)
         {
             var code = StatusCodes.Status500InternalServerError;
-            var errors = new List<string> { ex.Message };
+
+            // InnerException-ı da əlavə et ki, EF Core / Identity səhvlərinin real səbəbi görünsün
+            var allMessages = new List<string> { ex.Message };
+            var inner = ex.InnerException;
+            while (inner is not null)
+            {
+                allMessages.Add(inner.Message);
+                inner = inner.InnerException;
+            }
+            var errors = allMessages;
 
             switch (ex)
             {

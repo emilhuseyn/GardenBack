@@ -84,7 +84,7 @@ namespace App.API
 
         public static void AddCorsPolicy(this IServiceCollection services, IConfiguration configuration)
         {
-            var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:3000" };
+            var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:3000", "http://localhost:3001", "http://localhost:3002" };
 
             services.AddCors(options =>
             {

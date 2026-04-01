@@ -1,50 +1,6 @@
-2026/03/18-09:24:08.262 7b40 Creating DB C:\Users\Emil\Desktop\23\Garden\GardenBack\whatsapp-service\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb since it was missing.
-2026/03/18-09:24:08.280 7b40 Reusing MANIFEST C:\Users\Emil\Desktop\23\Garden\GardenBack\whatsapp-service\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
-2026/03/18-09:25:23.363 4ec4 Level-0 table #5: started
-2026/03/18-09:25:23.394 4ec4 Level-0 table #5: 1012956 bytes OK
-2026/03/18-09:25:23.395 4ec4 Delete type=0 #3
-2026/03/18-09:25:25.067 6254 Level-0 table #7: started
-2026/03/18-09:25:25.102 6254 Level-0 table #7: 972825 bytes OK
-2026/03/18-09:25:25.103 6254 Delete type=0 #4
-2026/03/18-09:25:25.115 4ec4 Compacting 1@1 + 1@2 files
-2026/03/18-09:25:25.178 4ec4 Generated table #8@1: 27069 keys, 897347 bytes
-2026/03/18-09:25:25.178 4ec4 Compacted 1@1 + 1@2 files => 897347 bytes
-2026/03/18-09:25:25.179 4ec4 compacted to: files[ 0 0 1 0 0 0 0 ]
-2026/03/18-09:25:36.453 4ec4 Level-0 table #10: started
-2026/03/18-09:25:36.485 4ec4 Level-0 table #10: 1092305 bytes OK
-2026/03/18-09:25:36.487 4ec4 Delete type=2 #5
-2026/03/18-09:25:36.487 4ec4 Delete type=0 #6
-2026/03/18-09:25:36.487 4ec4 Delete type=2 #7
-2026/03/18-09:25:36.498 6254 Compacting 1@1 + 1@2 files
-2026/03/18-09:25:36.573 6254 Generated table #11@1: 38458 keys, 1389528 bytes
-2026/03/18-09:25:36.573 6254 Compacted 1@1 + 1@2 files => 1389528 bytes
-2026/03/18-09:25:36.574 6254 compacted to: files[ 0 0 1 0 0 0 0 ]
-2026/03/18-09:25:40.266 4ec4 Level-0 table #13: started
-2026/03/18-09:25:40.293 4ec4 Level-0 table #13: 909861 bytes OK
-2026/03/18-09:25:40.294 4ec4 Delete type=2 #8
-2026/03/18-09:25:40.294 4ec4 Delete type=0 #9
-2026/03/18-09:25:40.295 4ec4 Delete type=2 #10
-2026/03/18-09:25:40.299 4ec4 Compacting 1@1 + 1@2 files
-2026/03/18-09:25:40.375 4ec4 Generated table #14@1: 56994 keys, 1883337 bytes
-2026/03/18-09:25:40.375 4ec4 Compacted 1@1 + 1@2 files => 1883337 bytes
-2026/03/18-09:25:40.376 4ec4 compacted to: files[ 0 0 1 0 0 0 0 ]
-2026/03/18-09:25:40.377 4ec4 Delete type=2 #11
-2026/03/18-09:25:40.377 4ec4 Delete type=2 #13
-2026/03/18-09:25:45.022 7b40 Level-0 table #16: started
-2026/03/18-09:25:45.056 7b40 Level-0 table #16: 906481 bytes OK
-2026/03/18-09:25:45.057 7b40 Delete type=0 #12
-2026/03/18-09:25:45.058 7b40 Compacting 1@1 + 1@2 files
-2026/03/18-09:25:45.150 7b40 Generated table #17@1: 70950 keys, 2222405 bytes
-2026/03/18-09:25:45.159 7b40 Generated table #18@1: 4561 keys, 148880 bytes
-2026/03/18-09:25:45.160 7b40 Compacted 1@1 + 1@2 files => 2371285 bytes
-2026/03/18-09:25:45.160 7b40 compacted to: files[ 0 0 2 0 0 0 0 ]
-2026/03/18-09:30:28.263 4ec4 Level-0 table #20: started
-2026/03/18-09:30:28.290 4ec4 Level-0 table #20: 1057966 bytes OK
-2026/03/18-09:30:28.292 4ec4 Delete type=2 #14
-2026/03/18-09:30:28.292 4ec4 Delete type=0 #15
-2026/03/18-09:30:28.292 4ec4 Delete type=2 #16
-2026/03/18-09:30:28.511 6254 Compacting 1@1 + 2@2 files
-2026/03/18-09:30:28.607 6254 Generated table #21@1: 62349 keys, 2217130 bytes
-2026/03/18-09:30:28.633 6254 Generated table #22@1: 22866 keys, 504342 bytes
-2026/03/18-09:30:28.634 6254 Compacted 1@1 + 2@2 files => 2721472 bytes
-2026/03/18-09:30:28.634 6254 compacted to: files[ 0 0 2 0 0 0 0 ]
+2026/03/18-12:44:59.976 14b98 Reusing MANIFEST C:\Users\Emil\Desktop\23\Garden\GardenBack\whatsapp-service\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/03/18-12:44:59.991 14b98 Recovering log #19
+2026/03/18-12:45:00.008 14b98 Reusing old log C:\Users\Emil\Desktop\23\Garden\GardenBack\whatsapp-service\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000019.log 
+2026/03/18-12:45:00.008 14b98 Delete type=2 #17
+2026/03/18-12:45:00.009 14b98 Delete type=2 #18
+2026/03/18-12:45:00.009 14b98 Delete type=2 #20

@@ -26,4 +26,10 @@
     <ProjectReference Include="..\App.Business\App.Business.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Templates\Razilashma_Template.docx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

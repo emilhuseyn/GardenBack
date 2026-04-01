@@ -11,16 +11,12 @@ namespace App.DAL.Presistence.Configurations
             builder.ToTable("attendances");
             builder.HasKey(a => a.Id);
             builder.Property(a => a.Notes).HasMaxLength(500);
-            builder.Property(a => a.RecordedById).IsRequired();
+            // Audit sahəsi — FK yoxdur, yalnız string kimi saxlanılır
+            builder.Property(a => a.RecordedById).HasMaxLength(128).IsRequired(false);
 
             builder.HasOne(a => a.Child)
                 .WithMany(c => c.Attendances)
                 .HasForeignKey(a => a.ChildId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.HasOne(a => a.RecordedBy)
-                .WithMany()
-                .HasForeignKey(a => a.RecordedById)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasIndex(a => a.ChildId);

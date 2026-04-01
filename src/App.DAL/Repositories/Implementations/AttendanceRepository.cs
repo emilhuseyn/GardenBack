@@ -15,7 +15,6 @@ namespace App.DAL.Repositories.Abstractions
                 .Where(a => a.Date == date)
                 .Include(a => a.Child)
                     .ThenInclude(c => c.Group)
-                .Include(a => a.RecordedBy)
                 .ToListAsync();
         }
 

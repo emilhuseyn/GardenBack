@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Emil/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/b341030a-79db-4938-9a76-e3abe5e3fa60/21b9cf83-fda8-42f4-aadd-941de861c1cc/skills/docx/**)",
+      "Bash(python scripts/office/soffice.py --headless --convert-to docx \"C:\\\\Users\\\\Emil\\\\Desktop\\\\23\\\\Garden\\\\Razilashma.doc\" --outdir /tmp/razilashma_out)",
+      "Bash(py --version)",
+      "Bash(py scripts/office/soffice.py --headless --convert-to docx \"C:\\\\Users\\\\Emil\\\\Desktop\\\\23\\\\Garden\\\\Razilashma.doc\" --outdir \"C:/tmp/razilashma_out\")",
+      "Bash(where soffice:*)",
+      "Read(//c/Program Files/LibreOffice/program/**)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Program Files \\(x86\\)/**)",
+      "Bash(pandoc \"C:/Users/Emil/Desktop/23/Garden/Razilashma.doc\" -o /tmp/razilashma.md)",
+      "Read(//tmp/**)",
+      "Bash(where pandoc:*)",
+      "Bash(py -c \":*)",
+      "Bash(mkdir -p \"C:/tmp/razilashma_template\")",
+      "Read(//c/tmp/**)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(node gen.js)",
+      "Bash(dotnet add:*)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet ef:*)",
+      "Bash(find C:/Users/Emil/Desktop/23/Garden/GardenFront -maxdepth 3 -name *.json -o -name *.ts -o -name *.tsx)",
+      "Bash(cmd /c \"dir \"\"C:\\\\Users\\\\Emil\\\\Desktop\\\\23\\\\Garden\\\\GardenFront\"\"\")",
+      "Bash(cmd /c \"dir \"\"C:\\\\Users\\\\Emil\\\\Desktop\\\\23\\\\Garden\"\"\")"
+    ]
+  }
+}

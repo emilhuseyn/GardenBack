@@ -1,0 +1,47 @@
+2026-03-20 04:48:58.884 +04:00 [INF] Executed DbCommand (1ms) [Parameters=[@__date_0='?' (DbType = Date)], CommandType='"Text"', CommandTimeout='30']
+SELECT `a`.`Id`, `a`.`ArrivalTime`, `a`.`ChildId`, `a`.`CreatedAt`, `a`.`Date`, `a`.`DepartureTime`, `a`.`IsDeleted`, `a`.`IsEarlyLeave`, `a`.`IsLate`, `a`.`IsPresent`, `a`.`Notes`, `a`.`RecordedById`, `a`.`UpdatedAt`, `t`.`Id`, `t`.`CreatedAt`, `t`.`DateOfBirth`, `t`.`FaceIdToken`, `t`.`FirstName`, `t`.`GroupId`, `t`.`IsDeleted`, `t`.`LastName`, `t`.`MonthlyFee`, `t`.`ParentEmail`, `t`.`ParentFullName`, `t`.`ParentPhone`, `t`.`RegistrationDate`, `t`.`ScheduleType`, `t`.`Status`, `t`.`UpdatedAt`, `t0`.`Id`, `t0`.`AgeCategory`, `t0`.`CreatedAt`, `t0`.`DivisionId`, `t0`.`IsDeleted`, `t0`.`Language`, `t0`.`MaxChildCount`, `t0`.`Name`, `t0`.`TeacherId`, `t0`.`UpdatedAt`, `a0`.`Id`, `a0`.`AccessFailedCount`, `a0`.`ConcurrencyStamp`, `a0`.`CreatedAt`, `a0`.`Email`, `a0`.`EmailConfirmed`, `a0`.`FirstName`, `a0`.`IsActive`, `a0`.`LastName`, `a0`.`LockoutEnabled`, `a0`.`LockoutEnd`, `a0`.`NormalizedEmail`, `a0`.`NormalizedUserName`, `a0`.`PasswordHash`, `a0`.`PhoneNumber`, `a0`.`PhoneNumberConfirmed`, `a0`.`Role`, `a0`.`SecurityStamp`, `a0`.`TwoFactorEnabled`, `a0`.`UpdatedAt`, `a0`.`UserName`
+FROM `attendances` AS `a`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`CreatedAt`, `c`.`DateOfBirth`, `c`.`FaceIdToken`, `c`.`FirstName`, `c`.`GroupId`, `c`.`IsDeleted`, `c`.`LastName`, `c`.`MonthlyFee`, `c`.`ParentEmail`, `c`.`ParentFullName`, `c`.`ParentPhone`, `c`.`RegistrationDate`, `c`.`ScheduleType`, `c`.`Status`, `c`.`UpdatedAt`
+    FROM `children` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `t` ON `a`.`ChildId` = `t`.`Id`
+INNER JOIN (
+    SELECT `g`.`Id`, `g`.`AgeCategory`, `g`.`CreatedAt`, `g`.`DivisionId`, `g`.`IsDeleted`, `g`.`Language`, `g`.`MaxChildCount`, `g`.`Name`, `g`.`TeacherId`, `g`.`UpdatedAt`
+    FROM `groups` AS `g`
+    WHERE NOT (`g`.`IsDeleted`)
+) AS `t0` ON `t`.`GroupId` = `t0`.`Id`
+INNER JOIN `AspNetUsers` AS `a0` ON `a`.`RecordedById` = `a0`.`Id`
+WHERE NOT (`a`.`IsDeleted`) AND (`a`.`Date` = @__date_0)
+2026-03-20 04:48:58.888 +04:00 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT `p`.`Id`, `p`.`ChildId`, `p`.`CreatedAt`, `p`.`DiscountType`, `p`.`DiscountValue`, `p`.`FinalAmount`, `p`.`IsDeleted`, `p`.`Month`, `p`.`Notes`, `p`.`OriginalAmount`, `p`.`PaidAmount`, `p`.`PaymentDate`, `p`.`RecordedById`, `p`.`Status`, `p`.`UpdatedAt`, `p`.`Year`, `t`.`Id`, `t`.`CreatedAt`, `t`.`DateOfBirth`, `t`.`FaceIdToken`, `t`.`FirstName`, `t`.`GroupId`, `t`.`IsDeleted`, `t`.`LastName`, `t`.`MonthlyFee`, `t`.`ParentEmail`, `t`.`ParentFullName`, `t`.`ParentPhone`, `t`.`RegistrationDate`, `t`.`ScheduleType`, `t`.`Status`, `t`.`UpdatedAt`, `t0`.`Id`, `t0`.`AgeCategory`, `t0`.`CreatedAt`, `t0`.`DivisionId`, `t0`.`IsDeleted`, `t0`.`Language`, `t0`.`MaxChildCount`, `t0`.`Name`, `t0`.`TeacherId`, `t0`.`UpdatedAt`, `t1`.`Id`, `t1`.`CreatedAt`, `t1`.`Description`, `t1`.`IsDeleted`, `t1`.`Language`, `t1`.`Name`, `t1`.`UpdatedAt`
+FROM `payments` AS `p`
+INNER JOIN (
+    SELECT `c`.`Id`, `c`.`CreatedAt`, `c`.`DateOfBirth`, `c`.`FaceIdToken`, `c`.`FirstName`, `c`.`GroupId`, `c`.`IsDeleted`, `c`.`LastName`, `c`.`MonthlyFee`, `c`.`ParentEmail`, `c`.`ParentFullName`, `c`.`ParentPhone`, `c`.`RegistrationDate`, `c`.`ScheduleType`, `c`.`Status`, `c`.`UpdatedAt`
+    FROM `children` AS `c`
+    WHERE NOT (`c`.`IsDeleted`)
+) AS `t` ON `p`.`ChildId` = `t`.`Id`
+INNER JOIN (
+    SELECT `g`.`Id`, `g`.`AgeCategory`, `g`.`CreatedAt`, `g`.`DivisionId`, `g`.`IsDeleted`, `g`.`Language`, `g`.`MaxChildCount`, `g`.`Name`, `g`.`TeacherId`, `g`.`UpdatedAt`
+    FROM `groups` AS `g`
+    WHERE NOT (`g`.`IsDeleted`)
+) AS `t0` ON `t`.`GroupId` = `t0`.`Id`
+INNER JOIN (
+    SELECT `d`.`Id`, `d`.`CreatedAt`, `d`.`Description`, `d`.`IsDeleted`, `d`.`Language`, `d`.`Name`, `d`.`UpdatedAt`
+    FROM `divisions` AS `d`
+    WHERE NOT (`d`.`IsDeleted`)
+) AS `t1` ON `t0`.`DivisionId` = `t1`.`Id`
+WHERE NOT (`p`.`IsDeleted`) AND `p`.`Status` IN (2, 1)
+ORDER BY `p`.`Year` DESC, `p`.`Month` DESC
+2026-03-20 04:48:58.890 +04:00 [INF] Executed DbCommand (0ms) [Parameters=[@__type_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT `s`.`Id`, `s`.`CreatedAt`, `s`.`EndTime`, `s`.`IsDeleted`, `s`.`ScheduleType`, `s`.`StartTime`, `s`.`UpdatedAt`, `s`.`UpdatedById`
+FROM `schedule_configs` AS `s`
+WHERE NOT (`s`.`IsDeleted`) AND (`s`.`ScheduleType` = @__type_0)
+LIMIT 1
+2026-03-20 04:48:58.893 +04:00 [INF] Yarın ödəniş xatırlatması: 0 uşaq (gün: 21)
+2026-03-20 04:48:58.893 +04:00 [INF] Executed DbCommand (0ms) [Parameters=[@__type_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT `s`.`Id`, `s`.`CreatedAt`, `s`.`EndTime`, `s`.`IsDeleted`, `s`.`ScheduleType`, `s`.`StartTime`, `s`.`UpdatedAt`, `s`.`UpdatedById`
+FROM `schedule_configs` AS `s`
+WHERE NOT (`s`.`IsDeleted`) AND (`s`.`ScheduleType` = @__type_0)
+LIMIT 1
+2026-03-20 04:48:58.894 +04:00 [INF] Yarın ödəniş xatırlatması tamamlandi. Sent=0 Failed=0

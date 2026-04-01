@@ -1,5 +1,4 @@
 using App.Core.Entities.Commons;
-using App.Core.Entities.Identity;
 using App.Core.Enums;
 
 namespace App.Core.Entities
@@ -17,9 +16,10 @@ namespace App.Core.Entities
         public DateTime? PaymentDate { get; set; }
         public PaymentStatus Status { get; set; } = PaymentStatus.Debt;
         public string? Notes { get; set; }
-        public string RecordedById { get; set; } = string.Empty;
+
+        /// <summary>Audit sahəsi — FK deyil, yalnız user ID saxlanılır</summary>
+        public string? RecordedById { get; set; }
 
         public Child Child { get; set; } = null!;
-        public User RecordedBy { get; set; } = null!;
     }
 }

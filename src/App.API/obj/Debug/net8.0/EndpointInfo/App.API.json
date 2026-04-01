@@ -6,6 +6,18 @@
     "version": "v1"
   },
   "paths": {
+    "/api/admins/seed-excel": {
+      "post": {
+        "tags": [
+          "Admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/attendances/daily": {
       "get": {
         "tags": [
@@ -599,6 +611,158 @@
     },
     "/api/childrens/{id}/deactivate": {
       "patch": {
+        "tags": [
+          "Children"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/childrens/activate-bulk": {
+      "post": {
+        "tags": [
+          "Children"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/childrens/deactivate-bulk": {
+      "post": {
+        "tags": [
+          "Children"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/childrens/delete-bulk": {
+      "post": {
+        "tags": [
+          "Children"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/childrens/{id}/agreement": {
+      "get": {
         "tags": [
           "Children"
         ],
@@ -1695,6 +1859,16 @@
         },
         "additionalProperties": false
       },
+      "AttendanceStatus": {
+        "enum": [
+          "Present",
+          "Absent",
+          "Excused",
+          "NotCounted"
+        ],
+        "type": "string",
+        "format": "int32"
+      },
       "BulkMarkAttendanceRequest": {
         "type": "object",
         "properties": {
@@ -1751,6 +1925,10 @@
           "monthlyFee": {
             "type": "number",
             "format": "double"
+          },
+          "paymentDay": {
+            "type": "integer",
+            "format": "int32"
           },
           "parentFullName": {
             "type": "string",
@@ -1871,8 +2049,8 @@
             "type": "string",
             "format": "date"
           },
-          "isPresent": {
-            "type": "boolean"
+          "status": {
+            "$ref": "#/components/schemas/AttendanceStatus"
           },
           "arrivalTime": {
             "type": "string",
@@ -1986,6 +2164,11 @@
           "monthlyFee": {
             "type": "number",
             "format": "double",
+            "nullable": true
+          },
+          "paymentDay": {
+            "type": "integer",
+            "format": "int32",
             "nullable": true
           },
           "parentFullName": {

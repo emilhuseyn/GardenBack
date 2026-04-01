@@ -35,3 +35,4 @@ C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.Core\obj\Debug\net8.0\App.Cor
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.Core\obj\Debug\net8.0\refint\App.Core.dll
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.Core\obj\Debug\net8.0\App.Core.pdb
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.Core\obj\Debug\net8.0\ref\App.Core.dll
+C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.Core\obj\Debug\net8.0\App.Core.sourcelink.json

@@ -52,6 +52,7 @@ namespace App.Business
             services.AddScoped<IReportService, ReportService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IBackupService, BackupService>();
+            services.AddScoped<IAgreementService, AgreementService>();
         }
 
         private static void RegisterAutoMapper(this IServiceCollection services)

@@ -44,3 +44,4 @@ C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.Shared\obj\Debug\net8.0\App.S
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.Shared\obj\Debug\net8.0\refint\App.Shared.dll
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.Shared\obj\Debug\net8.0\App.Shared.pdb
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.Shared\obj\Debug\net8.0\ref\App.Shared.dll
+C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.Shared\obj\Debug\net8.0\App.Shared.sourcelink.json

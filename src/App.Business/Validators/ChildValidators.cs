@@ -27,6 +27,9 @@ namespace App.Business.Validators
             RuleFor(x => x.MonthlyFee)
                 .GreaterThan(0).WithMessage("Aylıq ödəniş 0-dan böyük olmalıdır.");
 
+            RuleFor(x => x.PaymentDay)
+                .InclusiveBetween(1, 28).WithMessage("Ödəniş günü 1 ilə 28 arasında olmalıdır.");
+
             RuleFor(x => x.ParentFullName)
                 .NotEmpty().WithMessage("Valideynin tam adı tələb olunur.")
                 .MaximumLength(200);
@@ -59,6 +62,10 @@ namespace App.Business.Validators
             RuleFor(x => x.MonthlyFee)
                 .GreaterThan(0).When(x => x.MonthlyFee.HasValue)
                 .WithMessage("Aylıq ödəniş 0-dan böyük olmalıdır.");
+
+            RuleFor(x => x.PaymentDay)
+                .InclusiveBetween(1, 28).When(x => x.PaymentDay.HasValue)
+                .WithMessage("Ödəniş günü 1 ilə 28 arasında olmalıdır.");
 
             RuleFor(x => x.ParentPhone)
                 .Matches(@"^\+994\d{9}$").When(x => x.ParentPhone != null)

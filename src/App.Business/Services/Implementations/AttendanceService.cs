@@ -36,11 +36,6 @@ namespace App.Business.Services.Implementations
             if (!childExists)
                 throw new EntityNotFoundException($"{dto.ChildId} ID-li uşaq tapılmadı.");
 
-            // Verify that the user exists in the database
-            var userExists = await _unitOfWork.Context.Users.AnyAsync(u => u.Id == recordedById);
-            if (!userExists)
-                throw new EntityNotFoundException($"Qeydiyyatçı istifadəçi ({recordedById}) tapılmadı.");
-
             var existing = (await _unitOfWork.Attendances
                 .FindAsync(a => a.ChildId == dto.ChildId && a.Date == dto.Date))
                 .FirstOrDefault();

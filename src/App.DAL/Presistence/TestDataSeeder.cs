@@ -14,42 +14,7 @@ namespace App.DAL.Presistence
 
         public static async Task SeedTestDataAsync(AppDbContext context, UserManager<User> userManager)
         {
-            Console.WriteLine("[Seed] Başlanır...");
-
-            if (await userManager.FindByEmailAsync(MarkerEmail) != null)
-            {
-                Console.WriteLine("[Seed] Test datası artıq mövcuddur. Atlandı.");
-                return;
-            }
-
-            var admin = await userManager.FindByEmailAsync("admin@kindergarden.az");
-            if (admin == null) { Console.WriteLine("[Seed] Admin tapılmadı."); return; }
-
-            var divisions = await context.Divisions.ToListAsync();
-            Console.WriteLine($"[Seed] Bölmə sayı: {divisions.Count}");
-            if (divisions.Count < 2) { Console.WriteLine("[Seed] Bölmə kifayət deyil."); return; }
-
-            await ClearExistingDataAsync(context);
-
-            var rusDivision = divisions.First(d => d.Name.Contains("Rus"));
-            var engDivision = divisions.First(d => d.Name.Contains("İngilis"));
-
-            Console.WriteLine("[Seed] İstifadəçilər...");
-            var teachers = await SeedUsersAsync(userManager);
-
-            Console.WriteLine("[Seed] Qruplar...");
-            var groups = await SeedGroupsAsync(context, rusDivision.Id, engDivision.Id, teachers);
-
-            Console.WriteLine("[Seed] Uşaqlar...");
-            await SeedChildrenAsync(context, groups);
-
-            Console.WriteLine("[Seed] Ödənişlər...");
-            await SeedPaymentsAsync(context, admin.Id);
-
-            Console.WriteLine("[Seed] Davamiyyət...");
-            await SeedAttendanceAsync(context, admin.Id);
-
-            Console.WriteLine("[Seed] ✅ Test datası uğurla yükləndi.");
+           
         }
 
         private static async Task ClearExistingDataAsync(AppDbContext context)

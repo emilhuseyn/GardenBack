@@ -3,20 +3,104 @@
   "WorkspaceRootPath": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\services\\implementations\\paymentservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\services\\implementations\\paymentservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.api\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.api\\controllers\\childrencontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\controllers\\childrencontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.dal\\presistence\\testdataseeder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\presistence\\testdataseeder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\services\\implementations\\notificationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\services\\implementations\\notificationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\services\\interfaces\\inotificationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\services\\interfaces\\inotificationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.core\\entities\\smsnotification.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|solutionrelative:app.core\\entities\\smsnotification.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\services\\implementations\\scheduleconfigservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\services\\implementations\\scheduleconfigservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.dal\\unitofwork\\unitofwork.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\unitofwork\\unitofwork.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.api\\middlewares\\globalexceptionhandlermiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\middlewares\\globalexceptionhandlermiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.dal\\presistence\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\presistence\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\services\\implementations\\attendanceservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\services\\implementations\\attendanceservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.api\\controllers\\attendancecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\controllers\\attendancecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.api\\controllers\\divisionscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\controllers\\divisionscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.core\\enums\\attendancestatus.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|solutionrelative:app.core\\enums\\attendancestatus.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.dal\\presistence\\automatedmigration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\presistence\\automatedmigration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.dal\\presistence\\appdbcontextseed.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\presistence\\appdbcontextseed.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\services\\interfaces\\ichildservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\services\\interfaces\\ichildservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\README.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:README.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.core\\entities\\attendance.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|solutionrelative:app.core\\entities\\attendance.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\services\\implementations\\childservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\services\\implementations\\childservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.dal\\repositories\\interfaces\\ichildrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\repositories\\interfaces\\ichildrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.api\\apidependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\apidependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\services\\implementations\\paymentservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\services\\implementations\\paymentservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\services\\interfaces\\inotificationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\services\\interfaces\\inotificationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\app.business.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
@@ -27,10 +111,6 @@
       "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\migrations\\20260317102910_update.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.dal\\presistence\\appdbcontextseed.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\presistence\\appdbcontextseed.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.core\\entities\\identity\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|solutionrelative:app.core\\entities\\identity\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -39,35 +119,11 @@
       "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\services\\implementations\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.api\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\controllers\\userscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.api\\controllers\\childrencontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\controllers\\childrencontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\whatsapp-service\\server.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.dal\\presistence\\testdataseeder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\presistence\\testdataseeder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\dtos\\attendance\\attendancedtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\dtos\\attendance\\attendancedtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.api\\controllers\\attendancecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\controllers\\attendancecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.api\\controllers\\divisionscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\controllers\\divisionscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\services\\interfaces\\ibackupservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -136,16 +192,8 @@
       "RelativeMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|solutionrelative:app.core\\exceptions\\forbiddenexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\services\\implementations\\attendanceservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\services\\implementations\\attendanceservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{EF2F1779-80CD-492A-B5F8-9CAE159BEDE5}|App.Shared\\App.Shared.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.shared\\implementations\\claimservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{EF2F1779-80CD-492A-B5F8-9CAE159BEDE5}|App.Shared\\App.Shared.csproj|solutionrelative:app.shared\\implementations\\claimservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.dal\\presistence\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\presistence\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.dal\\daldependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -188,20 +236,12 @@
       "RelativeMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|solutionrelative:app.core\\entities\\child.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.core\\entities\\attendance.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|solutionrelative:app.core\\entities\\attendance.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.core\\entities\\scheduleconfig.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|solutionrelative:app.core\\entities\\scheduleconfig.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.core\\entities\\payment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|solutionrelative:app.core\\entities\\payment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.core\\entities\\smsnotification.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|solutionrelative:app.core\\entities\\smsnotification.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{67A6B18E-D112-4E2C-A6D1-87951A3A4B87}|App.Core\\App.Core.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.core\\exceptions\\unauthorizedexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -264,10 +304,6 @@
       "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\repositories\\interfaces\\irepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.dal\\repositories\\interfaces\\ichildrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\repositories\\interfaces\\ichildrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.dal\\repositories\\interfaces\\iattendancerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\repositories\\interfaces\\iattendancerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -312,14 +348,6 @@
       "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\unitofwork\\iunitofwork.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.dal\\unitofwork\\unitofwork.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\unitofwork\\unitofwork.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.dal\\presistence\\automatedmigration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{36A9E6DB-A0CC-46A3-9E58-0DF1369591C7}|App.DAL\\App.DAL.csproj|solutionrelative:app.dal\\presistence\\automatedmigration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\dtos\\children\\childdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\dtos\\children\\childdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -360,10 +388,6 @@
       "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\mappingprofiles\\mappingprofile.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\services\\interfaces\\ichildservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\services\\interfaces\\ichildservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\services\\interfaces\\iattendanceservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\services\\interfaces\\iattendanceservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -388,20 +412,12 @@
       "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\services\\interfaces\\ireportservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\services\\implementations\\childservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\services\\implementations\\childservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\services\\implementations\\groupservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\services\\implementations\\groupservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\services\\implementations\\divisionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\services\\implementations\\divisionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\services\\implementations\\scheduleconfigservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|solutionrelative:app.business\\services\\implementations\\scheduleconfigservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{32126517-CDDC-4BA9-B31B-A552B34AF250}|App.Business\\App.Business.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.business\\helpers\\jwtgenerator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -416,16 +432,8 @@
       "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\controllers\\schedulecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.api\\middlewares\\globalexceptionhandlermiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\middlewares\\globalexceptionhandlermiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.api\\middlewares\\requestloggingmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\middlewares\\requestloggingmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.api\\apidependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|solutionrelative:app.api\\apidependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{AD81E615-E4EC-46FC-ABC9-13985E3A624F}|App.API\\App.API.csproj|c:\\users\\emil\\desktop\\23\\garden\\gardenback\\src\\app.api\\controllers\\commons\\apicontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -463,7 +471,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 8,
+          "SelectedChildIndex": 7,
           "Children": [
             {
               "$type": "Bookmark",
@@ -475,200 +483,183 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "NotificationService.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\NotificationService.cs",
-              "RelativeDocumentMoniker": "App.Business\\Services\\Implementations\\NotificationService.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\NotificationService.cs",
-              "RelativeToolTip": "App.Business\\Services\\Implementations\\NotificationService.cs",
-              "ViewState": "AgIAAAoBAAAAAAAAAAAgwDABAAAAAAAAAAAAAA==",
+              "DocumentIndex": 5,
+              "Title": "SMSNotification.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Entities\\SMSNotification.cs",
+              "RelativeDocumentMoniker": "App.Core\\Entities\\SMSNotification.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Entities\\SMSNotification.cs",
+              "RelativeToolTip": "App.Core\\Entities\\SMSNotification.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-18T08:13:30.152Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "User.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Entities\\Identity\\User.cs",
-              "RelativeDocumentMoniker": "App.Core\\Entities\\Identity\\User.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Entities\\Identity\\User.cs",
-              "RelativeToolTip": "App.Core\\Entities\\Identity\\User.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:14:10.457Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 15,
-              "Title": "AttendanceController.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\AttendanceController.cs",
-              "RelativeDocumentMoniker": "App.API\\Controllers\\AttendanceController.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\AttendanceController.cs",
-              "RelativeToolTip": "App.API\\Controllers\\AttendanceController.cs",
-              "ViewState": "AgIAACoAAAAAAAAAAAAowEEAAABcAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:42:43.747Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "App.Business.csproj",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\App.Business.csproj",
-              "RelativeDocumentMoniker": "App.Business\\App.Business.csproj",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\App.Business.csproj",
-              "RelativeToolTip": "App.Business\\App.Business.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAuAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2026-03-06T18:26:23.904Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Program.cs",
-              "RelativeDocumentMoniker": "App.API\\Program.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Program.cs",
-              "RelativeToolTip": "App.API\\Program.cs",
-              "ViewState": "AgIAAE8AAAAAAAAAAAAIwHAAAAAnAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:45:19.521Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "INotificationService.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Interfaces\\INotificationService.cs",
-              "RelativeDocumentMoniker": "App.Business\\Services\\Interfaces\\INotificationService.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Interfaces\\INotificationService.cs",
-              "RelativeToolTip": "App.Business\\Services\\Interfaces\\INotificationService.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAnwBYAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:38:07.467Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "PaymentService.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\PaymentService.cs",
-              "RelativeDocumentMoniker": "App.Business\\Services\\Implementations\\PaymentService.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\PaymentService.cs",
-              "RelativeToolTip": "App.Business\\Services\\Implementations\\PaymentService.cs",
-              "ViewState": "AgIAAGUAAAAAAAAAAAAAAIUAAAA8AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:40:23.767Z",
+              "WhenOpened": "2026-03-06T18:25:27.009Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "AuthService.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\AuthService.cs",
-              "RelativeDocumentMoniker": "App.Business\\Services\\Implementations\\AuthService.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\AuthService.cs",
-              "RelativeToolTip": "App.Business\\Services\\Implementations\\AuthService.cs",
-              "ViewState": "AgIAAPcAAAAAAAAAAAAowB4BAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:38:31.942Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "20260317102910_Update.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Migrations\\20260317102910_Update.cs",
-              "RelativeDocumentMoniker": "App.DAL\\Migrations\\20260317102910_Update.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Migrations\\20260317102910_Update.cs",
-              "RelativeToolTip": "App.DAL\\Migrations\\20260317102910_Update.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABoAAAAVAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-17T10:29:11.402Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "UsersController.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\UsersController.cs",
-              "RelativeDocumentMoniker": "App.API\\Controllers\\UsersController.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\UsersController.cs",
-              "RelativeToolTip": "App.API\\Controllers\\UsersController.cs",
-              "ViewState": "AgIAADwAAAAAAAAAAAAAwBkAAAAKAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:44:08.857Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "ChildrenController.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\ChildrenController.cs",
-              "RelativeDocumentMoniker": "App.API\\Controllers\\ChildrenController.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\ChildrenController.cs",
-              "RelativeToolTip": "App.API\\Controllers\\ChildrenController.cs",
-              "ViewState": "AgIAAC4AAAAAAAAAAAAcwEgAAAA5AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:42:30.493Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
-              "Title": "server.js",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\whatsapp-service\\server.js",
-              "RelativeDocumentMoniker": "..\\whatsapp-service\\server.js",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\whatsapp-service\\server.js",
-              "RelativeToolTip": "..\\whatsapp-service\\server.js",
-              "ViewState": "AgIAAB4AAAAAAAAAAAAAADQAAAAXAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2026-03-09T22:14:32.015Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "AppDbContextSeed.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\AppDbContextSeed.cs",
-              "RelativeDocumentMoniker": "App.DAL\\Presistence\\AppDbContextSeed.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\AppDbContextSeed.cs",
-              "RelativeToolTip": "App.DAL\\Presistence\\AppDbContextSeed.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAAkAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:32:46.418Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 4,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\appsettings.json",
               "RelativeDocumentMoniker": "App.API\\appsettings.json",
               "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\appsettings.json",
               "RelativeToolTip": "App.API\\appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACEAAAAVAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAnAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-03-06T18:14:10.377Z"
+              "WhenOpened": "2026-03-06T18:14:10.377Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 3,
+              "Title": "NotificationService.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\NotificationService.cs",
+              "RelativeDocumentMoniker": "App.Business\\Services\\Implementations\\NotificationService.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\NotificationService.cs",
+              "RelativeToolTip": "App.Business\\Services\\Implementations\\NotificationService.cs",
+              "ViewState": "AgIAAPwAAAAAAAAAAAAQwDABAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-18T08:13:30.152Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "TestDataSeeder.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\TestDataSeeder.cs",
               "RelativeDocumentMoniker": "App.DAL\\Presistence\\TestDataSeeder.cs",
               "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\TestDataSeeder.cs",
               "RelativeToolTip": "App.DAL\\Presistence\\TestDataSeeder.cs",
-              "ViewState": "AgIAACkAAAAAAAAAAAAtwBQBAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAN0AAAAAAAAAAAAcwO8AAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-11T06:44:33.651Z"
+              "WhenOpened": "2026-03-11T06:44:33.651Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
-              "Title": "AttendanceDTOs.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\DTOs\\Attendance\\AttendanceDTOs.cs",
-              "RelativeDocumentMoniker": "App.Business\\DTOs\\Attendance\\AttendanceDTOs.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\DTOs\\Attendance\\AttendanceDTOs.cs",
-              "RelativeToolTip": "App.Business\\DTOs\\Attendance\\AttendanceDTOs.cs",
-              "ViewState": "AgIAABgAAAAAAAAAAAA2wAoAAAAFAAAAAAAAAA==",
+              "DocumentIndex": 1,
+              "Title": "ChildrenController.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\ChildrenController.cs",
+              "RelativeDocumentMoniker": "App.API\\Controllers\\ChildrenController.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\ChildrenController.cs",
+              "RelativeToolTip": "App.API\\Controllers\\ChildrenController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAA0AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:34:20.843Z"
+              "WhenOpened": "2026-03-06T18:42:30.493Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "UsersController.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\UsersController.cs",
+              "RelativeDocumentMoniker": "App.API\\Controllers\\UsersController.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\UsersController.cs",
+              "RelativeToolTip": "App.API\\Controllers\\UsersController.cs",
+              "ViewState": "AgIAABUAAAAAAAAAAAAwwBkAAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:44:08.857Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "ScheduleConfigService.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\ScheduleConfigService.cs",
+              "RelativeDocumentMoniker": "App.Business\\Services\\Implementations\\ScheduleConfigService.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\ScheduleConfigService.cs",
+              "RelativeToolTip": "App.Business\\Services\\Implementations\\ScheduleConfigService.cs",
+              "ViewState": "AgIAACYAAAAAAAAAAAAAADIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:41:03.671Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "UnitOfWork.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\UnitOfWork\\UnitOfWork.cs",
+              "RelativeDocumentMoniker": "App.DAL\\UnitOfWork\\UnitOfWork.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\UnitOfWork\\UnitOfWork.cs",
+              "RelativeToolTip": "App.DAL\\UnitOfWork\\UnitOfWork.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:32:28.702Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "GlobalExceptionHandlerMiddleware.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Middlewares\\GlobalExceptionHandlerMiddleware.cs",
+              "RelativeDocumentMoniker": "App.API\\Middlewares\\GlobalExceptionHandlerMiddleware.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Middlewares\\GlobalExceptionHandlerMiddleware.cs",
+              "RelativeToolTip": "App.API\\Middlewares\\GlobalExceptionHandlerMiddleware.cs",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAAABgAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:44:24.763Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "AttendanceService.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\AttendanceService.cs",
+              "RelativeDocumentMoniker": "App.Business\\Services\\Implementations\\AttendanceService.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\AttendanceService.cs",
+              "RelativeToolTip": "App.Business\\Services\\Implementations\\AttendanceService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADkAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:39:51.242Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "Attendance.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Entities\\Attendance.cs",
+              "RelativeDocumentMoniker": "App.Core\\Entities\\Attendance.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Entities\\Attendance.cs",
+              "RelativeToolTip": "App.Core\\Entities\\Attendance.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:25:10.107Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "README.md",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\README.md",
+              "RelativeDocumentMoniker": "README.md",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\README.md",
+              "RelativeToolTip": "README.md",
+              "ViewState": "AgIAADQBAAAAAAAAAAAmwAwAAAATAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2026-03-18T13:53:32.523Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 16,
+              "Title": "IChildService.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Interfaces\\IChildService.cs",
+              "RelativeDocumentMoniker": "App.Business\\Services\\Interfaces\\IChildService.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Interfaces\\IChildService.cs",
+              "RelativeToolTip": "App.Business\\Services\\Interfaces\\IChildService.cs",
+              "ViewState": "AgIAACYAAAAAAAAAAAAawEIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:36:35.85Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "AttendanceController.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\AttendanceController.cs",
+              "RelativeDocumentMoniker": "App.API\\Controllers\\AttendanceController.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\AttendanceController.cs",
+              "RelativeToolTip": "App.API\\Controllers\\AttendanceController.cs",
+              "ViewState": "AgIAADAAAAAAAAAAAADgv08AAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:42:43.747Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
               "Title": "DivisionsController.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\DivisionsController.cs",
               "RelativeDocumentMoniker": "App.API\\Controllers\\DivisionsController.cs",
@@ -680,7 +671,199 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 9,
+              "Title": "AppDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\AppDbContext.cs",
+              "RelativeDocumentMoniker": "App.DAL\\Presistence\\AppDbContext.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\AppDbContext.cs",
+              "RelativeToolTip": "App.DAL\\Presistence\\AppDbContext.cs",
+              "ViewState": "AgIAACAAAAAAAAAAAAAAwEIAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:14:10.448Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "AttendanceStatus.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Enums\\AttendanceStatus.cs",
+              "RelativeDocumentMoniker": "App.Core\\Enums\\AttendanceStatus.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Enums\\AttendanceStatus.cs",
+              "RelativeToolTip": "App.Core\\Enums\\AttendanceStatus.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-26T00:37:55.661Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "AutomatedMigration.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\AutomatedMigration.cs",
+              "RelativeDocumentMoniker": "App.DAL\\Presistence\\AutomatedMigration.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\AutomatedMigration.cs",
+              "RelativeToolTip": "App.DAL\\Presistence\\AutomatedMigration.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:32:55.733Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "AppDbContextSeed.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\AppDbContextSeed.cs",
+              "RelativeDocumentMoniker": "App.DAL\\Presistence\\AppDbContextSeed.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\AppDbContextSeed.cs",
+              "RelativeToolTip": "App.DAL\\Presistence\\AppDbContextSeed.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAACIAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:32:46.418Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "APIDependencyInjection.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\APIDependencyInjection.cs",
+              "RelativeDocumentMoniker": "App.API\\APIDependencyInjection.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\APIDependencyInjection.cs",
+              "RelativeToolTip": "App.API\\APIDependencyInjection.cs",
+              "ViewState": "AgIAAEAAAAAAAAAAAAD4v1wAAAAwAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:44:57.622Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Program.cs",
+              "RelativeDocumentMoniker": "App.API\\Program.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Program.cs",
+              "RelativeToolTip": "App.API\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACEAAAAeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:45:19.521Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "ChildService.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\ChildService.cs",
+              "RelativeDocumentMoniker": "App.Business\\Services\\Implementations\\ChildService.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\ChildService.cs",
+              "RelativeToolTip": "App.Business\\Services\\Implementations\\ChildService.cs",
+              "ViewState": "AgIAAE0AAAAAAAAAAAAYwHUAAAArAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:39:00.068Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "IChildRepository.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Repositories\\Interfaces\\IChildRepository.cs",
+              "RelativeDocumentMoniker": "App.DAL\\Repositories\\Interfaces\\IChildRepository.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Repositories\\Interfaces\\IChildRepository.cs",
+              "RelativeToolTip": "App.DAL\\Repositories\\Interfaces\\IChildRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:30:41.578Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "PaymentService.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\PaymentService.cs",
+              "RelativeDocumentMoniker": "App.Business\\Services\\Implementations\\PaymentService.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\PaymentService.cs",
+              "RelativeToolTip": "App.Business\\Services\\Implementations\\PaymentService.cs",
+              "ViewState": "AgIAAGUAAAAAAAAAAAAAAGoAAAA1AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:40:23.767Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "INotificationService.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Interfaces\\INotificationService.cs",
+              "RelativeDocumentMoniker": "App.Business\\Services\\Interfaces\\INotificationService.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Interfaces\\INotificationService.cs",
+              "RelativeToolTip": "App.Business\\Services\\Interfaces\\INotificationService.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAnwBYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:38:07.467Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "App.Business.csproj",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\App.Business.csproj",
+              "RelativeDocumentMoniker": "App.Business\\App.Business.csproj",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\App.Business.csproj",
+              "RelativeToolTip": "App.Business\\App.Business.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAuAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-03-06T18:26:23.904Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "User.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Entities\\Identity\\User.cs",
+              "RelativeDocumentMoniker": "App.Core\\Entities\\Identity\\User.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Entities\\Identity\\User.cs",
+              "RelativeToolTip": "App.Core\\Entities\\Identity\\User.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:14:10.457Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 28,
+              "Title": "AuthService.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\AuthService.cs",
+              "RelativeDocumentMoniker": "App.Business\\Services\\Implementations\\AuthService.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\AuthService.cs",
+              "RelativeToolTip": "App.Business\\Services\\Implementations\\AuthService.cs",
+              "ViewState": "AgIAAPcAAAAAAAAAAAAowB4BAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:38:31.942Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "20260317102910_Update.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Migrations\\20260317102910_Update.cs",
+              "RelativeDocumentMoniker": "App.DAL\\Migrations\\20260317102910_Update.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Migrations\\20260317102910_Update.cs",
+              "RelativeToolTip": "App.DAL\\Migrations\\20260317102910_Update.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABoAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-17T10:29:11.402Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 29,
+              "Title": "server.js",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\whatsapp-service\\server.js",
+              "RelativeDocumentMoniker": "..\\whatsapp-service\\server.js",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\whatsapp-service\\server.js",
+              "RelativeToolTip": "..\\whatsapp-service\\server.js",
+              "ViewState": "AgIAAB4AAAAAAAAAAAAAADQAAAAXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-09T22:14:32.015Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 30,
+              "Title": "AttendanceDTOs.cs",
+              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\DTOs\\Attendance\\AttendanceDTOs.cs",
+              "RelativeDocumentMoniker": "App.Business\\DTOs\\Attendance\\AttendanceDTOs.cs",
+              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\DTOs\\Attendance\\AttendanceDTOs.cs",
+              "RelativeToolTip": "App.Business\\DTOs\\Attendance\\AttendanceDTOs.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAIBJwAwAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-06T18:34:20.843Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 31,
               "Title": "IBackupService.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Interfaces\\IBackupService.cs",
               "RelativeDocumentMoniker": "App.Business\\Services\\Interfaces\\IBackupService.cs",
@@ -692,7 +875,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 112,
+              "DocumentIndex": 114,
               "Title": "Handler.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Handlers\\Implementations\\Handler.cs",
               "RelativeDocumentMoniker": "App.DAL\\Handlers\\Implementations\\Handler.cs",
@@ -704,7 +887,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 113,
+              "DocumentIndex": 115,
               "Title": "IHandler.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Handlers\\Interfaces\\IHandler.cs",
               "RelativeDocumentMoniker": "App.DAL\\Handlers\\Interfaces\\IHandler.cs",
@@ -716,7 +899,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 33,
               "Title": "IPaymentRepository.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Repositories\\Interfaces\\IPaymentRepository.cs",
               "RelativeDocumentMoniker": "App.DAL\\Repositories\\Interfaces\\IPaymentRepository.cs",
@@ -728,7 +911,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 20,
+              "DocumentIndex": 34,
               "Title": "~server.js",
               "DocumentMoniker": "C:\\Users\\Emil\\AppData\\Local\\Temp\\CopilotBaseline\\2eea6ffd\\~server.js",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\AppData\\Local\\Temp\\CopilotBaseline\\2eea6ffd\\~server.js",
@@ -740,7 +923,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 111,
+              "DocumentIndex": 113,
               "Title": "BackupService.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\BackupService.cs",
               "RelativeDocumentMoniker": "App.Business\\Services\\Implementations\\BackupService.cs",
@@ -752,7 +935,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 32,
               "Title": "ReportService.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\ReportService.cs",
               "RelativeDocumentMoniker": "App.Business\\Services\\Implementations\\ReportService.cs",
@@ -764,7 +947,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 21,
+              "DocumentIndex": 35,
               "Title": "NotificationsController.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\NotificationsController.cs",
               "RelativeDocumentMoniker": "App.API\\Controllers\\NotificationsController.cs",
@@ -776,7 +959,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 22,
+              "DocumentIndex": 36,
               "Title": "package.json",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\whatsapp-service\\package.json",
               "RelativeDocumentMoniker": "..\\whatsapp-service\\package.json",
@@ -788,7 +971,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 24,
+              "DocumentIndex": 38,
               "Title": "AuthController.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\AuthController.cs",
               "RelativeDocumentMoniker": "App.API\\Controllers\\AuthController.cs",
@@ -800,7 +983,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 25,
+              "DocumentIndex": 39,
               "Title": "AuthDTOs.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\DTOs\\Auth\\AuthDTOs.cs",
               "RelativeDocumentMoniker": "App.Business\\DTOs\\Auth\\AuthDTOs.cs",
@@ -812,7 +995,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 23,
+              "DocumentIndex": 37,
               "Title": "GroupsController.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\GroupsController.cs",
               "RelativeDocumentMoniker": "App.API\\Controllers\\GroupsController.cs",
@@ -824,7 +1007,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 26,
+              "DocumentIndex": 40,
               "Title": "IAuthService.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Interfaces\\IAuthService.cs",
               "RelativeDocumentMoniker": "App.Business\\Services\\Interfaces\\IAuthService.cs",
@@ -836,7 +1019,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 27,
+              "DocumentIndex": 41,
               "Title": "PluralizedRouteConvention.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Helpers\\PluralizedRouteConvention.cs",
               "RelativeDocumentMoniker": "App.Business\\Helpers\\PluralizedRouteConvention.cs",
@@ -848,7 +1031,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 29,
+              "DocumentIndex": 43,
               "Title": "PaymentDTOs.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\DTOs\\Payments\\PaymentDTOs.cs",
               "RelativeDocumentMoniker": "App.Business\\DTOs\\Payments\\PaymentDTOs.cs",
@@ -860,7 +1043,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 28,
+              "DocumentIndex": 42,
               "Title": "PaymentsController.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\PaymentsController.cs",
               "RelativeDocumentMoniker": "App.API\\Controllers\\PaymentsController.cs",
@@ -872,7 +1055,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 30,
+              "DocumentIndex": 44,
               "Title": "ReportsController.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\ReportsController.cs",
               "RelativeDocumentMoniker": "App.API\\Controllers\\ReportsController.cs",
@@ -884,7 +1067,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 31,
+              "DocumentIndex": 45,
               "Title": "EUserRole.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Enums\\EUserRole.cs",
               "RelativeDocumentMoniker": "App.Core\\Enums\\EUserRole.cs",
@@ -896,7 +1079,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 32,
+              "DocumentIndex": 46,
               "Title": "ValidationException.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Exceptions\\ValidationException.cs",
               "RelativeDocumentMoniker": "App.Core\\Exceptions\\ValidationException.cs",
@@ -908,7 +1091,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 108,
+              "DocumentIndex": 110,
               "Title": "XSSProtectionMiddleware.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Middlewares\\XSSProtectionMiddleware.cs",
               "RelativeDocumentMoniker": "App.API\\Middlewares\\XSSProtectionMiddleware.cs",
@@ -920,7 +1103,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 109,
+              "DocumentIndex": 111,
               "Title": "BaseEntityValidator.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Validators\\Commons\\BaseEntityValidator.cs",
               "RelativeDocumentMoniker": "App.Business\\Validators\\Commons\\BaseEntityValidator.cs",
@@ -932,19 +1115,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 34,
-              "Title": "AttendanceService.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\AttendanceService.cs",
-              "RelativeDocumentMoniker": "App.Business\\Services\\Implementations\\AttendanceService.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\AttendanceService.cs",
-              "RelativeToolTip": "App.Business\\Services\\Implementations\\AttendanceService.cs",
-              "ViewState": "AgIAAA0AAAAAAAAAAAAawMkAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:39:51.242Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 110,
+              "DocumentIndex": 112,
               "Title": "20260306185718_AllModels.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Migrations\\20260306185718_AllModels.cs",
               "RelativeDocumentMoniker": "App.DAL\\Migrations\\20260306185718_AllModels.cs",
@@ -956,7 +1127,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 45,
+              "DocumentIndex": 57,
               "Title": "Group.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Entities\\Group.cs",
               "RelativeDocumentMoniker": "App.Core\\Entities\\Group.cs",
@@ -968,7 +1139,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 33,
+              "DocumentIndex": 47,
               "Title": "ForbiddenException.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Exceptions\\ForbiddenException.cs",
               "RelativeDocumentMoniker": "App.Core\\Exceptions\\ForbiddenException.cs",
@@ -980,7 +1151,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 77,
+              "DocumentIndex": 86,
               "Title": "IUnitOfWork.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\UnitOfWork\\IUnitOfWork.cs",
               "RelativeDocumentMoniker": "App.DAL\\UnitOfWork\\IUnitOfWork.cs",
@@ -992,7 +1163,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 53,
+              "DocumentIndex": 63,
               "Title": "ApiResponse.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Common\\ApiResponse.cs",
               "RelativeDocumentMoniker": "App.Core\\Common\\ApiResponse.cs",
@@ -1004,7 +1175,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 55,
+              "DocumentIndex": 65,
               "Title": "App.DAL.csproj",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\App.DAL.csproj",
               "RelativeDocumentMoniker": "App.DAL\\App.DAL.csproj",
@@ -1016,7 +1187,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 64,
+              "DocumentIndex": 74,
               "Title": "UserConfiguration.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\Configurations\\UserConfiguration.cs",
               "RelativeDocumentMoniker": "App.DAL\\Presistence\\Configurations\\UserConfiguration.cs",
@@ -1028,19 +1199,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 106,
-              "Title": "APIDependencyInjection.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\APIDependencyInjection.cs",
-              "RelativeDocumentMoniker": "App.API\\APIDependencyInjection.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\APIDependencyInjection.cs",
-              "RelativeToolTip": "App.API\\APIDependencyInjection.cs",
-              "ViewState": "AgIAACwAAAAAAAAAAIBJwAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:44:57.622Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 71,
+              "DocumentIndex": 80,
               "Title": "ChildRepository.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Repositories\\Implementations\\ChildRepository.cs",
               "RelativeDocumentMoniker": "App.DAL\\Repositories\\Implementations\\ChildRepository.cs",
@@ -1052,7 +1211,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 107,
+              "DocumentIndex": 109,
               "Title": "APIController.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\Commons\\APIController.cs",
               "RelativeDocumentMoniker": "App.API\\Controllers\\Commons\\APIController.cs",
@@ -1064,7 +1223,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 105,
+              "DocumentIndex": 108,
               "Title": "RequestLoggingMiddleware.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Middlewares\\RequestLoggingMiddleware.cs",
               "RelativeDocumentMoniker": "App.API\\Middlewares\\RequestLoggingMiddleware.cs",
@@ -1076,19 +1235,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 104,
-              "Title": "GlobalExceptionHandlerMiddleware.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Middlewares\\GlobalExceptionHandlerMiddleware.cs",
-              "RelativeDocumentMoniker": "App.API\\Middlewares\\GlobalExceptionHandlerMiddleware.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Middlewares\\GlobalExceptionHandlerMiddleware.cs",
-              "RelativeToolTip": "App.API\\Middlewares\\GlobalExceptionHandlerMiddleware.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAIBJwAIAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:44:24.763Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 103,
+              "DocumentIndex": 107,
               "Title": "ScheduleController.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\Controllers\\ScheduleController.cs",
               "RelativeDocumentMoniker": "App.API\\Controllers\\ScheduleController.cs",
@@ -1100,7 +1247,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 102,
+              "DocumentIndex": 106,
               "Title": "BusinessDependencyInjection.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\BusinessDependencyInjection.cs",
               "RelativeDocumentMoniker": "App.Business\\BusinessDependencyInjection.cs",
@@ -1112,7 +1259,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 101,
+              "DocumentIndex": 105,
               "Title": "JWTGenerator.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Helpers\\JWTGenerator.cs",
               "RelativeDocumentMoniker": "App.Business\\Helpers\\JWTGenerator.cs",
@@ -1124,19 +1271,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 100,
-              "Title": "ScheduleConfigService.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\ScheduleConfigService.cs",
-              "RelativeDocumentMoniker": "App.Business\\Services\\Implementations\\ScheduleConfigService.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\ScheduleConfigService.cs",
-              "RelativeToolTip": "App.Business\\Services\\Implementations\\ScheduleConfigService.cs",
-              "ViewState": "AgIAACMAAAAAAAAAAIBJwDIAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:41:03.671Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 99,
+              "DocumentIndex": 104,
               "Title": "DivisionService.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\DivisionService.cs",
               "RelativeDocumentMoniker": "App.Business\\Services\\Implementations\\DivisionService.cs",
@@ -1148,7 +1283,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 98,
+              "DocumentIndex": 103,
               "Title": "GroupService.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\GroupService.cs",
               "RelativeDocumentMoniker": "App.Business\\Services\\Implementations\\GroupService.cs",
@@ -1160,19 +1295,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 97,
-              "Title": "ChildService.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\ChildService.cs",
-              "RelativeDocumentMoniker": "App.Business\\Services\\Implementations\\ChildService.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Implementations\\ChildService.cs",
-              "RelativeToolTip": "App.Business\\Services\\Implementations\\ChildService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAxwL8AAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:39:00.068Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 96,
+              "DocumentIndex": 102,
               "Title": "IReportService.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Interfaces\\IReportService.cs",
               "RelativeDocumentMoniker": "App.Business\\Services\\Interfaces\\IReportService.cs",
@@ -1184,7 +1307,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 95,
+              "DocumentIndex": 101,
               "Title": "IScheduleConfigService.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Interfaces\\IScheduleConfigService.cs",
               "RelativeDocumentMoniker": "App.Business\\Services\\Interfaces\\IScheduleConfigService.cs",
@@ -1196,7 +1319,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 94,
+              "DocumentIndex": 100,
               "Title": "IDivisionService.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Interfaces\\IDivisionService.cs",
               "RelativeDocumentMoniker": "App.Business\\Services\\Interfaces\\IDivisionService.cs",
@@ -1208,7 +1331,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 93,
+              "DocumentIndex": 99,
               "Title": "IGroupService.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Interfaces\\IGroupService.cs",
               "RelativeDocumentMoniker": "App.Business\\Services\\Interfaces\\IGroupService.cs",
@@ -1220,7 +1343,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 92,
+              "DocumentIndex": 98,
               "Title": "IPaymentService.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Interfaces\\IPaymentService.cs",
               "RelativeDocumentMoniker": "App.Business\\Services\\Interfaces\\IPaymentService.cs",
@@ -1232,7 +1355,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 91,
+              "DocumentIndex": 97,
               "Title": "IAttendanceService.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Interfaces\\IAttendanceService.cs",
               "RelativeDocumentMoniker": "App.Business\\Services\\Interfaces\\IAttendanceService.cs",
@@ -1244,19 +1367,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 90,
-              "Title": "IChildService.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Interfaces\\IChildService.cs",
-              "RelativeDocumentMoniker": "App.Business\\Services\\Interfaces\\IChildService.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Services\\Interfaces\\IChildService.cs",
-              "RelativeToolTip": "App.Business\\Services\\Interfaces\\IChildService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAADMAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:36:35.85Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 89,
+              "DocumentIndex": 96,
               "Title": "MappingProfile.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\MappingProfiles\\MappingProfile.cs",
               "RelativeDocumentMoniker": "App.Business\\MappingProfiles\\MappingProfile.cs",
@@ -1268,7 +1379,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 88,
+              "DocumentIndex": 95,
               "Title": "OtherValidators.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Validators\\OtherValidators.cs",
               "RelativeDocumentMoniker": "App.Business\\Validators\\OtherValidators.cs",
@@ -1280,7 +1391,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 87,
+              "DocumentIndex": 94,
               "Title": "GroupValidators.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Validators\\GroupValidators.cs",
               "RelativeDocumentMoniker": "App.Business\\Validators\\GroupValidators.cs",
@@ -1292,7 +1403,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 86,
+              "DocumentIndex": 93,
               "Title": "AuthValidators.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Validators\\AuthValidators.cs",
               "RelativeDocumentMoniker": "App.Business\\Validators\\AuthValidators.cs",
@@ -1304,7 +1415,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 85,
+              "DocumentIndex": 92,
               "Title": "ChildValidators.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\Validators\\ChildValidators.cs",
               "RelativeDocumentMoniker": "App.Business\\Validators\\ChildValidators.cs",
@@ -1316,7 +1427,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 84,
+              "DocumentIndex": 91,
               "Title": "ReportDTOs.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\DTOs\\Reports\\ReportDTOs.cs",
               "RelativeDocumentMoniker": "App.Business\\DTOs\\Reports\\ReportDTOs.cs",
@@ -1328,7 +1439,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 83,
+              "DocumentIndex": 90,
               "Title": "ScheduleDTOs.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\DTOs\\Schedule\\ScheduleDTOs.cs",
               "RelativeDocumentMoniker": "App.Business\\DTOs\\Schedule\\ScheduleDTOs.cs",
@@ -1340,7 +1451,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 82,
+              "DocumentIndex": 89,
               "Title": "DivisionDTOs.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\DTOs\\Divisions\\DivisionDTOs.cs",
               "RelativeDocumentMoniker": "App.Business\\DTOs\\Divisions\\DivisionDTOs.cs",
@@ -1352,7 +1463,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 81,
+              "DocumentIndex": 88,
               "Title": "GroupDTOs.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\DTOs\\Groups\\GroupDTOs.cs",
               "RelativeDocumentMoniker": "App.Business\\DTOs\\Groups\\GroupDTOs.cs",
@@ -1364,7 +1475,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 80,
+              "DocumentIndex": 87,
               "Title": "ChildDTOs.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Business\\DTOs\\Children\\ChildDTOs.cs",
               "RelativeDocumentMoniker": "App.Business\\DTOs\\Children\\ChildDTOs.cs",
@@ -1376,19 +1487,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 79,
-              "Title": "AutomatedMigration.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\AutomatedMigration.cs",
-              "RelativeDocumentMoniker": "App.DAL\\Presistence\\AutomatedMigration.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\AutomatedMigration.cs",
-              "RelativeToolTip": "App.DAL\\Presistence\\AutomatedMigration.cs",
-              "ViewState": "AgIAAAIAAAAAAAAAAIBJwAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:32:55.733Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 44,
+              "DocumentIndex": 56,
               "Title": "Division.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Entities\\Division.cs",
               "RelativeDocumentMoniker": "App.Core\\Entities\\Division.cs",
@@ -1400,19 +1499,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 78,
-              "Title": "UnitOfWork.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\UnitOfWork\\UnitOfWork.cs",
-              "RelativeDocumentMoniker": "App.DAL\\UnitOfWork\\UnitOfWork.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\UnitOfWork\\UnitOfWork.cs",
-              "RelativeToolTip": "App.DAL\\UnitOfWork\\UnitOfWork.cs",
-              "ViewState": "AgIAABgAAAAAAAAAAIBHwF8AAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:32:28.702Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 76,
+              "DocumentIndex": 85,
               "Title": "ScheduleConfigRepository.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Repositories\\Implementations\\ScheduleConfigRepository.cs",
               "RelativeDocumentMoniker": "App.DAL\\Repositories\\Implementations\\ScheduleConfigRepository.cs",
@@ -1424,7 +1511,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 75,
+              "DocumentIndex": 84,
               "Title": "DivisionRepository.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Repositories\\Implementations\\DivisionRepository.cs",
               "RelativeDocumentMoniker": "App.DAL\\Repositories\\Implementations\\DivisionRepository.cs",
@@ -1436,7 +1523,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 74,
+              "DocumentIndex": 83,
               "Title": "GroupRepository.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Repositories\\Implementations\\GroupRepository.cs",
               "RelativeDocumentMoniker": "App.DAL\\Repositories\\Implementations\\GroupRepository.cs",
@@ -1448,7 +1535,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 73,
+              "DocumentIndex": 82,
               "Title": "PaymentRepository.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Repositories\\Implementations\\PaymentRepository.cs",
               "RelativeDocumentMoniker": "App.DAL\\Repositories\\Implementations\\PaymentRepository.cs",
@@ -1460,19 +1547,19 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 72,
+              "DocumentIndex": 81,
               "Title": "AttendanceRepository.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Repositories\\Implementations\\AttendanceRepository.cs",
               "RelativeDocumentMoniker": "App.DAL\\Repositories\\Implementations\\AttendanceRepository.cs",
               "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Repositories\\Implementations\\AttendanceRepository.cs",
               "RelativeToolTip": "App.DAL\\Repositories\\Implementations\\AttendanceRepository.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAC8AAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAACoAAAAAAAAAAABRwDEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-03-06T18:31:33.86Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 43,
+              "DocumentIndex": 55,
               "Title": "DiscountType.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Enums\\DiscountType.cs",
               "RelativeDocumentMoniker": "App.Core\\Enums\\DiscountType.cs",
@@ -1484,7 +1571,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 70,
+              "DocumentIndex": 79,
               "Title": "IScheduleConfigRepository.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Repositories\\Interfaces\\IScheduleConfigRepository.cs",
               "RelativeDocumentMoniker": "App.DAL\\Repositories\\Interfaces\\IScheduleConfigRepository.cs",
@@ -1496,7 +1583,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 69,
+              "DocumentIndex": 78,
               "Title": "IDivisionRepository.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Repositories\\Interfaces\\IDivisionRepository.cs",
               "RelativeDocumentMoniker": "App.DAL\\Repositories\\Interfaces\\IDivisionRepository.cs",
@@ -1508,7 +1595,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 68,
+              "DocumentIndex": 77,
               "Title": "IGroupRepository.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Repositories\\Interfaces\\IGroupRepository.cs",
               "RelativeDocumentMoniker": "App.DAL\\Repositories\\Interfaces\\IGroupRepository.cs",
@@ -1520,7 +1607,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 67,
+              "DocumentIndex": 76,
               "Title": "IAttendanceRepository.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Repositories\\Interfaces\\IAttendanceRepository.cs",
               "RelativeDocumentMoniker": "App.DAL\\Repositories\\Interfaces\\IAttendanceRepository.cs",
@@ -1532,19 +1619,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 66,
-              "Title": "IChildRepository.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Repositories\\Interfaces\\IChildRepository.cs",
-              "RelativeDocumentMoniker": "App.DAL\\Repositories\\Interfaces\\IChildRepository.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Repositories\\Interfaces\\IChildRepository.cs",
-              "RelativeToolTip": "App.DAL\\Repositories\\Interfaces\\IChildRepository.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAxwAwAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:30:41.578Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 42,
+              "DocumentIndex": 54,
               "Title": "PaymentStatus.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Enums\\PaymentStatus.cs",
               "RelativeDocumentMoniker": "App.Core\\Enums\\PaymentStatus.cs",
@@ -1556,7 +1631,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 65,
+              "DocumentIndex": 75,
               "Title": "IRepository.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Repositories\\Interfaces\\IRepository.cs",
               "RelativeDocumentMoniker": "App.DAL\\Repositories\\Interfaces\\IRepository.cs",
@@ -1568,7 +1643,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 63,
+              "DocumentIndex": 73,
               "Title": "SMSNotificationConfiguration.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\Configurations\\SMSNotificationConfiguration.cs",
               "RelativeDocumentMoniker": "App.DAL\\Presistence\\Configurations\\SMSNotificationConfiguration.cs",
@@ -1580,7 +1655,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 62,
+              "DocumentIndex": 72,
               "Title": "PaymentConfiguration.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\Configurations\\PaymentConfiguration.cs",
               "RelativeDocumentMoniker": "App.DAL\\Presistence\\Configurations\\PaymentConfiguration.cs",
@@ -1592,7 +1667,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 61,
+              "DocumentIndex": 71,
               "Title": "ScheduleConfigConfiguration.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\Configurations\\ScheduleConfigConfiguration.cs",
               "RelativeDocumentMoniker": "App.DAL\\Presistence\\Configurations\\ScheduleConfigConfiguration.cs",
@@ -1604,7 +1679,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 60,
+              "DocumentIndex": 70,
               "Title": "AttendanceConfiguration.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\Configurations\\AttendanceConfiguration.cs",
               "RelativeDocumentMoniker": "App.DAL\\Presistence\\Configurations\\AttendanceConfiguration.cs",
@@ -1616,7 +1691,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 41,
+              "DocumentIndex": 53,
               "Title": "ChildStatus.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Enums\\ChildStatus.cs",
               "RelativeDocumentMoniker": "App.Core\\Enums\\ChildStatus.cs",
@@ -1628,7 +1703,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 59,
+              "DocumentIndex": 69,
               "Title": "ChildConfiguration.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\Configurations\\ChildConfiguration.cs",
               "RelativeDocumentMoniker": "App.DAL\\Presistence\\Configurations\\ChildConfiguration.cs",
@@ -1640,7 +1715,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 58,
+              "DocumentIndex": 68,
               "Title": "GroupConfiguration.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\Configurations\\GroupConfiguration.cs",
               "RelativeDocumentMoniker": "App.DAL\\Presistence\\Configurations\\GroupConfiguration.cs",
@@ -1652,7 +1727,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 57,
+              "DocumentIndex": 67,
               "Title": "DivisionConfiguration.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\Configurations\\DivisionConfiguration.cs",
               "RelativeDocumentMoniker": "App.DAL\\Presistence\\Configurations\\DivisionConfiguration.cs",
@@ -1664,7 +1739,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 56,
+              "DocumentIndex": 66,
               "Title": "App.API.csproj",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.API\\App.API.csproj",
               "RelativeDocumentMoniker": "App.API\\App.API.csproj",
@@ -1676,7 +1751,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 54,
+              "DocumentIndex": 64,
               "Title": "PagedResponse.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Common\\PagedResponse.cs",
               "RelativeDocumentMoniker": "App.Core\\Common\\PagedResponse.cs",
@@ -1688,7 +1763,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 40,
+              "DocumentIndex": 52,
               "Title": "ScheduleType.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Enums\\ScheduleType.cs",
               "RelativeDocumentMoniker": "App.Core\\Enums\\ScheduleType.cs",
@@ -1700,7 +1775,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 52,
+              "DocumentIndex": 62,
               "Title": "ConflictException.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Exceptions\\ConflictException.cs",
               "RelativeDocumentMoniker": "App.Core\\Exceptions\\ConflictException.cs",
@@ -1712,7 +1787,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 51,
+              "DocumentIndex": 61,
               "Title": "UnauthorizedException.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Exceptions\\UnauthorizedException.cs",
               "RelativeDocumentMoniker": "App.Core\\Exceptions\\UnauthorizedException.cs",
@@ -1724,7 +1799,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 39,
+              "DocumentIndex": 51,
               "Title": "BaseEntity.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Entities\\Commons\\BaseEntity.cs",
               "RelativeDocumentMoniker": "App.Core\\Entities\\Commons\\BaseEntity.cs",
@@ -1736,19 +1811,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 50,
-              "Title": "SMSNotification.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Entities\\SMSNotification.cs",
-              "RelativeDocumentMoniker": "App.Core\\Entities\\SMSNotification.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Entities\\SMSNotification.cs",
-              "RelativeToolTip": "App.Core\\Entities\\SMSNotification.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:25:27.009Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 49,
+              "DocumentIndex": 60,
               "Title": "Payment.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Entities\\Payment.cs",
               "RelativeDocumentMoniker": "App.Core\\Entities\\Payment.cs",
@@ -1760,7 +1823,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 48,
+              "DocumentIndex": 59,
               "Title": "ScheduleConfig.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Entities\\ScheduleConfig.cs",
               "RelativeDocumentMoniker": "App.Core\\Entities\\ScheduleConfig.cs",
@@ -1772,19 +1835,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 47,
-              "Title": "Attendance.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Entities\\Attendance.cs",
-              "RelativeDocumentMoniker": "App.Core\\Entities\\Attendance.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Entities\\Attendance.cs",
-              "RelativeToolTip": "App.Core\\Entities\\Attendance.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:25:10.107Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 46,
+              "DocumentIndex": 58,
               "Title": "Child.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Core\\Entities\\Child.cs",
               "RelativeDocumentMoniker": "App.Core\\Entities\\Child.cs",
@@ -1796,7 +1847,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 35,
+              "DocumentIndex": 48,
               "Title": "ClaimService.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.Shared\\Implementations\\ClaimService.cs",
               "RelativeDocumentMoniker": "App.Shared\\Implementations\\ClaimService.cs",
@@ -1808,7 +1859,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 37,
+              "DocumentIndex": 49,
               "Title": "DALDependencyInjection.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\DALDependencyInjection.cs",
               "RelativeDocumentMoniker": "App.DAL\\DALDependencyInjection.cs",
@@ -1820,7 +1871,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 38,
+              "DocumentIndex": 50,
               "Title": "Repository.cs",
               "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Repositories\\Implementations\\Repository.cs",
               "RelativeDocumentMoniker": "App.DAL\\Repositories\\Implementations\\Repository.cs",
@@ -1829,18 +1880,6 @@
               "ViewState": "AgIAAAcAAAAAAAAAAABQwGIAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-03-06T18:14:10.444Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 36,
-              "Title": "AppDbContext.cs",
-              "DocumentMoniker": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\AppDbContext.cs",
-              "RelativeDocumentMoniker": "App.DAL\\Presistence\\AppDbContext.cs",
-              "ToolTip": "C:\\Users\\Emil\\Desktop\\23\\Garden\\GardenBack\\src\\App.DAL\\Presistence\\AppDbContext.cs",
-              "RelativeToolTip": "App.DAL\\Presistence\\AppDbContext.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAABBwDYAAABYAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-06T18:14:10.448Z"
             }
           ]
         },

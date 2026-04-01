@@ -59,8 +59,8 @@ namespace App.DAL.Migrations
                         .HasColumnType("varchar(500)");
 
                     b.Property<string>("RecordedById")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -73,8 +73,6 @@ namespace App.DAL.Migrations
                     b.HasIndex("ChildId");
 
                     b.HasIndex("Date");
-
-                    b.HasIndex("RecordedById");
 
                     b.HasIndex("ChildId", "Date")
                         .IsUnique();
@@ -119,6 +117,10 @@ namespace App.DAL.Migrations
                     b.Property<decimal>("MonthlyFee")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("PaymentDay")
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
                     b.Property<string>("ParentEmail")
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
@@ -149,7 +151,10 @@ namespace App.DAL.Migrations
 
                     b.HasIndex("GroupId");
 
-                    b.ToTable("children", (string)null);
+                    b.ToTable("children", t =>
+                        {
+                            t.HasCheckConstraint("CK_children_PaymentDay", "PaymentDay >= 1 AND PaymentDay <= 28");
+                        });
                 });
 
             modelBuilder.Entity("App.Core.Entities.Division", b =>
@@ -368,8 +373,8 @@ namespace App.DAL.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("RecordedById")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -383,8 +388,6 @@ namespace App.DAL.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ChildId");
-
-                    b.HasIndex("RecordedById");
 
                     b.HasIndex("Month", "Year", "ChildId")
                         .IsUnique();
@@ -615,15 +618,7 @@ namespace App.DAL.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("App.Core.Entities.Identity.User", "RecordedBy")
-                        .WithMany()
-                        .HasForeignKey("RecordedById")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("Child");
-
-                    b.Navigation("RecordedBy");
                 });
 
             modelBuilder.Entity("App.Core.Entities.Child", b =>
@@ -664,15 +659,7 @@ namespace App.DAL.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("App.Core.Entities.Identity.User", "RecordedBy")
-                        .WithMany()
-                        .HasForeignKey("RecordedById")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("Child");
-
-                    b.Navigation("RecordedBy");
                 });
 
             modelBuilder.Entity("App.Core.Entities.SMSNotification", b =>

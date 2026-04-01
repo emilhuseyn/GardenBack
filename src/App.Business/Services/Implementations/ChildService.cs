@@ -61,6 +61,7 @@ namespace App.Business.Services.Implementations
             if (dto.GroupId.HasValue) child.GroupId = dto.GroupId.Value;
             if (dto.ScheduleType.HasValue) child.ScheduleType = dto.ScheduleType.Value;
             if (dto.MonthlyFee.HasValue) child.MonthlyFee = dto.MonthlyFee.Value;
+            if (dto.PaymentDay.HasValue) child.PaymentDay = dto.PaymentDay.Value;
             if (dto.ParentFullName != null) child.ParentFullName = dto.ParentFullName;
             if (dto.ParentPhone != null) child.ParentPhone = dto.ParentPhone;
             if (dto.ParentEmail != null) child.ParentEmail = dto.ParentEmail;

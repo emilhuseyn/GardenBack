@@ -6,16 +6,18 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace App.API.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     [Authorize(Policy = "AllStaff")]
     public class ChildrenController : ControllerBase
     {
         private readonly IChildService _childService;
+        private readonly IAgreementService _agreementService;
 
-        public ChildrenController(IChildService childService)
+        public ChildrenController(IChildService childService, IAgreementService agreementService)
         {
             _childService = childService;
+            _agreementService = agreementService;
         }
 
         // Administrator, Mühasib, Müəllim, Qəbul üzrə əməkdaş — hamısı görə bilər
@@ -81,6 +83,35 @@ namespace App.API.Controllers
         {
             await _childService.DeleteChildAsync(id);
             return Ok(ApiResponse<string>.SuccessResponse("Uşaq silindi."));
+        }
+
+        [HttpPost("activate-bulk")]
+        public async Task<IActionResult> ActivateChildren([FromBody] List<int> ids)
+        {
+            await _childService.ActivateChildrenAsync(ids);
+            return Ok(new { message = "Uşaqlar aktiv edildi." });
+        }
+
+        [HttpPost("deactivate-bulk")]
+        public async Task<IActionResult> DeactivateChildren([FromBody] List<int> ids)
+        {
+            await _childService.DeactivateChildrenAsync(ids);
+            return Ok(new { message = "Uşaqlar deaktiv edildi." });
+        }
+
+        [HttpPost("delete-bulk")]
+        public async Task<IActionResult> DeleteChildren([FromBody] List<int> ids)
+        {
+            await _childService.DeleteChildrenAsync(ids);
+            return Ok(new { message = "Uşaqlar silindi." });
+        }
+
+        [HttpGet("{id}/agreement")]
+        [Authorize(Policy = "AdminOrAdmission")]
+        public async Task<IActionResult> DownloadAgreement(int id)
+        {
+            var (fileBytes, fileName) = await _agreementService.GenerateAgreementAsync(id);
+            return File(fileBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileName);
         }
     }
 }

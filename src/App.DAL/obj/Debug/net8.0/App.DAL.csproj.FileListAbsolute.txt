@@ -56,3 +56,4 @@ C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.DAL\obj\Debug\net8.0\refint\A
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.DAL\obj\Debug\net8.0\App.DAL.pdb
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.DAL\obj\Debug\net8.0\App.DAL.genruntimeconfig.cache
 C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.DAL\obj\Debug\net8.0\ref\App.DAL.dll
+C:\Users\Emil\Desktop\23\Garden\GardenBack\src\App.DAL\obj\Debug\net8.0\App.DAL.sourcelink.json
