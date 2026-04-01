@@ -111,7 +111,7 @@ namespace App.API.Controllers
         public async Task<IActionResult> DownloadAgreement(int id)
         {
             var (fileBytes, fileName) = await _agreementService.GenerateAgreementAsync(id);
-            return File(fileBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileName);
+            return File(fileBytes, "application/msword", fileName);
         }
     }
 }
