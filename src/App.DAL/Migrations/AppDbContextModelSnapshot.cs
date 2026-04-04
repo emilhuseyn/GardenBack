@@ -80,6 +80,50 @@ namespace App.DAL.Migrations
                     b.ToTable("attendances", (string)null);
                 });
 
+            modelBuilder.Entity("App.Core.Entities.Cashbox", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccountNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("cashboxes", (string)null);
+                });
+
             modelBuilder.Entity("App.Core.Entities.Child", b =>
                 {
                     b.Property<int>("Id")
@@ -141,6 +185,14 @@ namespace App.DAL.Migrations
 
                     b.Property<int>("ScheduleType")
                         .HasColumnType("int");
+
+                    b.Property<string>("SecondParentFullName")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("SecondParentPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -245,6 +297,47 @@ namespace App.DAL.Migrations
                     b.ToTable("groups", (string)null);
                 });
 
+            modelBuilder.Entity("App.Core.Entities.GroupLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ActionDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<int?>("ChildId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("GroupId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("group_logs", (string)null);
+                });
+
             modelBuilder.Entity("App.Core.Entities.Identity.User", b =>
                 {
                     b.Property<string>("Id")
@@ -339,6 +432,9 @@ namespace App.DAL.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("CashboxId")
+                        .HasColumnType("int");
+
                     b.Property<int>("ChildId")
                         .HasColumnType("int");
 
@@ -387,6 +483,8 @@ namespace App.DAL.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CashboxId");
 
                     b.HasIndex("ChildId");
 
@@ -654,11 +752,18 @@ namespace App.DAL.Migrations
 
             modelBuilder.Entity("App.Core.Entities.Payment", b =>
                 {
+                    b.HasOne("App.Core.Entities.Cashbox", "Cashbox")
+                        .WithMany("Payments")
+                        .HasForeignKey("CashboxId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("App.Core.Entities.Child", "Child")
                         .WithMany("Payments")
                         .HasForeignKey("ChildId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Cashbox");
 
                     b.Navigation("Child");
                 });
@@ -733,6 +838,11 @@ namespace App.DAL.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("App.Core.Entities.Cashbox", b =>
+                {
+                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("App.Core.Entities.Child", b =>

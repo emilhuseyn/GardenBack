@@ -42,6 +42,14 @@ namespace App.API.Controllers
             return Ok(ApiResponse<IEnumerable<GroupResponse>>.SuccessResponse(result));
         }
 
+        [HttpGet("{id}/logs")]
+        [Authorize(Policy = "AllStaff")]
+        public async Task<IActionResult> GetGroupLogs(int id)
+        {
+            var result = await _groupService.GetGroupLogsAsync(id);
+            return Ok(ApiResponse<IEnumerable<GroupLogResponse>>.SuccessResponse(result));
+        }
+
         [HttpPost]
         [Authorize(Policy = "AdminOrAdmission")]
         public async Task<IActionResult> CreateGroup([FromBody] CreateGroupRequest dto)

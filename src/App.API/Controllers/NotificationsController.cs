@@ -56,6 +56,25 @@ namespace App.API.Controllers
             }
         }
 
+        /// <summary>Sabah ödəniş günü olanlara mesaj göndərir.</summary>
+        [HttpPost("send-due-alerts")]
+        public async Task<IActionResult> SendDueAlerts()
+        {
+            var status = await GetWhatsAppConnectedStatus();
+            if (!status)
+                return BadRequest(ApiResponse<string>.ErrorResponse(
+                    "WhatsApp qoşulmayıb. Əvvəlcə /whatsapp/start ilə qoşulun."));
+
+            var result = await _notificationService.SendPaymentDueRemindersAsync();
+            return Ok(ApiResponse<object>.SuccessResponse(new
+            {
+                sent = result.Sent,
+                failed = result.Failed,
+                errors = result.Errors,
+                message = $"{result.Sent} mesaj göndərildi, {result.Failed} uğursuz."
+            }));
+        }
+
         /// <summary>Node.js WhatsApp servisini avtomatik başladır ("Qoşul" düyməsi).</summary>
         [HttpPost("whatsapp/start")]
         public async Task<IActionResult> StartWhatsAppService()
@@ -193,25 +212,6 @@ namespace App.API.Controllers
                     "WhatsApp qoşulmayıb. Əvvəlcə /whatsapp/start ilə qoşulun."));
 
             var result = await _notificationService.SendBulkRemindersToDebtorsAsync();
-            return Ok(ApiResponse<object>.SuccessResponse(new
-            {
-                sent   = result.Sent,
-                failed = result.Failed,
-                errors = result.Errors,
-                message = $"{result.Sent} mesaj göndərildi, {result.Failed} uğursuz."
-            }));
-        }
-
-        /// <summary>Cari ay gecikmiş ödənişlər üçün bildiriş göndərir.</summary>
-        [HttpPost("send-overdue-alerts")]
-        public async Task<IActionResult> SendOverdueAlerts()
-        {
-            var status = await GetWhatsAppConnectedStatus();
-            if (!status)
-                return BadRequest(ApiResponse<string>.ErrorResponse(
-                    "WhatsApp qoşulmayıb. Əvvəlcə /whatsapp/start ilə qoşulun."));
-
-            var result = await _notificationService.SendOverduePaymentAlertsAsync();
             return Ok(ApiResponse<object>.SuccessResponse(new
             {
                 sent   = result.Sent,

@@ -16,7 +16,9 @@ namespace App.DAL.Presistence.Configurations
             builder.Property(c => c.PaymentDay).IsRequired().HasDefaultValue(1);
             builder.HasCheckConstraint("CK_children_PaymentDay", "[PaymentDay] >= 1 AND [PaymentDay] <= 28");
             builder.Property(c => c.ParentFullName).IsRequired().HasMaxLength(200);
+            builder.Property(c => c.SecondParentFullName).HasMaxLength(200);
             builder.Property(c => c.ParentPhone).IsRequired().HasMaxLength(20);
+            builder.Property(c => c.SecondParentPhone).HasMaxLength(20);
             builder.Property(c => c.ParentEmail).HasMaxLength(200);
             builder.Property(c => c.FaceIdToken).HasMaxLength(500);
 

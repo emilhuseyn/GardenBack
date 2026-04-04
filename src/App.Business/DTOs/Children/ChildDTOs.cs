@@ -12,7 +12,9 @@ namespace App.Business.DTOs.Children
         public decimal MonthlyFee { get; set; }
         public int PaymentDay { get; set; } = 1;
         public string ParentFullName { get; set; } = string.Empty;
+        public string? SecondParentFullName { get; set; }
         public string ParentPhone { get; set; } = string.Empty;
+        public string? SecondParentPhone { get; set; }
         public string? ParentEmail { get; set; }
         public string? FaceIdToken { get; set; }
     }
@@ -27,7 +29,9 @@ namespace App.Business.DTOs.Children
         public decimal? MonthlyFee { get; set; }
         public int? PaymentDay { get; set; }
         public string? ParentFullName { get; set; }
+        public string? SecondParentFullName { get; set; }
         public string? ParentPhone { get; set; }
+        public string? SecondParentPhone { get; set; }
         public string? ParentEmail { get; set; }
         public string? FaceIdToken { get; set; }
     }
@@ -46,7 +50,9 @@ namespace App.Business.DTOs.Children
         public int PaymentDay { get; set; }
         public string Status { get; set; } = string.Empty;
         public string ParentFullName { get; set; } = string.Empty;
+        public string? SecondParentFullName { get; set; }
         public string ParentPhone { get; set; } = string.Empty;
+        public string? SecondParentPhone { get; set; }
         public string? ParentEmail { get; set; }
         public DateTime RegistrationDate { get; set; }
     }
@@ -67,6 +73,6 @@ namespace App.Business.DTOs.Children
         public string? Status { get; set; }
         public string? ScheduleType { get; set; }
         public int Page { get; set; } = 1;
-        public int PageSize { get; set; } = 20;
+        public int PageSize { get; set; } = 0;
     }
 }

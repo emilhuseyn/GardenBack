@@ -59,6 +59,7 @@ namespace App.DAL
             services.AddScoped<IChildRepository, ChildRepository>();
             services.AddScoped<IAttendanceRepository, AttendanceRepository>();
             services.AddScoped<IPaymentRepository, PaymentRepository>();
+            services.AddScoped<ICashboxRepository, CashboxRepository>();
             services.AddScoped<IGroupRepository, GroupRepository>();
             services.AddScoped<IDivisionRepository, DivisionRepository>();
             services.AddScoped<IScheduleConfigRepository, ScheduleConfigRepository>();

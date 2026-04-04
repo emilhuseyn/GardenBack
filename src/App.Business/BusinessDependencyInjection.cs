@@ -46,6 +46,7 @@ namespace App.Business
             services.AddScoped<IChildService, ChildService>();
             services.AddScoped<IAttendanceService, AttendanceService>();
             services.AddScoped<IPaymentService, PaymentService>();
+            services.AddScoped<ICashboxService, CashboxService>();
             services.AddScoped<IGroupService, GroupService>();
             services.AddScoped<IDivisionService, DivisionService>();
             services.AddScoped<IScheduleConfigService, ScheduleConfigService>();

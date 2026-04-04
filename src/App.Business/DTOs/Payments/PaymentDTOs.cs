@@ -19,6 +19,7 @@ namespace App.Business.DTOs.Payments
         public int ChildId { get; set; }
         public int Month { get; set; }
         public int Year { get; set; }
+        public int CashboxId { get; set; }
         public decimal Amount { get; set; }
         public string? Notes { get; set; }
     }
@@ -37,6 +38,9 @@ namespace App.Business.DTOs.Payments
         public string GroupName { get; set; } = string.Empty;
         public int Month { get; set; }
         public int Year { get; set; }
+        public int? CashboxId { get; set; }
+        public string? CashboxName { get; set; }
+        public string? CashboxType { get; set; }
         public decimal OriginalAmount { get; set; }
         public string DiscountType { get; set; } = string.Empty;
         public decimal DiscountValue { get; set; }

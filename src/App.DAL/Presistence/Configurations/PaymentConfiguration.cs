@@ -23,6 +23,11 @@ namespace App.DAL.Presistence.Configurations
                 .HasForeignKey(p => p.ChildId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.HasOne(p => p.Cashbox)
+                .WithMany(c => c.Payments)
+                .HasForeignKey(p => p.CashboxId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             builder.HasIndex(p => new { p.Month, p.Year, p.ChildId }).IsUnique();
 
             builder.HasQueryFilter(p => !p.IsDeleted);

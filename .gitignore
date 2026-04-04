@@ -1,0 +1,27 @@
+# Build outputs
+**/bin/
+**/obj/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Logs
+src/App.API/Logs/
+
+# Backups
+src/App.API/Backups/
+
+# WhatsApp session (binary/cache data)
+whatsapp-service/.wwebjs_auth/
+
+# User secrets / env
+**/appsettings.*.json
+!**/appsettings.Development.json
+
+# OS
+Thumbs.db
+.DS_Store

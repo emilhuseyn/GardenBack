@@ -73,62 +73,43 @@ namespace App.Business.Services.Implementations
             return new SendResult(sent, failed, errors);
         }
 
-        /// <summary>Cari ay ödənilməmiş bütün uşaqlar üçün gecikmiş ödəniş bildirişi göndərir.</summary>
-        public async Task<SendResult> SendOverduePaymentAlertsAsync()
-        {
-            var debts   = await _unitOfWork.Payments.GetDebtorsAsync();
-            var grouped = debts.GroupBy(p => p.ChildId).ToList();
-
-            _logger.LogInformation("WhatsApp gecikmiş bildiriş: {Count} uşaq", grouped.Count);
-
-            int sent = 0, failed = 0;
-            var errors = new List<string>();
-
-            foreach (var group in grouped)
-            {
-                var r = await SendPaymentReminderAsync(group.Key);
-                sent   += r.Sent;
-                failed += r.Failed;
-                errors.AddRange(r.Errors);
-            }
-
-            return new SendResult(sent, failed, errors);
-        }
-
         /// <summary>Yarın ödəniş günü olan uşaqların valideynlərinə xatırlatma göndərir.</summary>
         public async Task<SendResult> SendPaymentDueRemindersAsync()
         {
-            var today = DateTime.UtcNow.Date;
-            var tomorrow = today.AddDays(1);
+            var nowBaku = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, GetBakuTimeZone());
+            var tomorrow = nowBaku.Date.AddDays(1);
 
-            // Get all children with unpaid payments
-            var debts = await _unitOfWork.Payments.GetDebtorsAsync();
-            
-            // Group by child and filter those whose payment anniversary is tomorrow
-            var debtorsToRemind = debts
-                .GroupBy(p => p.ChildId)
-                .Where(g => g.First().Child != null && g.First().Child.CreatedAt.Day == tomorrow.Day)
-                .Select(g => g.First())
+            var activeChildren = await _unitOfWork.Children.GetActiveChildrenAsync();
+            var childrenToRemind = activeChildren
+                .Where(c => c.PaymentDay == tomorrow.Day)
                 .ToList();
 
-            _logger.LogInformation("Yarın ödəniş xatırlatması: {Count} uşaq (gün: {Day})", debtorsToRemind.Count, tomorrow.Day);
+            _logger.LogInformation("Yarın ödəniş xatırlatması: {Count} uşaq (gün: {Day})", childrenToRemind.Count, tomorrow.Day);
 
             int sent = 0, failed = 0;
             var errors = new List<string>();
 
-            foreach (var payment in debtorsToRemind)
+            foreach (var child in childrenToRemind)
             {
                 try
                 {
-                    var child = payment.Child;
-                    if (child == null) continue;
+                    var payment = (await _unitOfWork.Payments
+                        .FindAsync(p => p.ChildId == child.Id && p.Month == tomorrow.Month && p.Year == tomorrow.Year))
+                        .FirstOrDefault();
+
+                    if (payment?.Status == PaymentStatus.Paid)
+                        continue;
+
+                    var amount = payment == null
+                        ? child.MonthlyFee
+                        : Math.Max(0, payment.FinalAmount - payment.PaidAmount);
 
                     var message = BuildPaymentDueReminderMessage(
                         child.ParentFullName,
                         $"{child.FirstName} {child.LastName}",
-                        payment.FinalAmount - payment.PaidAmount,
-                        payment.Month,
-                        payment.Year);
+                        amount,
+                        tomorrow.Month,
+                        tomorrow.Year);
 
                     var error = await SendWhatsAppAsync(child.ParentPhone, message, child.Id);
                     if (error == null)
@@ -247,7 +228,7 @@ namespace App.Business.Services.Implementations
             var sb = new StringBuilder();
             sb.AppendLine($"🌸 *Hörmətli {parentName}!*\n");
             sb.AppendLine($"Uşaq bağçamıza göstərdiyiniz etimada görə təşəkkür edirik.\n");
-            sb.AppendLine($"Sizə xatırlatmaq istəyirik ki, *{childName}* adlı övladınızın aşağıdakı aylara aid ödənişi hələ tamamlanmayıb:\n");
+            sb.AppendLine($"Sizə xatırlatmaq istəyirik ki, *{childName}* adlı övladınızın aşağıdakı aylara aid ödənişləri hələ tamamlanmayıb:\n");
             sb.AppendLine($"📅 *Aylar və məbləğlər:*\n" + string.Join("\n", monthDetails.Select(x => $"- {MonthName(x.Month)} {x.Year}: {x.Amount:F2} AZN")));
             sb.AppendLine($"💰 *Ümumi borc:* {debt:F2} AZN\n");
             sb.AppendLine($"Zəhmət olmasa ödənişi ən qısa müddətdə həyata keçirməyinizi xahiş edirik.\n");
@@ -256,32 +237,22 @@ namespace App.Business.Services.Implementations
             return sb.ToString();
         }
 
-        private static string BuildOverdueMessage(
-            string parentName, string childName, decimal debt, int month, int year)
-            => $"🌸 *Hörmətli {parentName}!*\n\n" +
-               $"Uşaq bağçamıza göstərdiyiniz etimada görə təşəkkür edirik.\n\n" +
-               $"Sizə xatırlatmaq istəyirik ki, *{childName}* adlı övladınızın *{MonthName(month)} {year}* tarixinə aid aylıq ödənişi hələ tamamlanmayıb:\n\n" +
-               $"💰 *Qalan borc:* {debt:F2} AZN\n\n" +
-               $"Zəhmət olmasa ödənişi ən qısa müddətdə həyata keçirməyinizi xahiş edirik.\n\n" +
-               $"Əlavə suallarınız olarsa, bağça rəhbərliyi ilə əlaqə saxlaya bilərsiniz.\n\n" +
-               $"Hörmətlə,\n*Uşaq Bağçası Administrasiyası* 🌸";
-
         private static string BuildPaymentDueReminderMessage(
             string parentName, string childName, decimal amount, int month, int year)
             => $"🌸 *Hörmətli {parentName}!*\n\n" +
                $"Uşaq bağçamıza göstərdiyiniz etimada görə təşəkkür edirik.\n\n" +
                $"Sizə xatırlatmaq istərdik ki, sabah *{childName}* adlı övladınızın *{MonthName(month)} {year}* ayına aid ödəniş günüdür.\n\n" +
                $"💰 *Ödəniş məbləği:* {amount:F2} AZN\n\n" +
-               $"Zəhmət olmasa ödənişi vaxtında etməyinizi rica edirik.\n\n" +
+               $"Zəhmət olmasa ödənişi vaxtında etməyinizi xahiş edirik.\n\n" +
                $"Hörmətlə,\n*Uşaq Bağçası Administrasiyası* 🌸";
 
         private static string BuildPaymentConfirmationMessage(
             string parentName, string childName, decimal paidAmount, int month, int year)
             => $"🌸 *Hörmətli {parentName}!*\n\n" +
-               $"Ödəniş çatdırıldığından xəbər veririk.\n\n" +
+               $"Ödənişinizin qeydə alındığını bildiririk.\n\n" +
                $"*{childName}* adlı övladınızın *{MonthName(month)} {year}* ayına aid ödənişi uğurla qeydə alınmışdır.\n\n" +
                $"💰 *Ödədiyi məbləğ:* {paidAmount:F2} AZN\n\n" +
-               $"Bağçanız və övladınız üçün göstərdiyiniz dəstək ləyiqdir. Təşəkkür edirik! 💝\n\n" +
+               $"Bağçamıza göstərdiyiniz etimada görə təşəkkür edirik! 💝\n\n" +
                $"Hörmətlə,\n*Uşaq Bağçası Administrasiyası* 🌸";
 
         private static string MonthName(int month) => month switch
@@ -300,5 +271,22 @@ namespace App.Business.Services.Implementations
             12 => "Dekabr",
             _  => month.ToString()
         };
+
+        private static DateTime BuildDueDate(Payment payment)
+        {
+            var day = payment.Child?.PaymentDay ?? 1;
+            var maxDay = DateTime.DaysInMonth(payment.Year, payment.Month);
+            return new DateTime(payment.Year, payment.Month, Math.Min(day, maxDay));
+        }
+
+        private static TimeZoneInfo GetBakuTimeZone()
+        {
+            try { return TimeZoneInfo.FindSystemTimeZoneById("Azerbaijan Standard Time"); }
+            catch
+            {
+                try { return TimeZoneInfo.FindSystemTimeZoneById("Asia/Baku"); }
+                catch { return TimeZoneInfo.Utc; }
+            }
+        }
     }
 }

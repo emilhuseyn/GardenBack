@@ -1,5 +1,6 @@
 using App.Business.DTOs.Attendance;
 using App.Business.DTOs.Auth;
+using App.Business.DTOs.Cashboxes;
 using App.Business.DTOs.Children;
 using App.Business.DTOs.Divisions;
 using App.Business.DTOs.Groups;
@@ -66,7 +67,13 @@ namespace App.Business.MappingProfiles
                 .ForMember(d => d.GroupName, opt => opt.MapFrom(s => s.Child != null && s.Child.Group != null ? s.Child.Group.Name : string.Empty))
                 .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()))
                 .ForMember(d => d.DiscountType, opt => opt.MapFrom(s => s.DiscountType.ToString()))
+                .ForMember(d => d.CashboxName, opt => opt.MapFrom(s => s.Cashbox != null ? s.Cashbox.Name : null))
+                .ForMember(d => d.CashboxType, opt => opt.MapFrom(s => s.Cashbox != null ? s.Cashbox.Type.ToString() : null))
                 .ForMember(d => d.RemainingDebt, opt => opt.MapFrom(s => s.FinalAmount - s.PaidAmount));
+
+            // Cashbox
+            CreateMap<Cashbox, CashboxResponse>()
+                .ForMember(d => d.Type, opt => opt.MapFrom(s => s.Type.ToString()));
 
             // Schedule
             CreateMap<ScheduleConfig, ScheduleConfigResponse>()

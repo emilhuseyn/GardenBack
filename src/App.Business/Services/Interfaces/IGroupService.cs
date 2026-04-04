@@ -12,6 +12,7 @@ namespace App.Business.Services.Interfaces
         Task<GroupDetailResponse> GetGroupByIdAsync(int id);
         Task<IEnumerable<GroupResponse>> GetAllGroupsAsync();
         Task<IEnumerable<GroupResponse>> GetGroupsByDivisionAsync(int divisionId);
+        Task<IEnumerable<GroupLogResponse>> GetGroupLogsAsync(int groupId);
         Task AssignTeacherAsync(int groupId, string teacherId);
         Task ChangeTeacherAsync(int groupId, string newTeacherId);
         Task DeleteGroupAsync(int id);

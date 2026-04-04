@@ -1,6 +1,7 @@
 using App.Business.DTOs.Groups;
 using App.Business.Services.Interfaces;
 using App.Core.Entities;
+using App.Core.Enums;
 using App.Core.Exceptions.Commons;
 using App.DAL.UnitOfWork;
 using AutoMapper;
@@ -56,6 +57,14 @@ namespace App.Business.Services.Implementations
             if (dto.AgeCategory != null) group.AgeCategory = dto.AgeCategory;
             if (dto.Language != null) group.Language = dto.Language;
 
+            await _unitOfWork.GroupLogs.AddAsync(new GroupLog
+            {
+                GroupId = group.Id,
+                ActionType = GroupLogActionType.GroupUpdated,
+                Message = $"Qrup redaktə edildi: {group.Name}",
+                ActionDate = DateTime.UtcNow
+            });
+
             await _unitOfWork.Groups.UpdateAsync(group);
             await _unitOfWork.SaveChangesAsync();
 
@@ -98,6 +107,29 @@ namespace App.Business.Services.Implementations
         {
             var groups = await _unitOfWork.Groups.GetGroupsByDivisionAsync(divisionId);
             return _mapper.Map<IEnumerable<GroupResponse>>(groups);
+        }
+
+        /// <summary>
+        /// Gets activity logs for a specific group.
+        /// </summary>
+        public async Task<IEnumerable<GroupLogResponse>> GetGroupLogsAsync(int groupId)
+        {
+            if (!await _unitOfWork.Groups.ExistsAsync(groupId))
+                throw new EntityNotFoundException($"{groupId} ID-li qrup tapılmadı.");
+
+            var logs = await _unitOfWork.GroupLogs.FindAsync(x => x.GroupId == groupId);
+
+            return logs
+                .OrderByDescending(x => x.ActionDate)
+                .Select(x => new GroupLogResponse
+                {
+                    Id = x.Id,
+                    GroupId = x.GroupId,
+                    ChildId = x.ChildId,
+                    ActionType = x.ActionType.ToString(),
+                    Message = x.Message,
+                    ActionDate = x.ActionDate
+                });
         }
 
         /// <summary>

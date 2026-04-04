@@ -6,6 +6,10 @@ using App.Core.Enums;
 using App.Core.Exceptions.Commons;
 using App.DAL.UnitOfWork;
 using AutoMapper;
+using Microsoft.Extensions.Hosting;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 
 namespace App.Business.Services.Implementations
 {
@@ -17,12 +21,14 @@ namespace App.Business.Services.Implementations
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly INotificationService _notificationService;
+        private readonly IHostEnvironment _env;
 
-        public PaymentService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService)
+        public PaymentService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IHostEnvironment env)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _notificationService = notificationService;
+            _env = env;
         }
 
         /// <summary>
@@ -86,6 +92,12 @@ namespace App.Business.Services.Implementations
         /// </summary>
         public async Task<PaymentResponse> RecordPaymentAsync(RecordPaymentRequest dto, string recordedById)
         {
+            var cashbox = await _unitOfWork.Cashboxes.GetByIdAsync(dto.CashboxId)
+                ?? throw new EntityNotFoundException($"{dto.CashboxId} ID-li kassa tapılmadı.");
+
+            if (!cashbox.IsActive)
+                throw new Core.Exceptions.ValidationException("Deaktiv kassaya ödəniş yazıla bilməz.");
+
             var payment = (await _unitOfWork.Payments
                 .FindAsync(p => p.ChildId == dto.ChildId && p.Month == dto.Month && p.Year == dto.Year))
                 .FirstOrDefault();
@@ -122,6 +134,7 @@ namespace App.Business.Services.Implementations
                     $"Ödəniş məbləği ({dto.Amount:F2} AZN) qalan borcu ({remaining:F2} AZN) aşa bilməz.");
 
             payment.PaidAmount += dto.Amount;
+            payment.CashboxId = dto.CashboxId;
             payment.PaymentDate = DateTime.UtcNow;
             payment.RecordedById = recordedById;
             payment.Notes = dto.Notes;
@@ -137,10 +150,10 @@ namespace App.Business.Services.Implementations
             var result = await _unitOfWork.Payments.GetByIdAsync(
                 p => p.Id == payment.Id,
                 p => p.Child,
-                p => p.Child.Group);
+                p => p.Child.Group,
+                p => p.Cashbox);
 
-            // Fire notification in background (queued for Hangfire processing)
-            _ = _notificationService.SendPaymentConfirmationAsync(payment.Id).ConfigureAwait(false);
+            await _notificationService.SendPaymentConfirmationAsync(payment.Id);
 
             return _mapper.Map<PaymentResponse>(result);
         }
@@ -153,7 +166,8 @@ namespace App.Business.Services.Implementations
             var payment = await _unitOfWork.Payments.GetByIdAsync(
                 p => p.Id == paymentId,
                 p => p.Child,
-                p => p.Child.Group)
+                p => p.Child.Group,
+                p => p.Cashbox)
                 ?? throw new EntityNotFoundException($"{paymentId} ID-li ödəniş tapılmadı.");
 
             payment.DiscountType = dto.DiscountType;
@@ -171,6 +185,170 @@ namespace App.Business.Services.Implementations
             await _unitOfWork.SaveChangesAsync();
 
             return _mapper.Map<PaymentResponse>(payment);
+        }
+
+        public async Task<(byte[] FileBytes, string FileName)> GeneratePaymentReceiptPdfAsync(int paymentId)
+        {
+            var payment = await _unitOfWork.Payments.GetByIdAsync(
+                p => p.Id == paymentId,
+                p => p.Child,
+                p => p.Child.Group,
+                p => p.Cashbox)
+                ?? throw new EntityNotFoundException($"{paymentId} ID-li ödəniş tapılmadı.");
+
+            QuestPDF.Settings.License = LicenseType.Community;
+
+            var childName = $"{payment.Child.FirstName} {payment.Child.LastName}";
+            var fileName = $"PaymentReceipt_{payment.Id}_{DateTime.UtcNow:yyyyMMddHHmmss}.pdf";
+            var logoPath = Path.Combine(_env.ContentRootPath, "Templates", "KinderGardenLogo.png");
+            var hasLogo = File.Exists(logoPath);
+            var logoBytes = hasLogo ? File.ReadAllBytes(logoPath) : null;
+            var paidDate = payment.PaymentDate ?? payment.UpdatedAt ?? DateTime.UtcNow;
+            var bakuTimeZone = GetBakuTimeZone();
+            var paidDateBaku = TimeZoneInfo.ConvertTimeFromUtc(
+                paidDate.Kind == DateTimeKind.Utc ? paidDate : DateTime.SpecifyKind(paidDate, DateTimeKind.Utc),
+                bakuTimeZone);
+            var nowBaku = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, bakuTimeZone);
+            var paidDateAz = $"{paidDateBaku.Day} {MonthNameAz(paidDateBaku.Month)} {paidDateBaku.Year}";
+            var paymentDay = Math.Max(payment.Child.PaymentDay, 1);
+            var periodEndDay = Math.Min(paymentDay, DateTime.DaysInMonth(payment.Year, payment.Month));
+            var periodEnd = new DateTime(payment.Year, payment.Month, periodEndDay, 0, 0, 0, DateTimeKind.Utc);
+            var previousMonth = periodEnd.AddMonths(-1);
+            var periodStartDay = Math.Min(paymentDay, DateTime.DaysInMonth(previousMonth.Year, previousMonth.Month));
+            var periodStart = new DateTime(previousMonth.Year, previousMonth.Month, periodStartDay, 0, 0, 0, DateTimeKind.Utc);
+            var periodRange = $"{periodStart:dd.MM.yyyy}-{periodEnd:dd.MM.yyyy}";
+            var remaining = Math.Max(0, payment.FinalAmount - payment.PaidAmount);
+            var statusText = payment.Status switch
+            {
+                PaymentStatus.Paid => "ÖDƏNİB",
+                PaymentStatus.PartiallyPaid => "QİSMƏN ÖDƏNİB",
+                _ => "BORC"
+            };
+
+            void BuildReceiptCopy(IContainer container, string copyTitle)
+            {
+                container.Border(1).BorderColor(Colors.Grey.Lighten1).Padding(10).Column(column =>
+                {
+                    column.Spacing(8);
+
+                    column.Item().Row(row =>
+                    {
+                        row.RelativeItem().Column(left =>
+                        {
+                            left.Item().Text("KINDERGARTEN BAKI").Bold().FontSize(14).FontColor(Colors.Blue.Darken2);
+                            left.Item().Text("RƏSMİ ÖDƏNİŞ ÇEKİ").SemiBold().FontSize(10).FontColor(Colors.Grey.Darken2);
+                            left.Item().Text(copyTitle).SemiBold().FontSize(9).FontColor(Colors.Grey.Darken1);
+                        });
+
+                        if (logoBytes != null)
+                        {
+                            row.ConstantItem(80)
+                                .Height(38)
+                                .Image(logoBytes, ImageScaling.FitArea);
+                        }
+                    });
+
+                    column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+
+                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Row(row =>
+                    {
+                        row.RelativeItem().Column(c =>
+                        {
+                            c.Item().Text($"Çek №: KG-{payment.Id:D6}").Bold();
+                            c.Item().Text($"Tarix: {paidDateAz}");
+                            c.Item().Text($"Dövr: {periodRange}");
+                        });
+
+                        row.ConstantItem(130).AlignRight().Column(c =>
+                        {
+                            c.Item().Text("Status").FontSize(9).FontColor(Colors.Grey.Darken1);
+                            c.Item().Background(Colors.Blue.Lighten4).Padding(5)
+                                .AlignCenter().Text(statusText).Bold().FontColor(Colors.Blue.Darken3);
+                        });
+                    });
+
+                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Column(c =>
+                    {
+                        c.Spacing(3);
+                        c.Item().Text("Ödəyici məlumatı").SemiBold().FontColor(Colors.Grey.Darken2);
+                        c.Item().Text($"Valideyn: {payment.Child.ParentFullName}");
+                        c.Item().Text($"Əlaqə: {payment.Child.ParentPhone}");
+                        c.Item().Text($"Uşaq: {childName}");
+                        c.Item().Text($"Qrup: {payment.Child.Group?.Name ?? "-"}");
+                        c.Item().Text($"Kassa: {payment.Cashbox?.Name ?? "-"} ({payment.Cashbox?.Type.ToString() ?? "-"})");
+                    });
+
+                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.RelativeColumn(3);
+                            columns.RelativeColumn(2);
+                        });
+
+                        table.Cell().PaddingBottom(5).Text("Açıqlama").SemiBold();
+                        table.Cell().PaddingBottom(5).AlignRight().Text("Məbləğ").SemiBold();
+
+                        table.Cell().Text("Əsas ödəniş");
+                        table.Cell().AlignRight().Text($"{payment.OriginalAmount:F2} AZN");
+
+                        table.Cell().Text($"Endirim ({payment.DiscountType})");
+                        table.Cell().AlignRight().Text($"-{payment.DiscountValue:F2} AZN");
+
+                        table.Cell().Text("Yekun məbləğ").SemiBold();
+                        table.Cell().AlignRight().Text($"{payment.FinalAmount:F2} AZN").SemiBold();
+
+                        table.Cell().Text("Ödənilmiş məbləğ").SemiBold();
+                        table.Cell().AlignRight().Text($"{payment.PaidAmount:F2} AZN").SemiBold().FontColor(Colors.Green.Darken2);
+
+                        table.Cell().Text("Qalıq borc");
+                        table.Cell().AlignRight().Text($"{remaining:F2} AZN").FontColor(remaining > 0 ? Colors.Red.Darken1 : Colors.Green.Darken2);
+                    });
+
+                    if (!string.IsNullOrWhiteSpace(payment.Notes))
+                        column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Text($"Qeyd: {payment.Notes}");
+
+                    column.Item().PaddingTop(8).Row(row =>
+                    {
+                        row.RelativeItem().Text("Qəbul edən: __________________").FontSize(9);
+                        row.RelativeItem().AlignRight().Text("İmza: __________________").FontSize(9);
+                    });
+                });
+            }
+
+            var pdfBytes = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Margin(20);
+                    page.Size(PageSizes.A4.Landscape());
+                    page.DefaultTextStyle(x => x.FontSize(10));
+
+                    page.Content().Row(row =>
+                    {
+                        row.Spacing(10);
+                        row.RelativeItem().Element(x => BuildReceiptCopy(x, "Müştəri nüsxəsi"));
+                        row.RelativeItem().Element(x => BuildReceiptCopy(x, "Müəssisə nüsxəsi"));
+                    });
+
+                    page.Footer().Column(footer =>
+                    {
+                        footer.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten1);
+                        footer.Item().PaddingTop(5).AlignCenter().Text($"Uşaq Bağçası İdarəetmə Sistemi • {nowBaku:dd.MM.yyyy HH:mm}").FontSize(9).FontColor(Colors.Grey.Darken1);
+                    });
+                });
+            }).GeneratePdf();
+
+            return (pdfBytes, fileName);
+        }
+
+        public async Task DeletePaymentAsync(int paymentId)
+        {
+            var payment = await _unitOfWork.Payments.GetByIdAsync(paymentId)
+                ?? throw new EntityNotFoundException($"{paymentId} ID-li ödəniş tapılmadı.");
+
+            await _unitOfWork.Payments.RemoveAsync(payment);
+            await _unitOfWork.SaveChangesAsync();
         }
 
         /// <summary>
@@ -307,5 +485,32 @@ namespace App.Business.Services.Implementations
                 DebtCount = list.Count(p => p.Status == PaymentStatus.Debt)
             };
         }
+
+        private static TimeZoneInfo GetBakuTimeZone()
+        {
+            try { return TimeZoneInfo.FindSystemTimeZoneById("Azerbaijan Standard Time"); }
+            catch
+            {
+                try { return TimeZoneInfo.FindSystemTimeZoneById("Asia/Baku"); }
+                catch { return TimeZoneInfo.Utc; }
+            }
+        }
+
+        private static string MonthNameAz(int month) => month switch
+        {
+            1 => "yanvar",
+            2 => "fevral",
+            3 => "mart",
+            4 => "aprel",
+            5 => "may",
+            6 => "iyun",
+            7 => "iyul",
+            8 => "avqust",
+            9 => "sentyabr",
+            10 => "oktyabr",
+            11 => "noyabr",
+            12 => "dekabr",
+            _ => month.ToString()
+        };
     }
 }

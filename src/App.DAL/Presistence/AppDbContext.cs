@@ -23,7 +23,9 @@ namespace App.DAL.Presistence
         public DbSet<Attendance> Attendances { get; set; }
         public DbSet<ScheduleConfig> ScheduleConfigs { get; set; }
         public DbSet<Payment> Payments { get; set; }
+        public DbSet<Cashbox> Cashboxes { get; set; }
         public DbSet<SMSNotification> SMSNotifications { get; set; }
+        public DbSet<GroupLog> GroupLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

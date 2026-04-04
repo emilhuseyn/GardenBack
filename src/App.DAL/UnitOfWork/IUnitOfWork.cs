@@ -8,7 +8,9 @@ namespace App.DAL.UnitOfWork
         IChildRepository Children { get; }
         IAttendanceRepository Attendances { get; }
         IPaymentRepository Payments { get; }
+        ICashboxRepository Cashboxes { get; }
         IGroupRepository Groups { get; }
+        IGroupLogRepository GroupLogs { get; }
         IDivisionRepository Divisions { get; }
         IScheduleConfigRepository ScheduleConfigs { get; }
         AppDbContext Context { get; }

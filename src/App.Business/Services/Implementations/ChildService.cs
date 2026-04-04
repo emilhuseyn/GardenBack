@@ -39,6 +39,16 @@ namespace App.Business.Services.Implementations
             await _unitOfWork.Children.AddAsync(child);
             await _unitOfWork.SaveChangesAsync();
 
+            await _unitOfWork.GroupLogs.AddAsync(new GroupLog
+            {
+                GroupId = child.GroupId,
+                ChildId = child.Id,
+                ActionType = GroupLogActionType.ChildAdded,
+                Message = $"Uşaq əlavə olundu: {child.FirstName} {child.LastName}",
+                ActionDate = DateTime.UtcNow
+            });
+            await _unitOfWork.SaveChangesAsync();
+
             var created = await _unitOfWork.Children.GetByIdAsync(
                 c => c.Id == child.Id,
                 c => c.Group,
@@ -63,7 +73,9 @@ namespace App.Business.Services.Implementations
             if (dto.MonthlyFee.HasValue) child.MonthlyFee = dto.MonthlyFee.Value;
             if (dto.PaymentDay.HasValue) child.PaymentDay = dto.PaymentDay.Value;
             if (dto.ParentFullName != null) child.ParentFullName = dto.ParentFullName;
+            if (dto.SecondParentFullName != null) child.SecondParentFullName = dto.SecondParentFullName;
             if (dto.ParentPhone != null) child.ParentPhone = dto.ParentPhone;
+            if (dto.SecondParentPhone != null) child.SecondParentPhone = dto.SecondParentPhone;
             if (dto.ParentEmail != null) child.ParentEmail = dto.ParentEmail;
             if (dto.FaceIdToken != null) child.FaceIdToken = dto.FaceIdToken;
 
@@ -124,14 +136,25 @@ namespace App.Business.Services.Implementations
                 query = query.Where(c => c.ScheduleType == schedType);
 
             var totalCount = query.Count();
-            var pageSize = Math.Clamp(filter.PageSize, 1, 100);
-            var page = Math.Max(filter.Page, 1);
-            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
-            var items = query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+            // PageSize <= 0 göndərildikdə bütün nəticələr qaytar
+            List<Child> items;
+            int pageSize, page, totalPages;
+
+            if (filter.PageSize <= 0)
+            {
+                items      = query.ToList();
+                pageSize   = totalCount == 0 ? 1 : totalCount;
+                page       = 1;
+                totalPages = 1;
+            }
+            else
+            {
+                pageSize   = filter.PageSize;
+                page       = Math.Max(filter.Page, 1);
+                totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+                items      = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            }
 
             return new PagedResponse<ChildResponse>
             {
@@ -154,6 +177,16 @@ namespace App.Business.Services.Implementations
                 ?? throw new EntityNotFoundException($"{id} ID-li uşaq tapılmadı.");
 
             child.Status = ChildStatus.Active;
+
+            await _unitOfWork.GroupLogs.AddAsync(new GroupLog
+            {
+                GroupId = child.GroupId,
+                ChildId = child.Id,
+                ActionType = GroupLogActionType.ChildReturned,
+                Message = $"Uşaq qrupa geri qaytarıldı: {child.FirstName} {child.LastName}",
+                ActionDate = DateTime.UtcNow
+            });
+
             await _unitOfWork.Children.UpdateAsync(child);
             await _unitOfWork.SaveChangesAsync();
         }
@@ -167,6 +200,17 @@ namespace App.Business.Services.Implementations
                 ?? throw new EntityNotFoundException($"{id} ID-li uşaq tapılmadı.");
 
             child.Status = ChildStatus.Inactive;
+            var actionDate = DateTime.UtcNow;
+
+            await _unitOfWork.GroupLogs.AddAsync(new GroupLog
+            {
+                GroupId = child.GroupId,
+                ChildId = child.Id,
+                ActionType = GroupLogActionType.ChildRemoved,
+                Message = $"Uşaq çıxarıldı: {child.FirstName} {child.LastName}",
+                ActionDate = actionDate
+            });
+
             await _unitOfWork.Children.UpdateAsync(child);
             await _unitOfWork.SaveChangesAsync();
         }
@@ -176,6 +220,18 @@ namespace App.Business.Services.Implementations
         /// </summary>
         public async Task DeleteChildAsync(int id)
         {
+            var child = await _unitOfWork.Children.GetByIdAsync(id)
+                ?? throw new EntityNotFoundException($"{id} ID-li uşaq tapılmadı.");
+
+            await _unitOfWork.GroupLogs.AddAsync(new GroupLog
+            {
+                GroupId = child.GroupId,
+                ChildId = child.Id,
+                ActionType = GroupLogActionType.ChildRemoved,
+                Message = $"Uşaq silindi: {child.FirstName} {child.LastName}",
+                ActionDate = DateTime.UtcNow
+            });
+
             await _unitOfWork.Children.SoftDeleteAsync(id);
             await _unitOfWork.SaveChangesAsync();
         }
@@ -200,6 +256,17 @@ namespace App.Business.Services.Implementations
                 if (child != null)
                 {
                     child.Status = ChildStatus.Inactive;
+                    var actionDate = DateTime.UtcNow;
+
+                    await _unitOfWork.GroupLogs.AddAsync(new GroupLog
+                    {
+                        GroupId = child.GroupId,
+                        ChildId = child.Id,
+                        ActionType = GroupLogActionType.ChildRemoved,
+                        Message = $"Uşaq çıxarıldı: {child.FirstName} {child.LastName}",
+                        ActionDate = actionDate
+                    });
+
                     await _unitOfWork.Children.UpdateAsync(child);
                 }
             }
@@ -217,6 +284,16 @@ namespace App.Business.Services.Implementations
                 if (child != null)
                 {
                     child.Status = ChildStatus.Active;
+
+                    await _unitOfWork.GroupLogs.AddAsync(new GroupLog
+                    {
+                        GroupId = child.GroupId,
+                        ChildId = child.Id,
+                        ActionType = GroupLogActionType.ChildReturned,
+                        Message = $"Uşaq qrupa geri qaytarıldı: {child.FirstName} {child.LastName}",
+                        ActionDate = DateTime.UtcNow
+                    });
+
                     await _unitOfWork.Children.UpdateAsync(child);
                 }
             }
@@ -230,6 +307,19 @@ namespace App.Business.Services.Implementations
         {
             foreach (var id in ids)
             {
+                var child = await _unitOfWork.Children.GetByIdAsync(id);
+                if (child != null)
+                {
+                    await _unitOfWork.GroupLogs.AddAsync(new GroupLog
+                    {
+                        GroupId = child.GroupId,
+                        ChildId = child.Id,
+                        ActionType = GroupLogActionType.ChildRemoved,
+                        Message = $"Uşaq silindi: {child.FirstName} {child.LastName}",
+                        ActionDate = DateTime.UtcNow
+                    });
+                }
+
                 await _unitOfWork.Children.SoftDeleteAsync(id);
             }
             await _unitOfWork.SaveChangesAsync();

@@ -72,6 +72,26 @@ namespace App.DAL.Presistence
                 context.ScheduleConfigs.AddRange(fullDay, halfDay);
                 await context.SaveChangesAsync();
             }
+
+            if (!context.Cashboxes.Any())
+            {
+                context.Cashboxes.AddRange(
+                    new Cashbox
+                    {
+                        Name = "Əsas Nəğd Kassa",
+                        Type = CashboxType.Cash,
+                        IsActive = true
+                    },
+                    new Cashbox
+                    {
+                        Name = "Əsas Kart Hesabı",
+                        Type = CashboxType.CardAccount,
+                        AccountNumber = "AZ00XXXX000000000000000001",
+                        IsActive = true
+                    });
+
+                await context.SaveChangesAsync();
+            }
         }
     }
 }

@@ -51,4 +51,14 @@ namespace App.Business.DTOs.Groups
     {
         public string TeacherId { get; set; } = string.Empty;
     }
+
+    public class GroupLogResponse
+    {
+        public int Id { get; set; }
+        public int? GroupId { get; set; }
+        public int? ChildId { get; set; }
+        public string ActionType { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public DateTime ActionDate { get; set; }
+    }
 }

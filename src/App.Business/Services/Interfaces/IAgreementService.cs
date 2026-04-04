@@ -7,5 +7,11 @@ namespace App.Business.Services.Interfaces
         /// Returns the file bytes and a suggested filename.
         /// </summary>
         Task<(byte[] FileBytes, string FileName)> GenerateAgreementAsync(int childId);
+
+        /// <summary>
+        /// Generates a filled contract DOC for the given child.
+        /// Returns the file bytes and a suggested filename.
+        /// </summary>
+        Task<(byte[] FileBytes, string FileName)> GenerateContractAsync(int childId);
     }
 }

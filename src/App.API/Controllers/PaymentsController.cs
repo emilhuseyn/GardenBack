@@ -76,6 +76,14 @@ namespace App.API.Controllers
             return Ok(ApiResponse<MonthlyCashReport>.SuccessResponse(result));
         }
 
+        [HttpGet("{id}/receipt")]
+        [Authorize(Policy = "PaymentView")]
+        public async Task<IActionResult> DownloadReceipt(int id)
+        {
+            var (fileBytes, fileName) = await _paymentService.GeneratePaymentReceiptPdfAsync(id);
+            return File(fileBytes, "application/pdf", fileName);
+        }
+
         // Administrator + Mühasib — yazma əməliyyatları
         [HttpPost("record")]
         public async Task<IActionResult> RecordPayment([FromBody] RecordPaymentRequest dto)
@@ -100,6 +108,13 @@ namespace App.API.Controllers
         {
             var result = await _paymentService.ApplyDiscountAsync(id, dto);
             return Ok(ApiResponse<PaymentResponse>.SuccessResponse(result, "Endirim tətbiq edildi."));
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeletePayment(int id)
+        {
+            await _paymentService.DeletePaymentAsync(id);
+            return Ok(ApiResponse<string>.SuccessResponse("Ödəniş silindi."));
         }
     }
 }

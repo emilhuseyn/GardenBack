@@ -113,5 +113,13 @@ namespace App.API.Controllers
             var (fileBytes, fileName) = await _agreementService.GenerateAgreementAsync(id);
             return File(fileBytes, "application/msword", fileName);
         }
+
+        [HttpGet("{id}/contract")]
+        [Authorize(Policy = "AdminOrAdmission")]
+        public async Task<IActionResult> DownloadContract(int id)
+        {
+            var (fileBytes, fileName) = await _agreementService.GenerateContractAsync(id);
+            return File(fileBytes, "application/msword", fileName);
+        }
     }
 }

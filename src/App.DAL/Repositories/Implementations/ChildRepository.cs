@@ -13,6 +13,9 @@ namespace App.DAL.Repositories.Abstractions
         public async Task<IEnumerable<Child>> GetChildrenWithDetailsAsync()
         {
             return await DbSet
+                .IgnoreQueryFilters()
+                .Where(c => !c.IsDeleted)
+                .AsSplitQuery()
                 .Include(c => c.Group)
                     .ThenInclude(g => g.Division)
                 .Include(c => c.Group)
@@ -37,13 +40,17 @@ namespace App.DAL.Repositories.Abstractions
                 .Where(c => c.FirstName.ToLower().Contains(term)
                     || c.LastName.ToLower().Contains(term)
                     || c.ParentFullName.ToLower().Contains(term)
-                    || c.ParentPhone.Contains(term))
+                    || (c.SecondParentFullName != null && c.SecondParentFullName.ToLower().Contains(term))
+                    || c.ParentPhone.Contains(term)
+                    || (c.SecondParentPhone != null && c.SecondParentPhone.Contains(term)))
                 .ToListAsync();
         }
 
         public async Task<IEnumerable<Child>> GetActiveChildrenAsync()
         {
             return await DbSet
+                .IgnoreQueryFilters()
+                .Where(c => !c.IsDeleted)
                 .Where(c => c.Status == ChildStatus.Active)
                 .Include(c => c.Group)
                 .ToListAsync();

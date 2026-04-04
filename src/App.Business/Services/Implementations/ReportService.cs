@@ -22,21 +22,25 @@ namespace App.Business.Services.Implementations
         /// </summary>
         public async Task<StatisticsSummaryResponse> GetStatisticsSummaryAsync()
         {
-            var activeChildren = await _unitOfWork.Children.GetActiveChildrenAsync();
-            var childList = activeChildren.ToList();
+            var childList = (await _unitOfWork.Children.GetAllAsync(c => c.Status == ChildStatus.Active))
+                .ToList();
             var groups = await _unitOfWork.Groups.GetGroupsWithDetailsAsync();
             var divisions = await _unitOfWork.Divisions.GetAllAsync(d => true, d => d.Groups);
 
-            var byDivision = new List<DivisionChildCount>();
-            foreach (var div in divisions)
-            {
-                var divGroupIds = div.Groups.Select(g => g.Id).ToHashSet();
-                byDivision.Add(new DivisionChildCount
+            var groupToDivision = groups
+                .ToDictionary(g => g.Id, g => g.Division?.Name ?? "Bölmə təyin edilməyib");
+
+            var byDivision = childList
+                .GroupBy(c => groupToDivision.TryGetValue(c.GroupId, out var divisionName)
+                    ? divisionName
+                    : "Bölmə təyin edilməyib")
+                .Select(g => new DivisionChildCount
                 {
-                    DivisionName = div.Name,
-                    ChildCount = childList.Count(c => divGroupIds.Contains(c.GroupId))
-                });
-            }
+                    DivisionName = g.Key,
+                    ChildCount = g.Count()
+                })
+                .OrderByDescending(x => x.ChildCount)
+                .ToList();
 
             return new StatisticsSummaryResponse
             {
@@ -48,6 +52,7 @@ namespace App.Business.Services.Implementations
                 ByDivision = byDivision
             };
         }
+
 
         /// <summary>
         /// Gets per-division statistics.

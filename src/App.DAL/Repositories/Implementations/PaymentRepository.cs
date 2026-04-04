@@ -17,6 +17,7 @@ namespace App.DAL.Repositories.Abstractions
                 .OrderByDescending(p => p.Year)
                 .ThenByDescending(p => p.Month)
                 .Include(p => p.Child)
+                .Include(p => p.Cashbox)
                 .ToListAsync();
         }
 
@@ -27,6 +28,7 @@ namespace App.DAL.Repositories.Abstractions
                 .Include(p => p.Child)
                     .ThenInclude(c => c.Group)
                         .ThenInclude(g => g.Division)
+                .Include(p => p.Cashbox)
                 .OrderByDescending(p => p.Year)
                 .ThenByDescending(p => p.Month)
                 .ToListAsync();
@@ -38,6 +40,7 @@ namespace App.DAL.Repositories.Abstractions
                 .Where(p => p.Month == month && p.Year == year)
                 .Include(p => p.Child)
                     .ThenInclude(c => c.Group)
+                .Include(p => p.Cashbox)
                 .ToListAsync();
         }
 
@@ -48,6 +51,7 @@ namespace App.DAL.Repositories.Abstractions
             return await DbSet
                 .Where(p => p.PaymentDate >= dateTime && p.PaymentDate < nextDay)
                 .Include(p => p.Child)
+                .Include(p => p.Cashbox)
                 .ToListAsync();
         }
 
@@ -56,6 +60,7 @@ namespace App.DAL.Repositories.Abstractions
             return await DbSet
                 .Where(p => p.Month == month && p.Year == year && p.Child.GroupId == groupId)
                 .Include(p => p.Child)
+                .Include(p => p.Cashbox)
                 .ToListAsync();
         }
 
@@ -75,6 +80,7 @@ namespace App.DAL.Repositories.Abstractions
                 .Include(p => p.Child)
                     .ThenInclude(c => c.Group)
                         .ThenInclude(g => g.Division)
+                .Include(p => p.Cashbox)
                 .AsQueryable();
 
             if (childId.HasValue)

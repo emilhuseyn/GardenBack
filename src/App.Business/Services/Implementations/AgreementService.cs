@@ -4,6 +4,8 @@ using App.DAL.UnitOfWork;
 using Microsoft.Extensions.Hosting;
 using Spire.Doc;
 using Spire.Doc.Documents;
+using Spire.Doc.Fields;
+using System.Text.RegularExpressions;
 using System.Text;
 
 namespace App.Business.Services.Implementations
@@ -49,7 +51,6 @@ namespace App.Business.Services.Implementations
             var monthAz    = AzMonths[date.Month - 1];
             var monthEn    = EnMonths[date.Month - 1];
             var year       = date.Year.ToString();
-            var agreementNo = childId.ToString("D3");
             var parentName  = child.ParentFullName;
             var childName   = $"{child.FirstName} {child.LastName}";
             var ageGroup    = child.Group.AgeCategory.Trim();
@@ -63,7 +64,7 @@ namespace App.Business.Services.Implementations
 
             // ── Azərbaycanca hissə: sadə əvəzetmələr ───────────────────────
             ReplaceAll(doc, "«    »_________ 2026 il",    $"«{day}» {monthAz} {year} il");
-            ReplaceAll(doc, "Tarixli _________N°",        $"Tarixli {agreementNo} N°");
+            ReplaceAll(doc, "Tarixli _________N°",        "Tarixli _________N°");
             ReplaceAll(doc, "«           » 2026 - ci il", $"«{day}» {monthAz} {year} - ci il");
             ReplaceAll(doc, "(_______) manatı",           $"({fee}) manatı");
 
@@ -79,12 +80,20 @@ namespace App.Business.Services.Implementations
             ReplaceAll(doc, "ogluna( qızına)          yaş", $"ogluna( qızına) {ageGroup} yaş");
 
             // ── İngilis hissəsi ───────────────────────────────────────────
-            ReplaceAll(doc, "AGREEMENT No. _________",      $"AGREEMENT No. {agreementNo}");
+            ReplaceAll(doc, "AGREEMENT No. _________",      "AGREEMENT No. _________");
             ReplaceAll(doc, "dated «      » _________",     $"dated «{day}» {monthEn}");
+            ReplaceAll(doc, "APPENDIX No. 1 to the AGREEMENT No. dated ", $"APPENDIX No. 1 to the AGREEMENT No. dated {day}/{monthEn}/{year} ");
+            FillDateBeforeYearInLine(doc, "Baku city", "/2026", $"{day}/{monthEn}");
 
             // Valideyn adı (EN): 35 alt xətt "in order to render..." əvvəlindən
             ReplaceAll(doc, "___________________________________ in order to render",
                 $"{parentNameEn} in order to render");
+
+            // Valideyn adı (EN): placeholder olan sətrlər
+            ReplaceAll(doc, "_______________________", parentNameEn);
+            FillLineBeforeAnchor(doc, "in order to render", parentNameEn);
+            FillPreviousUnderscoreLine(doc, "in order to render", parentNameEn);
+            TrimTextBeforeAnchor(doc, "in order to render", parentNameEn);
 
             // Uşaq adı (EN): 14 alt xətt + "  in  the age group of"
             ReplaceAll(doc, "______________  in  the age group of",
@@ -99,6 +108,81 @@ namespace App.Business.Services.Implementations
             doc.SaveToStream(output, FileFormat.Doc);
 
             var fileName = $"Razilashma_{child.FirstName}_{child.LastName}_{childId}.doc";
+            return (output.ToArray(), fileName);
+        }
+
+        public async Task<(byte[] FileBytes, string FileName)> GenerateContractAsync(int childId)
+        {
+            var child = await _unitOfWork.Children.GetByIdAsync(
+                c => c.Id == childId,
+                c => c.Group)
+                ?? throw new EntityNotFoundException($"{childId} ID-li uşaq tapılmadı.");
+
+            var templatePath = Path.Combine(_env.ContentRootPath, "Templates", "Kontrakt.doc");
+            if (!File.Exists(templatePath))
+                throw new FileNotFoundException("Kontrakt şablonu tapılmadı.", templatePath);
+
+            var date = child.RegistrationDate.ToLocalTime();
+            var day = date.Day.ToString("D2");
+            var monthAz = AzMonths[date.Month - 1];
+            var monthEn = EnMonths[date.Month - 1];
+            var year = date.Year.ToString();
+            var parentName = child.ParentFullName;
+            var childName = $"{child.FirstName} {child.LastName}";
+            var parentNameEn = ToAscii(parentName);
+            var childNameEn = ToAscii(childName);
+
+            var templateBytes = await File.ReadAllBytesAsync(templatePath);
+            using var input = new MemoryStream(templateBytes);
+            using var doc = new Document();
+            doc.LoadFromStream(input, FileFormat.Doc);
+
+            ReplaceAll(doc, "Bakı şəhəri                     “____”_ ___  2026-ci il", $"Bakı şəhəri                     “{day}” {monthAz}  {year}-ci il");
+            ReplaceAll(doc, "Baku city           ___/____/  2026", $"Baku city           {day}/{monthEn}/2026");
+            ReplaceAll(doc, "Baku city							/2026", $"Baku city							{day}/{monthEn}/2026");
+            FillDateBeforeYearInLine(doc, "Baku city", "/2026", $"{day}/{monthEn}");
+
+            ReplaceAll(doc, "<Valideynin soyad ad Ata adini yaz>", parentName);
+            ReplaceAll(doc, "<Uşağın soyad adı>", childName);
+            ReplaceAll(doc, "<Child full name>", childNameEn);
+
+            ReplaceAll(doc,
+                "__________________________________________________________ şəxsində valideyn və ya qanuni nümayəndə (bundan sonra “Valideyn”",
+                $"{parentName} şəxsində valideyn və ya qanuni nümayəndə (bundan sonra “Valideyn”");
+
+            ReplaceAll(doc,
+                "__________________________________________________________ represented by parent or legal representative (hereinafter referred to as “Parent”",
+                $"{parentNameEn} represented by parent or legal representative (hereinafter referred to as “Parent”");
+
+            ReplaceAll(doc,
+                "the parent or a legal representative ____________________________________ (hereinafter referred to as “Parent”)",
+                $"the parent or a legal representative {parentNameEn} (hereinafter referred to as “Parent”)");
+
+            ReplaceAll(doc,
+                "________________________________________ məktəbəqədər təlim-tərbiyə xidmətləri göstərir, Valideyn isə göstərilən bu xidmətləri qəbul",
+                $"{childName} məktəbəqədər təlim-tərbiyə xidmətləri göstərir, Valideyn isə göstərilən bu xidmətləri qəbul");
+
+            ReplaceAll(doc,
+                "state standards of preschool education for a child of a PARENT (or a child who is sponsored)_____________________________________ and the PARENT accepting",
+                $"state standards of preschool education for a child of a PARENT (or a child who is sponsored){childNameEn} and the PARENT accepting");
+
+            ReplaceAll(doc,
+                "according to the state standards of preschool education for a child of a PARENT (or a child who is sponsored)_____________________________________ and the PARENT accepting these services, undertakes to pays to the KINDERGARTEN for",
+                $"according to the state standards of preschool education for a child of a PARENT (or a child who is sponsored){childNameEn} and the PARENT accepting these services, undertakes to pays to the KINDERGARTEN for");
+
+            FillParentNameAz(doc, parentName);
+            FillChildNameAz(doc, childName);
+            FillLineBeforeAnchor(doc, "şəxsində valideyn və ya qanuni nümayəndə", parentName);
+            FillLineBeforeAnchor(doc, "represented by parent or legal representative", parentNameEn);
+            FillLineBeforeAnchor(doc, "məktəbəqədər təlim-tərbiyə xidmətləri göstərir, Valideyn isə göstərilən bu xidmətləri qəbul", childName);
+            FillLineBeforeAnchor(doc, "and the PARENT accepting", childNameEn);
+            FillLineBeforeAnchor(doc, "and the PARENT accepting these services, undertakes to pays to the KINDERGARTEN for", childNameEn);
+            FillPreviousUnderscoreLine(doc, "and the PARENT accepting these services, undertakes to pays to the KINDERGARTEN for", childNameEn);
+
+            using var output = new MemoryStream();
+            doc.SaveToStream(output, FileFormat.Doc);
+
+            var fileName = $"Kontrakt_{child.FirstName}_{child.LastName}_{childId}.doc";
             return (output.ToArray(), fileName);
         }
 
@@ -132,6 +216,30 @@ namespace App.Business.Services.Implementations
                     InsertAt(parent, idx, newPara);
                 }
                 // Əvvəlki abzas artıq valideyn adıdır → skip
+            }
+        }
+
+        private static void TrimTextBeforeAnchor(Document doc, string anchor, string value)
+        {
+            var selections = doc.FindAllString(anchor, false, false);
+            if (selections == null || selections.Length == 0)
+                return;
+
+            foreach (var selection in selections)
+            {
+                var range = selection.GetAsOneRange();
+                if (range.Owner is not Paragraph paragraph)
+                    continue;
+
+                var text = paragraph.Text ?? string.Empty;
+                var idx = text.IndexOf(anchor, StringComparison.OrdinalIgnoreCase);
+                if (idx <= 0)
+                    continue;
+
+                var updated = text[idx..].TrimStart();
+                paragraph.ChildObjects.Clear();
+                paragraph.AppendText(updated);
+                ApplyParagraphFont(paragraph, "Times New Roman");
             }
         }
 
@@ -188,6 +296,7 @@ namespace App.Business.Services.Implementations
             {
                 var r = sel.GetAsOneRange();
                 r.Text = newValue;
+                r.CharacterFormat.FontName = "Times New Roman";
             }
         }
 
@@ -216,6 +325,111 @@ namespace App.Business.Services.Implementations
                 coll.Add(para);
             else
                 coll.Insert(index, para);
+        }
+
+        private static void FillLineBeforeAnchor(Document doc, string anchor, string value)
+        {
+            var selections = doc.FindAllString(anchor, false, false);
+            if (selections == null || selections.Length == 0)
+                return;
+
+            foreach (var selection in selections)
+            {
+                var range = selection.GetAsOneRange();
+                if (range.Owner is not Paragraph paragraph)
+                    continue;
+
+                var text = paragraph.Text ?? string.Empty;
+                if (!text.Contains("_") || text.Contains(value, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var start = text.IndexOf('_');
+                var end = text.LastIndexOf('_');
+                if (start < 0 || end < start)
+                    continue;
+
+                var updated = text[..start] + value + text[(end + 1)..];
+
+                paragraph.ChildObjects.Clear();
+                paragraph.AppendText(updated);
+                ApplyParagraphFont(paragraph, "Times New Roman");
+            }
+        }
+
+        private static void FillPreviousUnderscoreLine(Document doc, string anchor, string value)
+        {
+            var selections = doc.FindAllString(anchor, false, false);
+            if (selections == null || selections.Length == 0)
+                return;
+
+            foreach (var selection in selections)
+            {
+                var range = selection.GetAsOneRange();
+                if (range.Owner is not Paragraph paragraph)
+                    continue;
+
+                var parent = paragraph.Owner;
+                var idx = IndexInParent(parent, paragraph);
+                if (idx <= 0)
+                    continue;
+
+                var prevObj = GetChildAt(parent, idx - 1);
+                if (prevObj is not Paragraph prevPara)
+                    continue;
+
+                var prevText = prevPara.Text ?? string.Empty;
+                if (!prevText.Contains("_") || prevText.Contains(value, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var start = prevText.IndexOf('_');
+                var end = prevText.LastIndexOf('_');
+                if (start < 0 || end < start)
+                    continue;
+
+                var updated = prevText[..start] + value + prevText[(end + 1)..];
+
+                prevPara.ChildObjects.Clear();
+                prevPara.AppendText(updated);
+                ApplyParagraphFont(prevPara, "Times New Roman");
+            }
+        }
+
+        private static void ApplyParagraphFont(Paragraph paragraph, string fontName)
+        {
+            foreach (DocumentObject child in paragraph.ChildObjects)
+            {
+                if (child is TextRange tr)
+                    tr.CharacterFormat.FontName = fontName;
+            }
+        }
+
+        private static void FillDateBeforeYearInLine(Document doc, string startsWith, string yearPart, string dateValue)
+        {
+            foreach (Section section in doc.Sections)
+            {
+                foreach (DocumentObject obj in section.Body.ChildObjects)
+                {
+                    if (obj is not Paragraph paragraph)
+                        continue;
+
+                    var text = paragraph.Text ?? string.Empty;
+                    if (!text.Contains(startsWith, StringComparison.OrdinalIgnoreCase) || !text.Contains(yearPart, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    var updated = Regex.Replace(
+                        text,
+                        @"(Baku\s*city\s*)(?:[_\s\t]*)(/2026)",
+                        m => $"{m.Groups[1].Value}{dateValue}{m.Groups[2].Value}",
+                        RegexOptions.IgnoreCase);
+
+                    if (updated == text)
+                        continue;
+
+                    paragraph.ChildObjects.Clear();
+                    paragraph.AppendText(updated);
+                    ApplyParagraphFont(paragraph, "Times New Roman");
+                }
+            }
         }
 
         private static string ToAscii(string value)

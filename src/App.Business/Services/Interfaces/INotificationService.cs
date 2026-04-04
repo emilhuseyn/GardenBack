@@ -10,9 +10,6 @@ namespace App.Business.Services.Interfaces
         /// <summary>Bütün borclu valideynlərə toplu xatırlatma göndərir.</summary>
         Task<SendResult> SendBulkRemindersToDebtorsAsync();
 
-        /// <summary>Gecikmiş ödənişləri yoxlayır və WhatsApp bildirişi göndərir.</summary>
-        Task<SendResult> SendOverduePaymentAlertsAsync();
-
         /// <summary>Yarın ödəniş günü olan uşaqların valideynlərinə xatırlatma göndərir.</summary>
         Task<SendResult> SendPaymentDueRemindersAsync();
 

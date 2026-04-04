@@ -31,6 +31,16 @@ namespace App.Business.Services.Interfaces
         Task<PaymentResponse> ApplyDiscountAsync(int paymentId, DiscountRequest dto);
 
         /// <summary>
+        /// Generates a PDF receipt for a payment.
+        /// </summary>
+        Task<(byte[] FileBytes, string FileName)> GeneratePaymentReceiptPdfAsync(int paymentId);
+
+        /// <summary>
+        /// Soft deletes a payment by id.
+        /// </summary>
+        Task DeletePaymentAsync(int paymentId);
+
+        /// <summary>
         /// Gets all children with unpaid debts.
         /// </summary>
         Task<IEnumerable<DebtorListItem>> GetDebtorsAsync();

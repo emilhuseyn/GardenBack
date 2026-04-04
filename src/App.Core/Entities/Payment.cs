@@ -13,6 +13,7 @@ namespace App.Core.Entities
         public decimal DiscountValue { get; set; }
         public decimal FinalAmount { get; set; }
         public decimal PaidAmount { get; set; }
+        public int? CashboxId { get; set; }
         public DateTime? PaymentDate { get; set; }
         public PaymentStatus Status { get; set; } = PaymentStatus.Debt;
         public string? Notes { get; set; }
@@ -21,5 +22,6 @@ namespace App.Core.Entities
         public string? RecordedById { get; set; }
 
         public Child Child { get; set; } = null!;
+        public Cashbox? Cashbox { get; set; }
     }
 }

@@ -34,9 +34,17 @@ namespace App.Business.Validators
                 .NotEmpty().WithMessage("Valideynin tam adı tələb olunur.")
                 .MaximumLength(200);
 
+            RuleFor(x => x.SecondParentFullName)
+                .MaximumLength(200)
+                .When(x => x.SecondParentFullName != null);
+
             RuleFor(x => x.ParentPhone)
                 .NotEmpty().WithMessage("Valideynin telefon nömrəsi tələb olunur.")
                 .Matches(@"^\+994\d{9}$").WithMessage("Telefon Azərbaycan formatında olmalıdır (+994XXXXXXXXX).");
+
+            RuleFor(x => x.SecondParentPhone)
+                .Matches(@"^\+994\d{9}$").When(x => x.SecondParentPhone != null)
+                .WithMessage("İkinci valideynin telefonu Azərbaycan formatında olmalıdır (+994XXXXXXXXX).");
 
             RuleFor(x => x.ParentEmail)
                 .EmailAddress().When(x => !string.IsNullOrEmpty(x.ParentEmail))
@@ -70,6 +78,14 @@ namespace App.Business.Validators
             RuleFor(x => x.ParentPhone)
                 .Matches(@"^\+994\d{9}$").When(x => x.ParentPhone != null)
                 .WithMessage("Telefon Azərbaycan formatında olmalıdır (+994XXXXXXXXX).");
+
+            RuleFor(x => x.SecondParentPhone)
+                .Matches(@"^\+994\d{9}$").When(x => x.SecondParentPhone != null)
+                .WithMessage("İkinci valideynin telefonu Azərbaycan formatında olmalıdır (+994XXXXXXXXX).");
+
+            RuleFor(x => x.SecondParentFullName)
+                .MaximumLength(200)
+                .When(x => x.SecondParentFullName != null);
 
             RuleFor(x => x.ParentEmail)
                 .EmailAddress().When(x => !string.IsNullOrEmpty(x.ParentEmail));
