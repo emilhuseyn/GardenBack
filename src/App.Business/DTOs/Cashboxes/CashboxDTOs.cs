@@ -22,5 +22,6 @@ namespace App.Business.DTOs.Cashboxes
         public string Type { get; set; } = string.Empty;
         public string? AccountNumber { get; set; }
         public bool IsActive { get; set; }
+        public decimal Balance { get; set; }
     }
 }

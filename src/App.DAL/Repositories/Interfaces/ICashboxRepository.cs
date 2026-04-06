@@ -5,5 +5,7 @@ namespace App.DAL.Repositories.Interfaces
     public interface ICashboxRepository : IRepository<Cashbox>
     {
         Task<IEnumerable<Cashbox>> GetActiveCashboxesAsync();
+        Task<IEnumerable<Cashbox>> GetAllWithPaymentsAsync();
+        Task<Cashbox?> GetByIdWithPaymentsAsync(int id);
     }
 }

@@ -15,5 +15,15 @@ namespace App.DAL.Repositories.Abstractions
         {
             return await DbSet.Where(x => x.IsActive).ToListAsync();
         }
+
+        public async Task<IEnumerable<Cashbox>> GetAllWithPaymentsAsync()
+        {
+            return await DbSet.Include(x => x.Payments).ToListAsync();
+        }
+
+        public async Task<Cashbox?> GetByIdWithPaymentsAsync(int id)
+        {
+            return await DbSet.Include(x => x.Payments).FirstOrDefaultAsync(x => x.Id == id);
+        }
     }
 }

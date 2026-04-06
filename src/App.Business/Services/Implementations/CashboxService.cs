@@ -78,19 +78,27 @@ namespace App.Business.Services.Implementations
 
         public async Task<IEnumerable<CashboxResponse>> GetAllCashboxesAsync(bool onlyActive = false)
         {
-            var cashboxes = onlyActive
-                ? await _unitOfWork.Cashboxes.GetActiveCashboxesAsync()
-                : await _unitOfWork.Cashboxes.GetAllAsync();
+            var cashboxes = await _unitOfWork.Cashboxes.GetAllWithPaymentsAsync();
 
-            return _mapper.Map<IEnumerable<CashboxResponse>>(cashboxes);
+            if (onlyActive)
+                cashboxes = cashboxes.Where(x => x.IsActive);
+
+            return cashboxes.Select(c =>
+            {
+                var dto = _mapper.Map<CashboxResponse>(c);
+                dto.Balance = c.Payments.Sum(p => p.PaidAmount);
+                return dto;
+            });
         }
 
         public async Task<CashboxResponse> GetCashboxByIdAsync(int id)
         {
-            var cashbox = await _unitOfWork.Cashboxes.GetByIdAsync(id)
+            var cashbox = await _unitOfWork.Cashboxes.GetByIdWithPaymentsAsync(id)
                 ?? throw new EntityNotFoundException($"{id} ID-li kassa tapılmadı.");
 
-            return _mapper.Map<CashboxResponse>(cashbox);
+            var dto = _mapper.Map<CashboxResponse>(cashbox);
+            dto.Balance = cashbox.Payments.Sum(p => p.PaidAmount);
+            return dto;
         }
 
         public async Task DeactivateCashboxAsync(int id)
