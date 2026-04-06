@@ -99,6 +99,18 @@ namespace App.Business.Services.Implementations
                 g => g.Children)
                 ?? throw new EntityNotFoundException($"{id} ID-li qrup tapılmadı.");
 
+            // Müəllim yalnız öz qrupuna girə bilər
+            var role = _claimService.GetUserRole();
+            if (role == "Teacher")
+            {
+                var userId = _claimService.GetUserId();
+                var isPrimary = group.TeacherId == userId;
+                var isAssigned = await _unitOfWork.GroupTeachers.GetAsync(id, userId) != null;
+
+                if (!isPrimary && !isAssigned)
+                    throw new Core.Exceptions.UnauthorizedException("Bu qrupa giriş icazəniz yoxdur.");
+            }
+
             var response = _mapper.Map<GroupDetailResponse>(group);
 
             var groupTeachers = await _unitOfWork.GroupTeachers.GetByGroupAsync(id);
