@@ -5,8 +5,10 @@ using App.Core.Enums;
 using App.Core.Exceptions.Commons;
 using App.Core.Services;
 using App.DAL.UnitOfWork;
+using App.Shared.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace App.Business.Services.Implementations
 {
@@ -19,14 +21,16 @@ namespace App.Business.Services.Implementations
         private readonly IMapper _mapper;
         private readonly IDateTimeService _dt;
         private readonly UserManager<App.Core.Entities.Identity.User> _userManager;
+        private readonly IClaimService _claimService;
 
         public GroupService(IUnitOfWork unitOfWork, IMapper mapper, IDateTimeService dt,
-            UserManager<App.Core.Entities.Identity.User> userManager)
+            UserManager<App.Core.Entities.Identity.User> userManager, IClaimService claimService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _dt = dt;
             _userManager = userManager;
+            _claimService = claimService;
         }
 
         /// <summary>
@@ -115,6 +119,20 @@ namespace App.Business.Services.Implementations
         public async Task<IEnumerable<GroupResponse>> GetAllGroupsAsync()
         {
             var groups = await _unitOfWork.Groups.GetGroupsWithDetailsAsync();
+
+            var role = _claimService.GetUserRole();
+            if (role == "Teacher")
+            {
+                var userId = _claimService.GetUserId();
+
+                var assignedGroupIds = await _unitOfWork.Context.GroupTeachers
+                    .Where(gt => gt.UserId == userId)
+                    .Select(gt => gt.GroupId)
+                    .ToListAsync();
+
+                groups = groups.Where(g => g.TeacherId == userId || assignedGroupIds.Contains(g.Id));
+            }
+
             return _mapper.Map<IEnumerable<GroupResponse>>(groups);
         }
 
