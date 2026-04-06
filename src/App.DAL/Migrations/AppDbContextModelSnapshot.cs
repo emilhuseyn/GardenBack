@@ -124,6 +124,42 @@ namespace App.DAL.Migrations
                     b.ToTable("cashboxes", (string)null);
                 });
 
+            modelBuilder.Entity("App.Core.Entities.CashboxMonthlyBalance", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CashboxId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("OpeningBalance")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CashboxId");
+
+                    b.ToTable("CashboxMonthlyBalances");
+                });
+
             modelBuilder.Entity("App.Core.Entities.Child", b =>
                 {
                     b.Property<int>("Id")
@@ -718,6 +754,17 @@ namespace App.DAL.Migrations
                         .IsRequired();
 
                     b.Navigation("Child");
+                });
+
+            modelBuilder.Entity("App.Core.Entities.CashboxMonthlyBalance", b =>
+                {
+                    b.HasOne("App.Core.Entities.Cashbox", "Cashbox")
+                        .WithMany()
+                        .HasForeignKey("CashboxId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cashbox");
                 });
 
             modelBuilder.Entity("App.Core.Entities.Child", b =>
