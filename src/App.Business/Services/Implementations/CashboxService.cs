@@ -183,22 +183,34 @@ namespace App.Business.Services.Implementations
                 ?? throw new EntityNotFoundException($"{cashboxId} ID-li kassa tapılmadı.");
 
             var balances = await _unitOfWork.CashboxBalances.GetByCashboxAsync(cashboxId);
+            var balanceDict = balances.ToDictionary(b => (b.Month, b.Year));
 
-            return balances.Select(b =>
+            // Ödəniş olan aylar + açılış qalığı yazılmış ayları birləşdir
+            var paymentMonths = cashbox.Payments
+                .Select(p => (p.CreatedAt.Month, p.CreatedAt.Year))
+                .Distinct();
+
+            var allMonths = paymentMonths
+                .Union(balanceDict.Keys)
+                .OrderByDescending(x => x.Year)
+                .ThenByDescending(x => x.Month);
+
+            return allMonths.Select(key =>
             {
-                var monthlyIncome = cashbox.Payments
-                    .Where(p => p.CreatedAt.Month == b.Month && p.CreatedAt.Year == b.Year)
+                var openingBalance = balanceDict.TryGetValue(key, out var b) ? b.OpeningBalance : 0;
+                var monthlyIncome  = cashbox.Payments
+                    .Where(p => p.CreatedAt.Month == key.Month && p.CreatedAt.Year == key.Year)
                     .Sum(p => p.PaidAmount);
 
                 return new CashboxMonthlyBalanceResponse
                 {
                     CashboxId      = cashboxId,
                     CashboxName    = cashbox.Name,
-                    Month          = b.Month,
-                    Year           = b.Year,
-                    OpeningBalance = b.OpeningBalance,
+                    Month          = key.Month,
+                    Year           = key.Year,
+                    OpeningBalance = openingBalance,
                     MonthlyIncome  = monthlyIncome,
-                    TotalBalance   = b.OpeningBalance + monthlyIncome
+                    TotalBalance   = openingBalance + monthlyIncome
                 };
             });
         }
