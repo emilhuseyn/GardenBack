@@ -13,6 +13,7 @@ namespace App.Core.Entities
         public decimal MonthlyFee { get; set; }
         public int PaymentDay { get; set; } = 1;
         public DateTime RegistrationDate { get; set; } = DateTime.UtcNow;
+        public DateTime? DeactivationDate { get; set; }
         public ChildStatus Status { get; set; } = ChildStatus.Active;
         public string ParentFullName { get; set; } = string.Empty;
         public string? SecondParentFullName { get; set; }

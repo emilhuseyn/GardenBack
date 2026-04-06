@@ -9,8 +9,10 @@ namespace App.DAL.UnitOfWork
         IAttendanceRepository Attendances { get; }
         IPaymentRepository Payments { get; }
         ICashboxRepository Cashboxes { get; }
+        ICashboxOperationRepository CashboxOperations { get; }
         ICashboxMonthlyBalanceRepository CashboxBalances { get; }
         IGroupRepository Groups { get; }
+        IGroupTeacherRepository GroupTeachers { get; }
         IGroupLogRepository GroupLogs { get; }
         IDivisionRepository Divisions { get; }
         IScheduleConfigRepository ScheduleConfigs { get; }

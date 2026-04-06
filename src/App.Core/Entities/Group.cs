@@ -15,5 +15,6 @@ namespace App.Core.Entities
         public Division Division { get; set; } = null!;
         public User Teacher { get; set; } = null!;
         public ICollection<Child> Children { get; set; } = new List<Child>();
+        public ICollection<GroupTeacher> GroupTeachers { get; set; } = new List<GroupTeacher>();
     }
 }

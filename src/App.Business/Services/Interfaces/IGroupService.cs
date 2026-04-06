@@ -16,5 +16,8 @@ namespace App.Business.Services.Interfaces
         Task AssignTeacherAsync(int groupId, string teacherId);
         Task ChangeTeacherAsync(int groupId, string newTeacherId);
         Task DeleteGroupAsync(int id);
+        Task<IEnumerable<GroupTeacherResponse>> GetGroupTeachersAsync(int groupId);
+        Task AddGroupTeacherAsync(int groupId, string userId);
+        Task RemoveGroupTeacherAsync(int groupId, string userId);
     }
 }

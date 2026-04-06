@@ -1,6 +1,25 @@
-2026/03/18-12:44:59.976 14b98 Reusing MANIFEST C:\Users\Emil\Desktop\23\Garden\GardenBack\whatsapp-service\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
-2026/03/18-12:44:59.991 14b98 Recovering log #19
-2026/03/18-12:45:00.008 14b98 Reusing old log C:\Users\Emil\Desktop\23\Garden\GardenBack\whatsapp-service\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000019.log 
-2026/03/18-12:45:00.008 14b98 Delete type=2 #17
-2026/03/18-12:45:00.009 14b98 Delete type=2 #18
-2026/03/18-12:45:00.009 14b98 Delete type=2 #20
+2026/03/18-17:12:37.190 4864 Reusing MANIFEST C:\Users\Emil\Desktop\23\Garden\GardenBack\whatsapp-service\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/03/18-17:12:37.203 4864 Recovering log #19
+2026/03/18-17:12:37.229 4864 Reusing old log C:\Users\Emil\Desktop\23\Garden\GardenBack\whatsapp-service\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000019.log 
+2026/03/20-04:48:46.685 4864 Level-0 table #25: started
+2026/03/20-04:48:46.762 4864 Level-0 table #25: 1294898 bytes OK
+2026/03/20-04:48:46.771 4864 Delete type=0 #19
+2026/03/20-04:48:46.796 5190 Compacting 1@1 + 2@2 files
+2026/03/20-04:48:46.928 5190 Generated table #26@1: 49721 keys, 2206117 bytes
+2026/03/20-04:48:46.994 5190 Generated table #27@1: 46547 keys, 955601 bytes
+2026/03/20-04:48:46.994 5190 Compacted 1@1 + 2@2 files => 3161718 bytes
+2026/03/20-04:48:46.995 5190 compacted to: files[ 0 0 2 0 0 0 0 ]
+2026/03/20-06:33:47.461 5190 Level-0 table #29: started
+2026/03/20-06:33:47.511 5190 Level-0 table #29: 992812 bytes OK
+2026/03/20-06:33:47.513 5190 Delete type=2 #21
+2026/03/20-06:33:47.513 5190 Delete type=2 #22
+2026/03/20-06:33:47.513 5190 Delete type=0 #24
+2026/03/20-06:33:47.513 5190 Delete type=2 #25
+2026/03/20-06:33:48.392 4864 Compacting 1@1 + 2@2 files
+2026/03/20-06:33:48.494 4864 Generated table #30@1: 51829 keys, 2207925 bytes
+2026/03/20-06:33:48.539 4864 Generated table #31@1: 46088 keys, 947387 bytes
+2026/03/20-06:33:48.539 4864 Compacted 1@1 + 2@2 files => 3155312 bytes
+2026/03/20-06:33:48.539 4864 compacted to: files[ 0 0 2 0 0 0 0 ]
+2026/03/20-06:33:48.540 4864 Delete type=2 #26
+2026/03/20-06:33:48.540 4864 Delete type=2 #27
+2026/03/20-06:33:48.540 4864 Delete type=2 #29

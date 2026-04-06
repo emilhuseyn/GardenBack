@@ -160,6 +160,48 @@ namespace App.DAL.Migrations
                     b.ToTable("CashboxMonthlyBalances");
                 });
 
+            modelBuilder.Entity("App.Core.Entities.CashboxOperation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("CashboxId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<DateTime>("OperationDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CashboxId");
+
+                    b.ToTable("cashbox_operations", (string)null);
+                });
+
             modelBuilder.Entity("App.Core.Entities.Child", b =>
                 {
                     b.Property<int>("Id")
@@ -172,6 +214,9 @@ namespace App.DAL.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("DateOfBirth")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DeactivationDate")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("FaceIdToken")
@@ -372,6 +417,24 @@ namespace App.DAL.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("group_logs", (string)null);
+                });
+
+            modelBuilder.Entity("App.Core.Entities.GroupTeacher", b =>
+                {
+                    b.Property<int>("GroupId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("AssignedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("GroupId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("GroupTeachers");
                 });
 
             modelBuilder.Entity("App.Core.Entities.Identity.User", b =>
@@ -767,6 +830,17 @@ namespace App.DAL.Migrations
                     b.Navigation("Cashbox");
                 });
 
+            modelBuilder.Entity("App.Core.Entities.CashboxOperation", b =>
+                {
+                    b.HasOne("App.Core.Entities.Cashbox", "Cashbox")
+                        .WithMany("Operations")
+                        .HasForeignKey("CashboxId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Cashbox");
+                });
+
             modelBuilder.Entity("App.Core.Entities.Child", b =>
                 {
                     b.HasOne("App.Core.Entities.Group", "Group")
@@ -795,6 +869,25 @@ namespace App.DAL.Migrations
                     b.Navigation("Division");
 
                     b.Navigation("Teacher");
+                });
+
+            modelBuilder.Entity("App.Core.Entities.GroupTeacher", b =>
+                {
+                    b.HasOne("App.Core.Entities.Group", "Group")
+                        .WithMany("GroupTeachers")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("App.Core.Entities.Identity.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("App.Core.Entities.Payment", b =>
@@ -889,6 +982,8 @@ namespace App.DAL.Migrations
 
             modelBuilder.Entity("App.Core.Entities.Cashbox", b =>
                 {
+                    b.Navigation("Operations");
+
                     b.Navigation("Payments");
                 });
 
@@ -907,6 +1002,8 @@ namespace App.DAL.Migrations
             modelBuilder.Entity("App.Core.Entities.Group", b =>
                 {
                     b.Navigation("Children");
+
+                    b.Navigation("GroupTeachers");
                 });
 #pragma warning restore 612, 618
         }

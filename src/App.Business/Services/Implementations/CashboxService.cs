@@ -84,12 +84,18 @@ namespace App.Business.Services.Implementations
             if (onlyActive)
                 cashboxes = cashboxes.Where(x => x.IsActive);
 
-            return cashboxes.Select(c =>
+            var list = cashboxes.ToList();
+            var result = new List<CashboxResponse>();
+
+            foreach (var c in list)
             {
+                var operations = await _unitOfWork.CashboxOperations.GetByCashboxAsync(c.Id);
                 var dto = _mapper.Map<CashboxResponse>(c);
-                dto.Balance = c.Payments.Sum(p => p.PaidAmount);
-                return dto;
-            });
+                dto.Balance = CalculateCashboxBalance(c.Payments, operations);
+                result.Add(dto);
+            }
+
+            return result;
         }
 
         public async Task<CashboxResponse> GetCashboxByIdAsync(int id)
@@ -97,8 +103,9 @@ namespace App.Business.Services.Implementations
             var cashbox = await _unitOfWork.Cashboxes.GetByIdWithPaymentsAsync(id)
                 ?? throw new EntityNotFoundException($"{id} ID-li kassa tapılmadı.");
 
+            var operations = await _unitOfWork.CashboxOperations.GetByCashboxAsync(id);
             var dto = _mapper.Map<CashboxResponse>(cashbox);
-            dto.Balance = cashbox.Payments.Sum(p => p.PaidAmount);
+            dto.Balance = CalculateCashboxBalance(cashbox.Payments, operations);
             return dto;
         }
 
@@ -141,6 +148,14 @@ namespace App.Business.Services.Implementations
                 .Where(p => p.CreatedAt.Month == dto.Month && p.CreatedAt.Year == dto.Year)
                 .Sum(p => p.PaidAmount);
 
+            var monthlyOperations = await _unitOfWork.CashboxOperations.GetByCashboxAndMonthAsync(cashboxId, dto.Month, dto.Year);
+            var monthlyManualIncome = monthlyOperations
+                .Where(x => x.Type == CashboxOperationType.Income)
+                .Sum(x => x.Amount);
+            var monthlyExpense = monthlyOperations
+                .Where(x => x.Type == CashboxOperationType.Expense)
+                .Sum(x => x.Amount);
+
             return new CashboxMonthlyBalanceResponse
             {
                 CashboxId     = cashboxId,
@@ -148,8 +163,9 @@ namespace App.Business.Services.Implementations
                 Month         = dto.Month,
                 Year          = dto.Year,
                 OpeningBalance = dto.OpeningBalance,
-                MonthlyIncome  = monthlyIncome,
-                TotalBalance   = dto.OpeningBalance + monthlyIncome
+                MonthlyIncome  = monthlyIncome + monthlyManualIncome,
+                MonthlyExpense = monthlyExpense,
+                TotalBalance   = dto.OpeningBalance + monthlyIncome + monthlyManualIncome - monthlyExpense
             };
         }
 
@@ -165,6 +181,14 @@ namespace App.Business.Services.Implementations
                 .Where(p => p.CreatedAt.Month == month && p.CreatedAt.Year == year)
                 .Sum(p => p.PaidAmount);
 
+            var monthlyOperations = await _unitOfWork.CashboxOperations.GetByCashboxAndMonthAsync(cashboxId, month, year);
+            var monthlyManualIncome = monthlyOperations
+                .Where(x => x.Type == CashboxOperationType.Income)
+                .Sum(x => x.Amount);
+            var monthlyExpense = monthlyOperations
+                .Where(x => x.Type == CashboxOperationType.Expense)
+                .Sum(x => x.Amount);
+
             return new CashboxMonthlyBalanceResponse
             {
                 CashboxId      = cashboxId,
@@ -172,8 +196,9 @@ namespace App.Business.Services.Implementations
                 Month          = month,
                 Year           = year,
                 OpeningBalance = openingBalance,
-                MonthlyIncome  = monthlyIncome,
-                TotalBalance   = openingBalance + monthlyIncome
+                MonthlyIncome  = monthlyIncome + monthlyManualIncome,
+                MonthlyExpense = monthlyExpense,
+                TotalBalance   = openingBalance + monthlyIncome + monthlyManualIncome - monthlyExpense
             };
         }
 
@@ -195,12 +220,26 @@ namespace App.Business.Services.Implementations
                 .OrderByDescending(x => x.Year)
                 .ThenByDescending(x => x.Month);
 
+            var allOperations = await _unitOfWork.CashboxOperations.GetByCashboxAsync(cashboxId);
+
             return allMonths.Select(key =>
             {
                 var openingBalance = balanceDict.TryGetValue(key, out var b) ? b.OpeningBalance : 0;
                 var monthlyIncome  = cashbox.Payments
                     .Where(p => p.CreatedAt.Month == key.Month && p.CreatedAt.Year == key.Year)
                     .Sum(p => p.PaidAmount);
+
+                var monthlyOps = allOperations
+                    .Where(x => x.OperationDate.Month == key.Month && x.OperationDate.Year == key.Year)
+                    .ToList();
+
+                var monthlyManualIncome = monthlyOps
+                    .Where(x => x.Type == CashboxOperationType.Income)
+                    .Sum(x => x.Amount);
+
+                var monthlyExpense = monthlyOps
+                    .Where(x => x.Type == CashboxOperationType.Expense)
+                    .Sum(x => x.Amount);
 
                 return new CashboxMonthlyBalanceResponse
                 {
@@ -209,10 +248,86 @@ namespace App.Business.Services.Implementations
                     Month          = key.Month,
                     Year           = key.Year,
                     OpeningBalance = openingBalance,
-                    MonthlyIncome  = monthlyIncome,
-                    TotalBalance   = openingBalance + monthlyIncome
+                    MonthlyIncome  = monthlyIncome + monthlyManualIncome,
+                    MonthlyExpense = monthlyExpense,
+                    TotalBalance   = openingBalance + monthlyIncome + monthlyManualIncome - monthlyExpense
                 };
             });
+        }
+
+        public async Task<CashboxOperationResponse> AddIncomeAsync(int cashboxId, CashboxOperationRequest dto)
+        {
+            return await AddOperationAsync(cashboxId, dto, CashboxOperationType.Income);
+        }
+
+        public async Task<CashboxOperationResponse> AddExpenseAsync(int cashboxId, CashboxOperationRequest dto)
+        {
+            return await AddOperationAsync(cashboxId, dto, CashboxOperationType.Expense);
+        }
+
+        public async Task<IEnumerable<CashboxOperationResponse>> GetOperationsAsync(int cashboxId, int? month = null, int? year = null)
+        {
+            var cashbox = await _unitOfWork.Cashboxes.GetByIdAsync(cashboxId)
+                ?? throw new EntityNotFoundException($"{cashboxId} ID-li kassa tapılmadı.");
+
+            IEnumerable<CashboxOperation> operations;
+
+            if (month.HasValue && year.HasValue)
+                operations = await _unitOfWork.CashboxOperations.GetByCashboxAndMonthAsync(cashboxId, month.Value, year.Value);
+            else
+                operations = await _unitOfWork.CashboxOperations.GetByCashboxAsync(cashboxId);
+
+            return operations.Select(x => new CashboxOperationResponse
+            {
+                Id = x.Id,
+                CashboxId = x.CashboxId,
+                CashboxName = cashbox.Name,
+                Type = x.Type.ToString(),
+                Amount = x.Amount,
+                Note = x.Note,
+                OperationDate = x.OperationDate
+            });
+        }
+
+        private async Task<CashboxOperationResponse> AddOperationAsync(int cashboxId, CashboxOperationRequest dto, CashboxOperationType type)
+        {
+            var cashbox = await _unitOfWork.Cashboxes.GetByIdAsync(cashboxId)
+                ?? throw new EntityNotFoundException($"{cashboxId} ID-li kassa tapılmadı.");
+
+            if (!cashbox.IsActive)
+                throw new ValidationException("Deaktiv kassada əməliyyat aparmaq olmaz.");
+
+            var operation = new CashboxOperation
+            {
+                CashboxId = cashboxId,
+                Type = type,
+                Amount = dto.Amount,
+                Note = dto.Note,
+                OperationDate = dto.OperationDate ?? DateTime.UtcNow
+            };
+
+            await _unitOfWork.CashboxOperations.AddAsync(operation);
+            await _unitOfWork.SaveChangesAsync();
+
+            return new CashboxOperationResponse
+            {
+                Id = operation.Id,
+                CashboxId = operation.CashboxId,
+                CashboxName = cashbox.Name,
+                Type = operation.Type.ToString(),
+                Amount = operation.Amount,
+                Note = operation.Note,
+                OperationDate = operation.OperationDate
+            };
+        }
+
+        private static decimal CalculateCashboxBalance(IEnumerable<Payment> payments, IEnumerable<CashboxOperation> operations)
+        {
+            var paymentIncome = payments.Sum(p => p.PaidAmount);
+            var operationIncome = operations.Where(x => x.Type == CashboxOperationType.Income).Sum(x => x.Amount);
+            var operationExpense = operations.Where(x => x.Type == CashboxOperationType.Expense).Sum(x => x.Amount);
+
+            return paymentIncome + operationIncome - operationExpense;
         }
     }
 }

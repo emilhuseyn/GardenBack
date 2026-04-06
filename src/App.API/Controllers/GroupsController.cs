@@ -82,5 +82,31 @@ namespace App.API.Controllers
             await _groupService.DeleteGroupAsync(id);
             return Ok(ApiResponse<string>.SuccessResponse("Qrup silindi."));
         }
+
+        // ── Group Teachers ────────────────────────────────────────────────────
+
+        [HttpGet("{id}/teachers")]
+        [Authorize(Policy = "AllStaff")]
+        public async Task<IActionResult> GetGroupTeachers(int id)
+        {
+            var result = await _groupService.GetGroupTeachersAsync(id);
+            return Ok(ApiResponse<IEnumerable<GroupTeacherResponse>>.SuccessResponse(result));
+        }
+
+        [HttpPost("{id}/teachers")]
+        [Authorize(Policy = "AdminOrAdmission")]
+        public async Task<IActionResult> AddGroupTeacher(int id, [FromBody] AddGroupTeacherRequest dto)
+        {
+            await _groupService.AddGroupTeacherAsync(id, dto.UserId);
+            return Ok(ApiResponse<string>.SuccessResponse("Tərbiyəçi qrupa əlavə edildi."));
+        }
+
+        [HttpDelete("{id}/teachers/{userId}")]
+        [Authorize(Policy = "AdminOrAdmission")]
+        public async Task<IActionResult> RemoveGroupTeacher(int id, string userId)
+        {
+            await _groupService.RemoveGroupTeacherAsync(id, userId);
+            return Ok(ApiResponse<string>.SuccessResponse("Tərbiyəçi qrupdan çıxarıldı."));
+        }
     }
 }

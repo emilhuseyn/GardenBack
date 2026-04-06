@@ -37,6 +37,7 @@ namespace App.Business.DTOs.Groups
     public class GroupDetailResponse : GroupResponse
     {
         public List<GroupChildItem> Children { get; set; } = new();
+        public List<GroupTeacherResponse> Teachers { get; set; } = new();
     }
 
     public class GroupChildItem
@@ -50,6 +51,19 @@ namespace App.Business.DTOs.Groups
     public class AssignTeacherRequest
     {
         public string TeacherId { get; set; } = string.Empty;
+    }
+
+    public class GroupTeacherResponse
+    {
+        public string UserId { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public DateTime AssignedAt { get; set; }
+    }
+
+    public class AddGroupTeacherRequest
+    {
+        public string UserId { get; set; } = string.Empty;
     }
 
     public class GroupLogResponse

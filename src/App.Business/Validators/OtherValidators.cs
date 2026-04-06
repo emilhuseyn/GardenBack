@@ -79,4 +79,22 @@ namespace App.Business.Validators
                 .When(x => x.AccountNumber != null);
         }
     }
+
+    public class CashboxOperationValidator : AbstractValidator<CashboxOperationRequest>
+    {
+        public CashboxOperationValidator()
+        {
+            RuleFor(x => x.Amount)
+                .GreaterThan(0).WithMessage("Məbləğ 0-dan böyük olmalıdır.");
+
+            RuleFor(x => x.Note)
+                .MaximumLength(500)
+                .When(x => x.Note != null);
+
+            RuleFor(x => x.OperationDate)
+                .LessThanOrEqualTo(DateTime.UtcNow)
+                .When(x => x.OperationDate.HasValue)
+                .WithMessage("Əməliyyat tarixi gələcək tarix ola bilməz.");
+        }
+    }
 }

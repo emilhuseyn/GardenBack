@@ -89,6 +89,20 @@ namespace App.Business.Validators
 
             RuleFor(x => x.ParentEmail)
                 .EmailAddress().When(x => !string.IsNullOrEmpty(x.ParentEmail));
+
+            RuleFor(x => x.RegistrationDate)
+                .LessThanOrEqualTo(DateTime.UtcNow)
+                .When(x => x.RegistrationDate.HasValue)
+                .WithMessage("Bağçaya qəbul tarixi gələcək tarix ola bilməz.");
+
+            RuleFor(x => x.DeactivationDate)
+                .LessThanOrEqualTo(DateTime.UtcNow)
+                .When(x => x.DeactivationDate.HasValue)
+                .WithMessage("Deaktiv olma tarixi gələcək tarix ola bilməz.");
+
+            RuleFor(x => x)
+                .Must(x => !x.RegistrationDate.HasValue || !x.DeactivationDate.HasValue || x.DeactivationDate.Value >= x.RegistrationDate.Value)
+                .WithMessage("Deaktiv olma tarixi qəbul tarixindən əvvəl ola bilməz.");
         }
     }
 }

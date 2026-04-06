@@ -11,5 +11,6 @@ namespace App.Core.Entities
         public bool IsActive { get; set; } = true;
 
         public ICollection<Payment> Payments { get; set; } = new List<Payment>();
+        public ICollection<CashboxOperation> Operations { get; set; } = new List<CashboxOperation>();
     }
 }

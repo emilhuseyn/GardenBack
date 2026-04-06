@@ -15,8 +15,10 @@ namespace App.DAL.UnitOfWork
         private IAttendanceRepository? _attendances;
         private IPaymentRepository? _payments;
         private ICashboxRepository? _cashboxes;
+        private ICashboxOperationRepository? _cashboxOperations;
         private ICashboxMonthlyBalanceRepository? _cashboxBalances;
         private IGroupRepository? _groups;
+        private IGroupTeacherRepository? _groupTeachers;
         private IGroupLogRepository? _groupLogs;
         private IDivisionRepository? _divisions;
         private IScheduleConfigRepository? _scheduleConfigs;
@@ -40,11 +42,17 @@ namespace App.DAL.UnitOfWork
         public ICashboxRepository Cashboxes =>
             _cashboxes ??= new CashboxRepository(_context);
 
+        public ICashboxOperationRepository CashboxOperations =>
+            _cashboxOperations ??= new CashboxOperationRepository(_context);
+
         public ICashboxMonthlyBalanceRepository CashboxBalances =>
             _cashboxBalances ??= new CashboxMonthlyBalanceRepository(_context);
 
         public IGroupRepository Groups =>
             _groups ??= new GroupRepository(_context);
+
+        public IGroupTeacherRepository GroupTeachers =>
+            _groupTeachers ??= new GroupTeacherRepository(_context);
 
         public IGroupLogRepository GroupLogs =>
             _groupLogs ??= new GroupLogRepository(_context);

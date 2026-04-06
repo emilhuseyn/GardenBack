@@ -27,13 +27,31 @@ namespace App.DAL.Presistence
         public DbSet<ScheduleConfig> ScheduleConfigs { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Cashbox> Cashboxes { get; set; }
+        public DbSet<CashboxOperation> CashboxOperations { get; set; }
         public DbSet<SMSNotification> SMSNotifications { get; set; }
         public DbSet<GroupLog> GroupLogs { get; set; }
         public DbSet<CashboxMonthlyBalance> CashboxMonthlyBalances { get; set; }
+        public DbSet<GroupTeacher> GroupTeachers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+            modelBuilder.Entity<GroupTeacher>(entity =>
+            {
+                entity.HasKey(gt => new { gt.GroupId, gt.UserId });
+
+                entity.HasOne(gt => gt.Group)
+                    .WithMany(g => g.GroupTeachers)
+                    .HasForeignKey(gt => gt.GroupId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(gt => gt.User)
+                    .WithMany()
+                    .HasForeignKey(gt => gt.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
             base.OnModelCreating(modelBuilder);
         }
 

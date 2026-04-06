@@ -86,5 +86,34 @@ namespace App.API.Controllers
             var result = await _cashboxService.GetAllMonthlyBalancesAsync(id);
             return Ok(ApiResponse<IEnumerable<CashboxMonthlyBalanceResponse>>.SuccessResponse(result));
         }
+
+        // ── Kassa mədaxil / məxaric ──────────────────────────────────────────
+
+        [HttpPost("{id}/income")]
+        [Authorize(Policy = "AdminOrAccountant")]
+        public async Task<IActionResult> AddIncome(int id, [FromBody] CashboxOperationRequest dto)
+        {
+            var result = await _cashboxService.AddIncomeAsync(id, dto);
+            return Ok(ApiResponse<CashboxOperationResponse>.SuccessResponse(result, "Kassaya mədaxil əlavə olundu."));
+        }
+
+        [HttpPost("{id}/expense")]
+        [Authorize(Policy = "AdminOrAccountant")]
+        public async Task<IActionResult> AddExpense(int id, [FromBody] CashboxOperationRequest dto)
+        {
+            var result = await _cashboxService.AddExpenseAsync(id, dto);
+            return Ok(ApiResponse<CashboxOperationResponse>.SuccessResponse(result, "Kassadan məxaric qeyd olundu."));
+        }
+
+        [HttpGet("{id}/operations")]
+        [Authorize(Policy = "PaymentView")]
+        public async Task<IActionResult> GetOperations(int id, [FromQuery] int? month, [FromQuery] int? year)
+        {
+            if ((month.HasValue && !year.HasValue) || (!month.HasValue && year.HasValue))
+                return BadRequest(ApiResponse<string>.ErrorResponse("Ay və il birlikdə göndərilməlidir."));
+
+            var result = await _cashboxService.GetOperationsAsync(id, month, year);
+            return Ok(ApiResponse<IEnumerable<CashboxOperationResponse>>.SuccessResponse(result));
+        }
     }
 }

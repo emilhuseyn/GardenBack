@@ -28,6 +28,8 @@ namespace App.Business.DTOs.Children
         public ScheduleType? ScheduleType { get; set; }
         public decimal? MonthlyFee { get; set; }
         public int? PaymentDay { get; set; }
+        public DateTime? RegistrationDate { get; set; }
+        public DateTime? DeactivationDate { get; set; }
         public string? ParentFullName { get; set; }
         public string? SecondParentFullName { get; set; }
         public string? ParentPhone { get; set; }
@@ -48,6 +50,7 @@ namespace App.Business.DTOs.Children
         public string ScheduleType { get; set; } = string.Empty;
         public decimal MonthlyFee { get; set; }
         public int PaymentDay { get; set; }
+        public DateTime? DeactivationDate { get; set; }
         public string Status { get; set; } = string.Empty;
         public string ParentFullName { get; set; } = string.Empty;
         public string? SecondParentFullName { get; set; }

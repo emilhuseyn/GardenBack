@@ -12,5 +12,8 @@ namespace App.Business.Services.Interfaces
         Task<CashboxMonthlyBalanceResponse> SetOpeningBalanceAsync(int cashboxId, SetOpeningBalanceRequest dto);
         Task<CashboxMonthlyBalanceResponse> GetMonthlyBalanceAsync(int cashboxId, int month, int year);
         Task<IEnumerable<CashboxMonthlyBalanceResponse>> GetAllMonthlyBalancesAsync(int cashboxId);
+        Task<CashboxOperationResponse> AddIncomeAsync(int cashboxId, CashboxOperationRequest dto);
+        Task<CashboxOperationResponse> AddExpenseAsync(int cashboxId, CashboxOperationRequest dto);
+        Task<IEnumerable<CashboxOperationResponse>> GetOperationsAsync(int cashboxId, int? month = null, int? year = null);
     }
 }

@@ -1,25 +1,69 @@
-2026/03/18-17:12:37.190 4864 Reusing MANIFEST C:\Users\Emil\Desktop\23\Garden\GardenBack\whatsapp-service\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
-2026/03/18-17:12:37.203 4864 Recovering log #19
-2026/03/18-17:12:37.229 4864 Reusing old log C:\Users\Emil\Desktop\23\Garden\GardenBack\whatsapp-service\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000019.log 
-2026/03/20-04:48:46.685 4864 Level-0 table #25: started
-2026/03/20-04:48:46.762 4864 Level-0 table #25: 1294898 bytes OK
-2026/03/20-04:48:46.771 4864 Delete type=0 #19
-2026/03/20-04:48:46.796 5190 Compacting 1@1 + 2@2 files
-2026/03/20-04:48:46.928 5190 Generated table #26@1: 49721 keys, 2206117 bytes
-2026/03/20-04:48:46.994 5190 Generated table #27@1: 46547 keys, 955601 bytes
-2026/03/20-04:48:46.994 5190 Compacted 1@1 + 2@2 files => 3161718 bytes
-2026/03/20-04:48:46.995 5190 compacted to: files[ 0 0 2 0 0 0 0 ]
-2026/03/20-06:33:47.461 5190 Level-0 table #29: started
-2026/03/20-06:33:47.511 5190 Level-0 table #29: 992812 bytes OK
-2026/03/20-06:33:47.513 5190 Delete type=2 #21
-2026/03/20-06:33:47.513 5190 Delete type=2 #22
-2026/03/20-06:33:47.513 5190 Delete type=0 #24
-2026/03/20-06:33:47.513 5190 Delete type=2 #25
-2026/03/20-06:33:48.392 4864 Compacting 1@1 + 2@2 files
-2026/03/20-06:33:48.494 4864 Generated table #30@1: 51829 keys, 2207925 bytes
-2026/03/20-06:33:48.539 4864 Generated table #31@1: 46088 keys, 947387 bytes
-2026/03/20-06:33:48.539 4864 Compacted 1@1 + 2@2 files => 3155312 bytes
-2026/03/20-06:33:48.539 4864 compacted to: files[ 0 0 2 0 0 0 0 ]
-2026/03/20-06:33:48.540 4864 Delete type=2 #26
-2026/03/20-06:33:48.540 4864 Delete type=2 #27
-2026/03/20-06:33:48.540 4864 Delete type=2 #29
+2026/04/02-10:44:49.701 666c Reusing MANIFEST C:\Users\Emil\Desktop\23\Garden\GardenBack\whatsapp-service\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/04/02-10:44:49.713 666c Recovering log #28
+2026/04/02-10:44:49.735 666c Reusing old log C:\Users\Emil\Desktop\23\Garden\GardenBack\whatsapp-service\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000028.log 
+2026/04/02-10:44:57.252 53c8 Level-0 table #34: started
+2026/04/02-10:44:57.278 53c8 Level-0 table #34: 1093398 bytes OK
+2026/04/02-10:44:57.279 53c8 Delete type=0 #28
+2026/04/02-10:44:57.288 53c8 Compacting 1@1 + 2@2 files
+2026/04/02-10:44:57.369 53c8 Generated table #35@1: 59270 keys, 2220651 bytes
+2026/04/02-10:44:57.420 53c8 Generated table #36@1: 62696 keys, 1356988 bytes
+2026/04/02-10:44:57.420 53c8 Compacted 1@1 + 2@2 files => 3577639 bytes
+2026/04/02-10:44:57.421 53c8 compacted to: files[ 0 0 2 0 0 0 0 ]
+2026/04/02-10:44:58.544 53c8 Level-0 table #38: started
+2026/04/02-10:44:58.569 53c8 Level-0 table #38: 1086869 bytes OK
+2026/04/02-10:44:58.569 53c8 Delete type=2 #30
+2026/04/02-10:44:58.569 53c8 Delete type=2 #31
+2026/04/02-10:44:58.569 53c8 Delete type=0 #33
+2026/04/02-10:44:58.569 53c8 Delete type=2 #34
+2026/04/02-10:44:58.575 53c8 Compacting 1@1 + 2@2 files
+2026/04/02-10:44:58.661 53c8 Generated table #39@1: 45317 keys, 2199574 bytes
+2026/04/02-10:44:58.704 53c8 Generated table #40@1: 58147 keys, 1180095 bytes
+2026/04/02-10:44:58.704 53c8 Compacted 1@1 + 2@2 files => 3379669 bytes
+2026/04/02-10:44:58.704 53c8 compacted to: files[ 0 0 2 0 0 0 0 ]
+2026/04/02-10:45:05.874 31ac Level-0 table #42: started
+2026/04/02-10:45:05.897 31ac Level-0 table #42: 1143323 bytes OK
+2026/04/02-10:45:05.898 31ac Delete type=2 #35
+2026/04/02-10:45:05.899 31ac Delete type=2 #36
+2026/04/02-10:45:05.899 31ac Delete type=0 #37
+2026/04/02-10:45:05.899 31ac Delete type=2 #38
+2026/04/02-10:45:06.074 53c8 Compacting 1@1 + 2@2 files
+2026/04/02-10:45:06.143 53c8 Generated table #43@1: 41744 keys, 2196750 bytes
+2026/04/02-10:45:06.204 53c8 Generated table #44@1: 62964 keys, 1364189 bytes
+2026/04/02-10:45:06.204 53c8 Compacted 1@1 + 2@2 files => 3560939 bytes
+2026/04/02-10:45:06.204 53c8 compacted to: files[ 0 0 2 0 0 0 0 ]
+2026/04/02-10:45:06.205 53c8 Delete type=2 #39
+2026/04/02-10:45:06.205 53c8 Delete type=2 #40
+2026/04/02-10:45:06.205 53c8 Delete type=2 #42
+2026/04/02-10:45:08.100 53c8 Level-0 table #46: started
+2026/04/02-10:45:08.133 53c8 Level-0 table #46: 1167682 bytes OK
+2026/04/02-10:45:08.134 53c8 Delete type=0 #41
+2026/04/02-10:45:08.228 53c8 Compacting 1@1 + 2@2 files
+2026/04/02-10:45:08.292 53c8 Generated table #47@1: 44639 keys, 2199502 bytes
+2026/04/02-10:45:08.356 53c8 Generated table #48@1: 68205 keys, 1598968 bytes
+2026/04/02-10:45:08.357 53c8 Compacted 1@1 + 2@2 files => 3798470 bytes
+2026/04/02-10:45:08.357 53c8 compacted to: files[ 0 0 2 0 0 0 0 ]
+2026/04/02-10:45:08.358 53c8 Delete type=2 #43
+2026/04/02-10:45:08.358 53c8 Delete type=2 #44
+2026/04/02-10:45:08.358 53c8 Delete type=2 #46
+2026/04/02-10:45:09.715 53c8 Level-0 table #50: started
+2026/04/02-10:45:09.740 53c8 Level-0 table #50: 1108524 bytes OK
+2026/04/02-10:45:09.741 53c8 Delete type=0 #45
+2026/04/02-10:45:09.792 53c8 Compacting 1@1 + 2@2 files
+2026/04/02-10:45:09.862 53c8 Generated table #51@1: 46619 keys, 2202114 bytes
+2026/04/02-10:45:09.932 53c8 Generated table #52@1: 77461 keys, 1902682 bytes
+2026/04/02-10:45:09.932 53c8 Compacted 1@1 + 2@2 files => 4104796 bytes
+2026/04/02-10:45:09.933 53c8 compacted to: files[ 0 0 2 0 0 0 0 ]
+2026/04/02-10:45:18.761 31ac Level-0 table #54: started
+2026/04/02-10:45:18.789 31ac Level-0 table #54: 1205121 bytes OK
+2026/04/02-10:45:18.791 31ac Delete type=2 #47
+2026/04/02-10:45:18.791 31ac Delete type=2 #48
+2026/04/02-10:45:18.791 31ac Delete type=0 #49
+2026/04/02-10:45:18.791 31ac Delete type=2 #50
+2026/04/02-10:45:18.793 31ac Compacting 1@1 + 2@2 files
+2026/04/02-10:45:18.859 31ac Generated table #55@1: 48903 keys, 2210923 bytes
+2026/04/02-10:45:18.919 31ac Generated table #56@1: 82122 keys, 2104857 bytes
+2026/04/02-10:45:18.919 31ac Compacted 1@1 + 2@2 files => 4315780 bytes
+2026/04/02-10:45:18.920 31ac compacted to: files[ 0 0 2 0 0 0 0 ]
+2026/04/02-10:45:18.920 31ac Delete type=2 #51
+2026/04/02-10:45:18.920 31ac Delete type=2 #52
+2026/04/02-10:45:18.920 31ac Delete type=2 #54

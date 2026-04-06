@@ -6,6 +6,7 @@ using App.Core.Exceptions.Commons;
 using App.Core.Services;
 using App.DAL.UnitOfWork;
 using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 
 namespace App.Business.Services.Implementations
 {
@@ -17,12 +18,15 @@ namespace App.Business.Services.Implementations
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IDateTimeService _dt;
+        private readonly UserManager<App.Core.Entities.Identity.User> _userManager;
 
-        public GroupService(IUnitOfWork unitOfWork, IMapper mapper, IDateTimeService dt)
+        public GroupService(IUnitOfWork unitOfWork, IMapper mapper, IDateTimeService dt,
+            UserManager<App.Core.Entities.Identity.User> userManager)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _dt = dt;
+            _userManager = userManager;
         }
 
         /// <summary>
@@ -91,7 +95,18 @@ namespace App.Business.Services.Implementations
                 g => g.Children)
                 ?? throw new EntityNotFoundException($"{id} ID-li qrup tapılmadı.");
 
-                            return _mapper.Map<GroupDetailResponse>(group);
+            var response = _mapper.Map<GroupDetailResponse>(group);
+
+            var groupTeachers = await _unitOfWork.GroupTeachers.GetByGroupAsync(id);
+            response.Teachers = groupTeachers.Select(gt => new GroupTeacherResponse
+            {
+                UserId    = gt.UserId,
+                FullName  = $"{gt.User.FirstName} {gt.User.LastName}".Trim(),
+                Email     = gt.User.Email ?? string.Empty,
+                AssignedAt = gt.AssignedAt
+            }).ToList();
+
+            return response;
         }
 
         /// <summary>
@@ -166,6 +181,61 @@ namespace App.Business.Services.Implementations
         public async Task DeleteGroupAsync(int id)
         {
             await _unitOfWork.Groups.SoftDeleteAsync(id);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Returns all teachers assigned to a group.
+        /// </summary>
+        public async Task<IEnumerable<GroupTeacherResponse>> GetGroupTeachersAsync(int groupId)
+        {
+            if (!await _unitOfWork.Groups.ExistsAsync(groupId))
+                throw new EntityNotFoundException($"{groupId} ID-li qrup tapılmadı.");
+
+            var groupTeachers = await _unitOfWork.GroupTeachers.GetByGroupAsync(groupId);
+            return groupTeachers.Select(gt => new GroupTeacherResponse
+            {
+                UserId    = gt.UserId,
+                FullName  = $"{gt.User.FirstName} {gt.User.LastName}".Trim(),
+                Email     = gt.User.Email ?? string.Empty,
+                AssignedAt = gt.AssignedAt
+            });
+        }
+
+        /// <summary>
+        /// Adds a teacher to a group.
+        /// </summary>
+        public async Task AddGroupTeacherAsync(int groupId, string userId)
+        {
+            if (!await _unitOfWork.Groups.ExistsAsync(groupId))
+                throw new EntityNotFoundException($"{groupId} ID-li qrup tapılmadı.");
+
+            var user = await _userManager.FindByIdAsync(userId)
+                ?? throw new EntityNotFoundException($"{userId} ID-li istifadəçi tapılmadı.");
+
+            var existing = await _unitOfWork.GroupTeachers.GetAsync(groupId, userId);
+            if (existing != null)
+                throw new InvalidOperationException("Bu tərbiyəçi artıq bu qrupa təyin edilib.");
+
+            await _unitOfWork.GroupTeachers.AddAsync(new GroupTeacher
+            {
+                GroupId    = groupId,
+                UserId     = userId,
+                AssignedAt = _dt.Now
+            });
+
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Removes a teacher from a group.
+        /// </summary>
+        public async Task RemoveGroupTeacherAsync(int groupId, string userId)
+        {
+            var record = await _unitOfWork.GroupTeachers.GetAsync(groupId, userId)
+                ?? throw new EntityNotFoundException("Bu tərbiyəçi bu qrupda tapılmadı.");
+
+            await _unitOfWork.GroupTeachers.RemoveAsync(record);
             await _unitOfWork.SaveChangesAsync();
         }
     }
