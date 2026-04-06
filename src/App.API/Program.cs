@@ -1,5 +1,6 @@
 using Microsoft.OpenApi.Models;
 using App.Business;
+using App.Business.Services.Implementations;
 using App.Business.Services.Interfaces;
 using App.Core.Entities.Identity;
 using App.DAL;
@@ -87,31 +88,36 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
     Authorization = new[] { new Hangfire.Dashboard.LocalRequestsOnlyAuthorizationFilter() }
 });
 
-// Register recurring jobs
+// Register recurring jobs — bütün cron ifadələri Bakı vaxtı (UTC+4) ilə işləyir
+var bakuZone = BakuDateTimeService.Zone;
 
 // Hər ayın 1-i gecə saat 00:01-də — cari ay üçün borcları yarat
 RecurringJob.AddOrUpdate<IPaymentService>(
     "generate-monthly-debts",
     s => s.GenerateCurrentMonthDebtsAsync(),
-    Cron.Monthly(1, 0, 1));
+    Cron.Monthly(1, 0, 1),
+    new RecurringJobOptions { TimeZone = bakuZone });
 
 // Hər gün saat 18:30-da — gecikmiş gəliş/tez getmə qeydlərini yenilə
 RecurringJob.AddOrUpdate<IAttendanceService>(
     "process-attendance-flags",
     s => s.AutoDetectLateAndEarlyLeave(),
-    Cron.Daily(18, 30));
+    Cron.Daily(18, 30),
+    new RecurringJobOptions { TimeZone = bakuZone });
 
 // Hər gecə saat 02:00-da — gündəlik verilənlər bazası backup-ı
 RecurringJob.AddOrUpdate<IBackupService>(
     "daily-database-backup",
     s => s.CreateBackupAsync(),
-    "0 2 * * *");
+    "0 2 * * *",
+    new RecurringJobOptions { TimeZone = bakuZone });
 
 // Hər gün saat 20:00-da uşağın qeydiyyat günündən bir gün əvvəl valideynə ödəniş xatırlatması
 RecurringJob.AddOrUpdate<INotificationService>(
     "send-payment-due-reminders",
     s => s.SendPaymentDueRemindersAsync(),
-    Cron.Daily(20, 0));
+    Cron.Daily(20, 0),
+    new RecurringJobOptions { TimeZone = bakuZone });
 
 app.MapControllers();
 

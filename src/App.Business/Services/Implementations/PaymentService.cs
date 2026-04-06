@@ -4,6 +4,7 @@ using App.Core.Common;
 using App.Core.Entities;
 using App.Core.Enums;
 using App.Core.Exceptions.Commons;
+using App.Core.Services;
 using App.DAL.UnitOfWork;
 using AutoMapper;
 using Microsoft.Extensions.Hosting;
@@ -22,13 +23,15 @@ namespace App.Business.Services.Implementations
         private readonly IMapper _mapper;
         private readonly INotificationService _notificationService;
         private readonly IHostEnvironment _env;
+        private readonly IDateTimeService _dt;
 
-        public PaymentService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IHostEnvironment env)
+        public PaymentService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, IHostEnvironment env, IDateTimeService dt)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _notificationService = notificationService;
             _env = env;
+            _dt = dt;
         }
 
         /// <summary>
@@ -37,7 +40,7 @@ namespace App.Business.Services.Implementations
         /// </summary>
         public Task GenerateCurrentMonthDebtsAsync()
         {
-            var now = DateTime.Now;
+            var now = _dt.Now;
             return GenerateMonthlyDebtsAsync(now.Month, now.Year);
         }
 

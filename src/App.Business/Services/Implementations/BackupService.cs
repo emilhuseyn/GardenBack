@@ -1,4 +1,5 @@
 using App.Business.Services.Interfaces;
+using App.Core.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
@@ -13,13 +14,15 @@ namespace App.Business.Services.Implementations
         private readonly ILogger<BackupService> _logger;
         private readonly string _connectionString;
         private readonly string _backupDirectory;
+        private readonly IDateTimeService _dt;
 
-        public BackupService(ILogger<BackupService> logger, IConfiguration configuration)
+        public BackupService(ILogger<BackupService> logger, IConfiguration configuration, IDateTimeService dt)
         {
             _logger           = logger;
             _connectionString = configuration.GetConnectionString("DefaultConnection")
                                 ?? throw new InvalidOperationException("DefaultConnection tapılmadı.");
             _backupDirectory  = configuration["Backup:Directory"] ?? "Backups";
+            _dt               = dt;
         }
 
         /// <summary>
@@ -49,7 +52,7 @@ namespace App.Business.Services.Implementations
                 var dir      = Path.GetFullPath(_backupDirectory);
                 Directory.CreateDirectory(dir);
 
-                var fileName = $"backup_{DateTime.Now:yyyyMMdd_HHmmss}.sql";
+                var fileName = $"backup_{_dt.Now:yyyyMMdd_HHmmss}.sql";
                 var filePath = Path.Combine(dir, fileName);
 
                 var args = $"-h {server} -u {user} -p{password} {database}";
@@ -95,7 +98,7 @@ namespace App.Business.Services.Implementations
         {
             try
             {
-                var cutoff = DateTime.Now.AddDays(-30);
+                var cutoff = _dt.Now.AddDays(-30);
                 foreach (var file in Directory.GetFiles(directory, "backup_*.sql"))
                 {
                     if (File.GetCreationTime(file) < cutoff)

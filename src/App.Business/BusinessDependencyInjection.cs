@@ -5,6 +5,7 @@ using App.Business.Services.ExternalServices.Interfaces;
 using App.Business.Services.Implementations;
 using App.Business.Services.Interfaces;
 using App.Business.Validators.Commons;
+using App.Core.Services;
 using App.Shared.Implementations;
 using App.Shared.Interfaces;
 using FluentValidation;
@@ -37,6 +38,8 @@ namespace App.Business
 
         private static void AddServices(this IServiceCollection services)
         {
+            services.AddSingleton<IDateTimeService, BakuDateTimeService>();
+
             services.AddHttpClient("WhatsApp");
 
             services.AddScoped<IClaimService, ClaimService>();
