@@ -132,6 +132,7 @@ namespace App.Business.Services.Implementations
         {
             var groups = await _unitOfWork.Groups.GetGroupsWithDetailsAsync();
 
+            // Yalnız Teacher filtrə edilər — Admin, Admission, Accountant bütün qrupları görür
             var role = _claimService.GetUserRole();
             if (role == "Teacher")
             {
