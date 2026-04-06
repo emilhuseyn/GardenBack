@@ -3,10 +3,13 @@ using App.Business.Services.Interfaces;
 using App.Core.Common;
 using App.Core.Entities;
 using App.Core.Enums;
+using App.Core.Exceptions;
 using App.Core.Exceptions.Commons;
 using App.Core.Services;
 using App.DAL.UnitOfWork;
+using App.Shared.Interfaces;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 
 namespace App.Business.Services.Implementations
 {
@@ -18,12 +21,33 @@ namespace App.Business.Services.Implementations
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IDateTimeService _dt;
+        private readonly IClaimService _claimService;
 
-        public ChildService(IUnitOfWork unitOfWork, IMapper mapper, IDateTimeService dt)
+        public ChildService(IUnitOfWork unitOfWork, IMapper mapper, IDateTimeService dt, IClaimService claimService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _dt = dt;
+            _claimService = claimService;
+        }
+
+        /// <summary>
+        /// Müəllim yalnız öz qrupuna aid uşağa girə bilər.
+        /// </summary>
+        private async Task EnsureTeacherGroupAccessAsync(int childGroupId)
+        {
+            var role = _claimService.GetUserRole();
+            if (role != "Teacher") return;
+
+            var userId = _claimService.GetUserId();
+            var group = await _unitOfWork.Groups.GetByIdAsync(childGroupId)
+                ?? throw new EntityNotFoundException("Qrup tapılmadı.");
+
+            var isPrimary  = group.TeacherId == userId;
+            var isAssigned = await _unitOfWork.GroupTeachers.GetAsync(childGroupId, userId) != null;
+
+            if (!isPrimary && !isAssigned)
+                throw new UnauthorizedException("Bu uşağa giriş icazəniz yoxdur.");
         }
 
         /// <summary>
@@ -68,6 +92,8 @@ namespace App.Business.Services.Implementations
             var child = await _unitOfWork.Children.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException($"{id} ID-li uşaq tapılmadı.");
 
+            await EnsureTeacherGroupAccessAsync(child.GroupId);
+
             if (dto.FirstName != null) child.FirstName = dto.FirstName;
             if (dto.LastName != null) child.LastName = dto.LastName;
             if (dto.DateOfBirth.HasValue) child.DateOfBirth = dto.DateOfBirth.Value;
@@ -107,6 +133,8 @@ namespace App.Business.Services.Implementations
                 c => c.Group.Teacher)
                 ?? throw new EntityNotFoundException($"{id} ID-li uşaq tapılmadı.");
 
+            await EnsureTeacherGroupAccessAsync(child.GroupId);
+
                             var response = _mapper.Map<ChildDetailResponse>(child);
 
             var now = DateOnly.FromDateTime(_dt.Now);
@@ -129,7 +157,28 @@ namespace App.Business.Services.Implementations
         public async Task<PagedResponse<ChildResponse>> GetAllChildrenAsync(ChildFilterRequest filter)
         {
             var children = await _unitOfWork.Children.GetChildrenWithDetailsAsync();
-            var query = children.AsQueryable().Where(x=>x.IsDeleted==false);
+            var query = children.AsQueryable().Where(x => x.IsDeleted == false);
+
+            // Müəllim yalnız öz qruplarının uşaqlarını görə bilər
+            var role = _claimService.GetUserRole();
+            if (role == "Teacher")
+            {
+                var userId = _claimService.GetUserId();
+                var teacherGroupIds = (await _unitOfWork.GroupTeachers.GetByGroupAsync(0))
+                    .Select(gt => gt.GroupId).ToList();
+
+                // primary teacher olduğu qrupları da əlavə et
+                var allGroups = await _unitOfWork.Groups.FindAsync(g => g.TeacherId == userId);
+                var primaryGroupIds = allGroups.Select(g => g.Id).ToList();
+
+                var assignedGroupIds = (await _unitOfWork.Context.GroupTeachers
+                    .Where(gt => gt.UserId == userId)
+                    .Select(gt => gt.GroupId)
+                    .ToListAsync());
+
+                var allowedGroupIds = primaryGroupIds.Union(assignedGroupIds).ToHashSet();
+                query = query.Where(c => allowedGroupIds.Contains(c.GroupId));
+            }
 
             if (filter.GroupId.HasValue)
                 query = query.Where(c => c.GroupId == filter.GroupId.Value);

@@ -23,6 +23,13 @@ namespace App.Shared.Implementations
             return GetClaim(ClaimTypes.Name);
         }
 
+        public string GetUserRole()
+        {
+            return _httpContextAccessor.HttpContext?.User?
+                .Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value
+                ?? string.Empty;
+        }
+
         public string GetClaim(string key)
         {
             var result = _httpContextAccessor.HttpContext?.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value

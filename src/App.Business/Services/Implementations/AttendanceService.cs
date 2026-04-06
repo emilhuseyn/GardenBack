@@ -6,6 +6,7 @@ using App.Core.Exceptions;
 using App.Core.Exceptions.Commons;
 using App.Core.Services;
 using App.DAL.UnitOfWork;
+using App.Shared.Interfaces;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,12 +20,14 @@ namespace App.Business.Services.Implementations
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IDateTimeService _dt;
+        private readonly IClaimService _claimService;
 
-        public AttendanceService(IUnitOfWork unitOfWork, IMapper mapper, IDateTimeService dt)
+        public AttendanceService(IUnitOfWork unitOfWork, IMapper mapper, IDateTimeService dt, IClaimService claimService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _dt = dt;
+            _claimService = claimService;
         }
 
         /// <summary>
@@ -35,9 +38,25 @@ namespace App.Business.Services.Implementations
             if (string.IsNullOrEmpty(recordedById))
                 throw new Core.Exceptions.ValidationException(new[] { "Qeydiyyatçı ID mövcud deyil." });
 
-            var childExists = await _unitOfWork.Children.ExistsAsync(dto.ChildId);
-            if (!childExists)
-                throw new EntityNotFoundException($"{dto.ChildId} ID-li uşaq tapılmadı.");
+            var child = await _unitOfWork.Children.GetByIdAsync(dto.ChildId)
+                ?? throw new EntityNotFoundException($"{dto.ChildId} ID-li uşaq tapılmadı.");
+
+            // Müəllim yalnız öz qrupunda davamiyyət yaza bilər
+            var role = _claimService.GetUserRole();
+            if (role == "Teacher")
+            {
+                var userId = _claimService.GetUserId();
+                var group = await _unitOfWork.Groups.GetByIdAsync(child.GroupId)
+                    ?? throw new EntityNotFoundException("Qrup tapılmadı.");
+
+                var isPrimary  = group.TeacherId == userId;
+                var isAssigned = await _unitOfWork.GroupTeachers.GetAsync(child.GroupId, userId) != null;
+
+                if (!isPrimary && !isAssigned)
+                    throw new UnauthorizedException("Bu qrupun davamiyyətini yazmaq üçün icazəniz yoxdur.");
+            }
+
+            _ = child; // already validated above
 
             var existing = (await _unitOfWork.Attendances
                 .FindAsync(a => a.ChildId == dto.ChildId && a.Date == dto.Date))

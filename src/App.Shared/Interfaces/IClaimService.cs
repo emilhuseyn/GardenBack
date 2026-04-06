@@ -9,6 +9,7 @@ namespace App.Shared.Interfaces
     public interface IClaimService
     {
         string GetUserId();
+        string GetUserRole();
         string GetClaim(string key);
     }
 }
