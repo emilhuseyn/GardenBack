@@ -2,6 +2,7 @@ using App.Business.DTOs.Cashboxes;
 using App.Business.Services.Interfaces;
 using App.Core.Entities;
 using App.Core.Enums;
+using App.Core.Services;
 using App.Core.Exceptions;
 using App.Core.Exceptions.Commons;
 using App.DAL.UnitOfWork;
@@ -109,6 +110,97 @@ namespace App.Business.Services.Implementations
             cashbox.IsActive = false;
             await _unitOfWork.Cashboxes.UpdateAsync(cashbox);
             await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task<CashboxMonthlyBalanceResponse> SetOpeningBalanceAsync(int cashboxId, SetOpeningBalanceRequest dto)
+        {
+            var cashbox = await _unitOfWork.Cashboxes.GetByIdWithPaymentsAsync(cashboxId)
+                ?? throw new EntityNotFoundException($"{cashboxId} ID-li kassa tapılmadı.");
+
+            var existing = await _unitOfWork.CashboxBalances.GetAsync(cashboxId, dto.Month, dto.Year);
+
+            if (existing != null)
+            {
+                existing.OpeningBalance = dto.OpeningBalance;
+                await _unitOfWork.CashboxBalances.UpdateAsync(existing);
+            }
+            else
+            {
+                await _unitOfWork.CashboxBalances.AddAsync(new CashboxMonthlyBalance
+                {
+                    CashboxId      = cashboxId,
+                    Month          = dto.Month,
+                    Year           = dto.Year,
+                    OpeningBalance = dto.OpeningBalance
+                });
+            }
+
+            await _unitOfWork.SaveChangesAsync();
+
+            var monthlyIncome = cashbox.Payments
+                .Where(p => p.CreatedAt.Month == dto.Month && p.CreatedAt.Year == dto.Year)
+                .Sum(p => p.PaidAmount);
+
+            return new CashboxMonthlyBalanceResponse
+            {
+                CashboxId     = cashboxId,
+                CashboxName   = cashbox.Name,
+                Month         = dto.Month,
+                Year          = dto.Year,
+                OpeningBalance = dto.OpeningBalance,
+                MonthlyIncome  = monthlyIncome,
+                TotalBalance   = dto.OpeningBalance + monthlyIncome
+            };
+        }
+
+        public async Task<CashboxMonthlyBalanceResponse> GetMonthlyBalanceAsync(int cashboxId, int month, int year)
+        {
+            var cashbox = await _unitOfWork.Cashboxes.GetByIdWithPaymentsAsync(cashboxId)
+                ?? throw new EntityNotFoundException($"{cashboxId} ID-li kassa tapılmadı.");
+
+            var balance = await _unitOfWork.CashboxBalances.GetAsync(cashboxId, month, year);
+            var openingBalance = balance?.OpeningBalance ?? 0;
+
+            var monthlyIncome = cashbox.Payments
+                .Where(p => p.CreatedAt.Month == month && p.CreatedAt.Year == year)
+                .Sum(p => p.PaidAmount);
+
+            return new CashboxMonthlyBalanceResponse
+            {
+                CashboxId      = cashboxId,
+                CashboxName    = cashbox.Name,
+                Month          = month,
+                Year           = year,
+                OpeningBalance = openingBalance,
+                MonthlyIncome  = monthlyIncome,
+                TotalBalance   = openingBalance + monthlyIncome
+            };
+        }
+
+        public async Task<IEnumerable<CashboxMonthlyBalanceResponse>> GetAllMonthlyBalancesAsync(int cashboxId)
+        {
+            var cashbox = await _unitOfWork.Cashboxes.GetByIdWithPaymentsAsync(cashboxId)
+                ?? throw new EntityNotFoundException($"{cashboxId} ID-li kassa tapılmadı.");
+
+            var balances = await _unitOfWork.CashboxBalances.GetByCashboxAsync(cashboxId);
+
+            return balances.Select(b =>
+            {
+                var monthlyIncome = cashbox.Payments
+                    .Where(p => p.CreatedAt.Month == b.Month && p.CreatedAt.Year == b.Year)
+                    .Sum(p => p.PaidAmount);
+
+                return new CashboxMonthlyBalanceResponse
+                {
+                    CashboxId      = cashboxId,
+                    CashboxName    = cashbox.Name,
+                    Month          = b.Month,
+                    Year           = b.Year,
+                    OpeningBalance = b.OpeningBalance,
+                    MonthlyIncome  = monthlyIncome,
+                    TotalBalance   = b.OpeningBalance + monthlyIncome
+                };
+            });
         }
     }
 }

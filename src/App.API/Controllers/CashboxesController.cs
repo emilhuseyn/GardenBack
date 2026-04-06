@@ -57,5 +57,34 @@ namespace App.API.Controllers
             await _cashboxService.DeactivateCashboxAsync(id);
             return Ok(ApiResponse<string>.SuccessResponse("Kassa deaktiv edildi."));
         }
+
+        // ── Aylıq qalıq məbləğ ──────────────────────────────────────────
+
+        /// <summary>Kassa üçün ayin açılış qalığını əlavə et / yenilə.</summary>
+        [HttpPut("{id}/balance")]
+        [Authorize(Policy = "AdminOrAccountant")]
+        public async Task<IActionResult> SetOpeningBalance(int id, [FromBody] SetOpeningBalanceRequest dto)
+        {
+            var result = await _cashboxService.SetOpeningBalanceAsync(id, dto);
+            return Ok(ApiResponse<CashboxMonthlyBalanceResponse>.SuccessResponse(result, "Açılış qalığı saxlanıldı."));
+        }
+
+        /// <summary>Kassa üçün müəyyən ay/ilin balansını gətir.</summary>
+        [HttpGet("{id}/balance")]
+        [Authorize(Policy = "PaymentView")]
+        public async Task<IActionResult> GetMonthlyBalance(int id, [FromQuery] int month, [FromQuery] int year)
+        {
+            var result = await _cashboxService.GetMonthlyBalanceAsync(id, month, year);
+            return Ok(ApiResponse<CashboxMonthlyBalanceResponse>.SuccessResponse(result));
+        }
+
+        /// <summary>Kassanın bütün aylıq balans tarixçəsini gətir.</summary>
+        [HttpGet("{id}/balance/history")]
+        [Authorize(Policy = "PaymentView")]
+        public async Task<IActionResult> GetBalanceHistory(int id)
+        {
+            var result = await _cashboxService.GetAllMonthlyBalancesAsync(id);
+            return Ok(ApiResponse<IEnumerable<CashboxMonthlyBalanceResponse>>.SuccessResponse(result));
+        }
     }
 }

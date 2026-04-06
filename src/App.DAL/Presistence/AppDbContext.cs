@@ -29,6 +29,7 @@ namespace App.DAL.Presistence
         public DbSet<Cashbox> Cashboxes { get; set; }
         public DbSet<SMSNotification> SMSNotifications { get; set; }
         public DbSet<GroupLog> GroupLogs { get; set; }
+        public DbSet<CashboxMonthlyBalance> CashboxMonthlyBalances { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

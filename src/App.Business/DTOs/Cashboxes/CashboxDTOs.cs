@@ -1,5 +1,24 @@
 namespace App.Business.DTOs.Cashboxes
 {
+    public class SetOpeningBalanceRequest
+    {
+        public int Month { get; set; }
+        public int Year { get; set; }
+        public decimal OpeningBalance { get; set; }
+    }
+
+    public class CashboxMonthlyBalanceResponse
+    {
+        public int CashboxId { get; set; }
+        public string CashboxName { get; set; } = string.Empty;
+        public int Month { get; set; }
+        public int Year { get; set; }
+        public decimal OpeningBalance { get; set; }
+        public decimal MonthlyIncome { get; set; }
+        public decimal TotalBalance { get; set; }
+    }
+
+
     public class CreateCashboxRequest
     {
         public string Name { get; set; } = string.Empty;
