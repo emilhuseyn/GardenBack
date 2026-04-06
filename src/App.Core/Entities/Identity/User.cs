@@ -9,7 +9,7 @@ namespace App.Core.Entities.Identity
         public string LastName { get; set; } = string.Empty;
         public EUserRole Role { get; set; }
         public bool IsActive { get; set; } = true;
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(4);
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow.AddHours(4);
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 }

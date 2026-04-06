@@ -9,6 +9,6 @@ namespace App.Core.Entities
         public int? ChildId { get; set; }
         public GroupLogActionType ActionType { get; set; }
         public string Message { get; set; } = string.Empty;
-        public DateTime ActionDate { get; set; } = DateTime.UtcNow;
+        public DateTime ActionDate { get; set; }
     }
 }

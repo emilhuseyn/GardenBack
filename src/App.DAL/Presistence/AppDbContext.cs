@@ -1,6 +1,7 @@
 ﻿using App.Core.Entities;
 using App.Core.Entities.Commons;
 using App.Core.Entities.Identity;
+using App.Core.Services;
 using App.Shared.Interfaces;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -11,10 +12,12 @@ namespace App.DAL.Presistence
     public class AppDbContext : IdentityDbContext<User>
     {
         private readonly IClaimService _claimService;
+        private readonly IDateTimeService _dt;
 
-        public AppDbContext(DbContextOptions<AppDbContext> options, IClaimService claimService) : base(options)
+        public AppDbContext(DbContextOptions<AppDbContext> options, IClaimService claimService, IDateTimeService dt) : base(options)
         {
             _claimService = claimService;
+            _dt = dt;
         }
 
         public DbSet<Division> Divisions { get; set; }
@@ -40,11 +43,11 @@ namespace App.DAL.Presistence
                 switch (entry.State)
                 {
                     case EntityState.Added:
-                        entry.Entity.CreatedAt = DateTime.UtcNow;
-                        entry.Entity.UpdatedAt = DateTime.UtcNow;
+                        entry.Entity.CreatedAt = _dt.Now;
+                        entry.Entity.UpdatedAt = _dt.Now;
                         break;
                     case EntityState.Modified:
-                        entry.Entity.UpdatedAt = DateTime.UtcNow;
+                        entry.Entity.UpdatedAt = _dt.Now;
                         break;
                 }
             }
@@ -55,13 +58,13 @@ namespace App.DAL.Presistence
                 {
                     case EntityState.Added:
                         entry.Entity.CreatedBy = _claimService.GetUserId() ?? "ByServer";
-                        entry.Entity.CreatedOn = DateTime.UtcNow;
+                        entry.Entity.CreatedOn = _dt.Now;
                         entry.Entity.UpdatedBy = _claimService.GetUserId() ?? "ByServer";
-                        entry.Entity.UpdatedOn = DateTime.UtcNow;
+                        entry.Entity.UpdatedOn = _dt.Now;
                         break;
                     case EntityState.Modified:
                         entry.Entity.UpdatedBy = _claimService.GetUserId() ?? "ByServer";
-                        entry.Entity.UpdatedOn = DateTime.UtcNow;
+                        entry.Entity.UpdatedOn = _dt.Now;
                         break;
                 }
             }

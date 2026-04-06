@@ -4,6 +4,7 @@ using App.Core.Common;
 using App.Core.Entities;
 using App.Core.Enums;
 using App.Core.Exceptions.Commons;
+using App.Core.Services;
 using App.DAL.UnitOfWork;
 using AutoMapper;
 
@@ -16,11 +17,13 @@ namespace App.Business.Services.Implementations
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IDateTimeService _dt;
 
-        public ChildService(IUnitOfWork unitOfWork, IMapper mapper)
+        public ChildService(IUnitOfWork unitOfWork, IMapper mapper, IDateTimeService dt)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _dt = dt;
         }
 
         /// <summary>
@@ -33,7 +36,7 @@ namespace App.Business.Services.Implementations
                 throw new EntityNotFoundException($"{dto.GroupId} ID-li qrup tapılmadı.");
 
             var child = _mapper.Map<Child>(dto);
-            child.RegistrationDate = DateTime.UtcNow;
+            child.RegistrationDate = _dt.Now;
             child.Status = ChildStatus.Active;
 
             await _unitOfWork.Children.AddAsync(child);
@@ -45,7 +48,7 @@ namespace App.Business.Services.Implementations
                 ChildId = child.Id,
                 ActionType = GroupLogActionType.ChildAdded,
                 Message = $"Uşaq əlavə olundu: {child.FirstName} {child.LastName}",
-                ActionDate = DateTime.UtcNow
+                ActionDate = _dt.Now
             });
             await _unitOfWork.SaveChangesAsync();
 
@@ -104,7 +107,7 @@ namespace App.Business.Services.Implementations
 
                             var response = _mapper.Map<ChildDetailResponse>(child);
 
-            var now = DateOnly.FromDateTime(DateTime.UtcNow);
+            var now = DateOnly.FromDateTime(_dt.Now);
             var monthStart = new DateOnly(now.Year, now.Month, 1);
             var attendances = await _unitOfWork.Attendances.GetChildAttendanceAsync(id, monthStart, now);
             response.AttendanceDays = attendances.Count(a => a.Status == AttendanceStatus.Present);
@@ -184,7 +187,7 @@ namespace App.Business.Services.Implementations
                 ChildId = child.Id,
                 ActionType = GroupLogActionType.ChildReturned,
                 Message = $"Uşaq qrupa geri qaytarıldı: {child.FirstName} {child.LastName}",
-                ActionDate = DateTime.UtcNow
+                ActionDate = _dt.Now
             });
 
             await _unitOfWork.Children.UpdateAsync(child);
@@ -200,7 +203,7 @@ namespace App.Business.Services.Implementations
                 ?? throw new EntityNotFoundException($"{id} ID-li uşaq tapılmadı.");
 
             child.Status = ChildStatus.Inactive;
-            var actionDate = DateTime.UtcNow;
+            var actionDate = _dt.Now;
 
             await _unitOfWork.GroupLogs.AddAsync(new GroupLog
             {
@@ -229,7 +232,7 @@ namespace App.Business.Services.Implementations
                 ChildId = child.Id,
                 ActionType = GroupLogActionType.ChildRemoved,
                 Message = $"Uşaq silindi: {child.FirstName} {child.LastName}",
-                ActionDate = DateTime.UtcNow
+                ActionDate = _dt.Now
             });
 
             await _unitOfWork.Children.SoftDeleteAsync(id);
@@ -256,7 +259,7 @@ namespace App.Business.Services.Implementations
                 if (child != null)
                 {
                     child.Status = ChildStatus.Inactive;
-                    var actionDate = DateTime.UtcNow;
+                    var actionDate = _dt.Now;
 
                     await _unitOfWork.GroupLogs.AddAsync(new GroupLog
                     {
@@ -291,7 +294,7 @@ namespace App.Business.Services.Implementations
                         ChildId = child.Id,
                         ActionType = GroupLogActionType.ChildReturned,
                         Message = $"Uşaq qrupa geri qaytarıldı: {child.FirstName} {child.LastName}",
-                        ActionDate = DateTime.UtcNow
+                        ActionDate = _dt.Now
                     });
 
                     await _unitOfWork.Children.UpdateAsync(child);
@@ -316,7 +319,7 @@ namespace App.Business.Services.Implementations
                         ChildId = child.Id,
                         ActionType = GroupLogActionType.ChildRemoved,
                         Message = $"Uşaq silindi: {child.FirstName} {child.LastName}",
-                        ActionDate = DateTime.UtcNow
+                        ActionDate = _dt.Now
                     });
                 }
 

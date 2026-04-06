@@ -1,6 +1,7 @@
 using App.Business.DTOs.Reports;
 using App.Business.Services.Interfaces;
 using App.Core.Enums;
+using App.Core.Services;
 using App.DAL.UnitOfWork;
 
 namespace App.Business.Services.Implementations
@@ -11,10 +12,12 @@ namespace App.Business.Services.Implementations
     public class ReportService : IReportService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IDateTimeService _dt;
 
-        public ReportService(IUnitOfWork unitOfWork)
+        public ReportService(IUnitOfWork unitOfWork, IDateTimeService dt)
         {
             _unitOfWork = unitOfWork;
+            _dt = dt;
         }
 
         /// <summary>
@@ -62,7 +65,7 @@ namespace App.Business.Services.Implementations
             var divisions = await _unitOfWork.Divisions.GetAllAsync(d => true, d => d.Groups);
             var activeChildren = (await _unitOfWork.Children.GetActiveChildrenAsync()).ToList();
 
-            var now = DateTime.UtcNow;
+            var now = _dt.Now;
             var payments = await _unitOfWork.Payments.GetMonthlyPaymentsAsync(now.Month, now.Year);
 
             return divisions.Select(div =>

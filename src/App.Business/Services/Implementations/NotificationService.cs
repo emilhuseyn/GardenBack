@@ -1,6 +1,7 @@
 using App.Business.Services.Interfaces;
 using App.Core.Entities;
 using App.Core.Enums;
+using App.Core.Services;
 using App.DAL.UnitOfWork;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -16,16 +17,20 @@ namespace App.Business.Services.Implementations
         private readonly HttpClient _httpClient;
         private readonly string _whatsAppServiceUrl;
 
+        private readonly IDateTimeService _dt;
+
         public NotificationService(
             IUnitOfWork unitOfWork,
             ILogger<NotificationService> logger,
             IHttpClientFactory httpClientFactory,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IDateTimeService dt)
         {
             _unitOfWork         = unitOfWork;
             _logger             = logger;
             _httpClient         = httpClientFactory.CreateClient("WhatsApp");
             _whatsAppServiceUrl = configuration["WhatsApp:ServiceUrl"] ?? "http://localhost:3001";
+            _dt                 = dt;
         }
 
         /// <summary>Bir uşağın borcunu yoxlayır, gecikibsə WhatsApp mesajı göndərir.</summary>
@@ -76,8 +81,7 @@ namespace App.Business.Services.Implementations
         /// <summary>Yarın ödəniş günü olan uşaqların valideynlərinə xatırlatma göndərir.</summary>
         public async Task<SendResult> SendPaymentDueRemindersAsync()
         {
-            var nowBaku = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, GetBakuTimeZone());
-            var tomorrow = nowBaku.Date.AddDays(1);
+            var tomorrow = _dt.Now.Date.AddDays(1);
 
             var activeChildren = await _unitOfWork.Children.GetActiveChildrenAsync();
             var childrenToRemind = activeChildren
@@ -213,7 +217,7 @@ namespace App.Business.Services.Implementations
             {
                 RecipientPhone = phone,
                 Message        = isSuccessful ? message : $"[XETA: {error}] {message}",
-                SentAt         = DateTime.UtcNow,
+                SentAt         = _dt.Now,
                 IsSuccessful   = isSuccessful,
                 ChildId        = childId
             };

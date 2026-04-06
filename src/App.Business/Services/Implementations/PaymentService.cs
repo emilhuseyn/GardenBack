@@ -138,7 +138,7 @@ namespace App.Business.Services.Implementations
 
             payment.PaidAmount += dto.Amount;
             payment.CashboxId = dto.CashboxId;
-            payment.PaymentDate = DateTime.UtcNow;
+            payment.PaymentDate = _dt.Now;
             payment.RecordedById = recordedById;
             payment.Notes = dto.Notes;
 
@@ -202,16 +202,16 @@ namespace App.Business.Services.Implementations
             QuestPDF.Settings.License = LicenseType.Community;
 
             var childName = $"{payment.Child.FirstName} {payment.Child.LastName}";
-            var fileName = $"PaymentReceipt_{payment.Id}_{DateTime.UtcNow:yyyyMMddHHmmss}.pdf";
+            var fileName = $"PaymentReceipt_{payment.Id}_{_dt.Now:yyyyMMddHHmmss}.pdf";
             var logoPath = Path.Combine(_env.ContentRootPath, "Templates", "KinderGardenLogo.png");
             var hasLogo = File.Exists(logoPath);
             var logoBytes = hasLogo ? File.ReadAllBytes(logoPath) : null;
-            var paidDate = payment.PaymentDate ?? payment.UpdatedAt ?? DateTime.UtcNow;
+            var paidDate = payment.PaymentDate ?? payment.UpdatedAt ?? _dt.Now;
             var bakuTimeZone = GetBakuTimeZone();
             var paidDateBaku = TimeZoneInfo.ConvertTimeFromUtc(
                 paidDate.Kind == DateTimeKind.Utc ? paidDate : DateTime.SpecifyKind(paidDate, DateTimeKind.Utc),
                 bakuTimeZone);
-            var nowBaku = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, bakuTimeZone);
+            var nowBaku = TimeZoneInfo.ConvertTimeFromUtc(_dt.Now, bakuTimeZone);
             var paidDateAz = $"{paidDateBaku.Day} {MonthNameAz(paidDateBaku.Month)} {paidDateBaku.Year}";
             var paymentDay = Math.Max(payment.Child.PaymentDay, 1);
             var periodEndDay = Math.Min(paymentDay, DateTime.DaysInMonth(payment.Year, payment.Month));

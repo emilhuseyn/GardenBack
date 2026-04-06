@@ -5,6 +5,7 @@ using App.Core.Entities.Identity;
 using App.Core.Enums;
 using App.Core.Exceptions;
 using App.Core.Exceptions.Commons;
+using App.Core.Services;
 using App.DAL.UnitOfWork;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -21,17 +22,20 @@ namespace App.Business.Services.Implementations
         private readonly SignInManager<User> _signInManager;
         private readonly IConfiguration _configuration;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IDateTimeService _dt;
 
         public AuthService(
             UserManager<User> userManager,
             SignInManager<User> signInManager,
             IConfiguration configuration,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IDateTimeService dt)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
             _unitOfWork = unitOfWork;
+            _dt = dt;
         }
 
         /// <summary>
@@ -70,7 +74,7 @@ namespace App.Business.Services.Implementations
                 Email = user.Email!,
                 FullName = $"{user.FirstName} {user.LastName}",
                 Role = user.Role.ToString(),
-                Expiration = DateTime.UtcNow.AddHours(4 + 8) // UTC+4, 8 hours session
+                Expiration = _dt.Now.AddHours(8) // 8 hours session
             };
         }
 
@@ -96,7 +100,7 @@ namespace App.Business.Services.Implementations
                 Email = user.Email!,
                 FullName = $"{user.FirstName} {user.LastName}",
                 Role = user.Role.ToString(),
-                Expiration = DateTime.UtcNow.AddHours(4 + 8) // UTC+4, 8 hours session
+                Expiration = _dt.Now.AddHours(8) // 8 hours session
             };
         }
 
@@ -133,7 +137,7 @@ namespace App.Business.Services.Implementations
             if (dto.LastName != null) user.LastName = dto.LastName;
             if (dto.PhoneNumber != null) user.PhoneNumber = dto.PhoneNumber;
 
-            user.UpdatedAt = DateTime.UtcNow.AddHours(4);
+            user.UpdatedAt = _dt.Now;
 
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)
@@ -166,7 +170,7 @@ namespace App.Business.Services.Implementations
                 user.Role = role;
             }
 
-            user.UpdatedAt = DateTime.UtcNow.AddHours(4);
+            user.UpdatedAt = _dt.Now;
 
             await _userManager.UpdateAsync(user);
         }

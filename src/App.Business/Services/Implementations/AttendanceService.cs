@@ -4,6 +4,7 @@ using App.Core.Entities;
 using App.Core.Enums;
 using App.Core.Exceptions;
 using App.Core.Exceptions.Commons;
+using App.Core.Services;
 using App.DAL.UnitOfWork;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
@@ -17,11 +18,13 @@ namespace App.Business.Services.Implementations
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IDateTimeService _dt;
 
-        public AttendanceService(IUnitOfWork unitOfWork, IMapper mapper)
+        public AttendanceService(IUnitOfWork unitOfWork, IMapper mapper, IDateTimeService dt)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _dt = dt;
         }
 
         /// <summary>
@@ -181,7 +184,7 @@ namespace App.Business.Services.Implementations
         /// </summary>
         public async Task AutoDetectLateAndEarlyLeave()
         {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = DateOnly.FromDateTime(_dt.Now);
             var attendances = await _unitOfWork.Attendances.GetDailyAttendanceAsync(today);
 
             var fullDayConfig = await _unitOfWork.ScheduleConfigs.GetByScheduleTypeAsync(ScheduleType.FullDay);

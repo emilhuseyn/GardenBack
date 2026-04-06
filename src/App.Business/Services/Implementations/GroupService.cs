@@ -3,6 +3,7 @@ using App.Business.Services.Interfaces;
 using App.Core.Entities;
 using App.Core.Enums;
 using App.Core.Exceptions.Commons;
+using App.Core.Services;
 using App.DAL.UnitOfWork;
 using AutoMapper;
 
@@ -15,11 +16,13 @@ namespace App.Business.Services.Implementations
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IDateTimeService _dt;
 
-        public GroupService(IUnitOfWork unitOfWork, IMapper mapper)
+        public GroupService(IUnitOfWork unitOfWork, IMapper mapper, IDateTimeService dt)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _dt = dt;
         }
 
         /// <summary>
@@ -62,7 +65,7 @@ namespace App.Business.Services.Implementations
                 GroupId = group.Id,
                 ActionType = GroupLogActionType.GroupUpdated,
                 Message = $"Qrup redaktə edildi: {group.Name}",
-                ActionDate = DateTime.UtcNow
+                ActionDate = _dt.Now
             });
 
             await _unitOfWork.Groups.UpdateAsync(group);
