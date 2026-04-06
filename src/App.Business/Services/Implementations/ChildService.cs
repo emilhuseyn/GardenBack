@@ -75,6 +75,8 @@ namespace App.Business.Services.Implementations
             if (dto.ScheduleType.HasValue) child.ScheduleType = dto.ScheduleType.Value;
             if (dto.MonthlyFee.HasValue) child.MonthlyFee = dto.MonthlyFee.Value;
             if (dto.PaymentDay.HasValue) child.PaymentDay = dto.PaymentDay.Value;
+            if (dto.RegistrationDate.HasValue) child.RegistrationDate = dto.RegistrationDate.Value;
+            if (dto.DeactivationDate.HasValue) child.DeactivationDate = dto.DeactivationDate.Value;
             if (dto.ParentFullName != null) child.ParentFullName = dto.ParentFullName;
             if (dto.SecondParentFullName != null) child.SecondParentFullName = dto.SecondParentFullName;
             if (dto.ParentPhone != null) child.ParentPhone = dto.ParentPhone;
@@ -180,6 +182,7 @@ namespace App.Business.Services.Implementations
                 ?? throw new EntityNotFoundException($"{id} ID-li uşaq tapılmadı.");
 
             child.Status = ChildStatus.Active;
+            child.DeactivationDate = null;
 
             await _unitOfWork.GroupLogs.AddAsync(new GroupLog
             {
@@ -203,6 +206,7 @@ namespace App.Business.Services.Implementations
                 ?? throw new EntityNotFoundException($"{id} ID-li uşaq tapılmadı.");
 
             child.Status = ChildStatus.Inactive;
+            child.DeactivationDate = _dt.Now;
             var actionDate = _dt.Now;
 
             await _unitOfWork.GroupLogs.AddAsync(new GroupLog
@@ -259,6 +263,7 @@ namespace App.Business.Services.Implementations
                 if (child != null)
                 {
                     child.Status = ChildStatus.Inactive;
+                    child.DeactivationDate = _dt.Now;
                     var actionDate = _dt.Now;
 
                     await _unitOfWork.GroupLogs.AddAsync(new GroupLog
@@ -287,6 +292,7 @@ namespace App.Business.Services.Implementations
                 if (child != null)
                 {
                     child.Status = ChildStatus.Active;
+                    child.DeactivationDate = null;
 
                     await _unitOfWork.GroupLogs.AddAsync(new GroupLog
                     {
