@@ -135,7 +135,6 @@ namespace App.Business.Services.Implementations
 
             if (dto.FirstName != null) user.FirstName = dto.FirstName;
             if (dto.LastName != null) user.LastName = dto.LastName;
-            if (dto.PhoneNumber != null) user.PhoneNumber = dto.PhoneNumber;
 
             user.UpdatedAt = _dt.Now;
 
@@ -279,7 +278,6 @@ namespace App.Business.Services.Implementations
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Email = user.Email ?? string.Empty,
-                PhoneNumber = user.PhoneNumber,
                 Role = user.Role.ToString(),
                 IsActive = user.IsActive,
                 CreatedAt = user.CreatedAt.AddHours(4),

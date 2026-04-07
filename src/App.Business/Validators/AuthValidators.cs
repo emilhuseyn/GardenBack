@@ -33,9 +33,6 @@ namespace App.Business.Validators
             RuleFor(x => x.Email)
                 .EmailAddress().WithMessage("E-poçt formatı yanlışdır.")
                 .When(x => x.Email != null);
-            RuleFor(x => x.PhoneNumber)
-                .Matches(@"^\+994\d{9}$").WithMessage("Telefon Azərbaycan formatında olmalıdır (+994XXXXXXXXX).")
-                .When(x => x.PhoneNumber != null);
         }
     }
 
