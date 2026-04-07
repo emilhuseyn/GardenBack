@@ -4,6 +4,7 @@ namespace App.Core.Enums
     {
         Cash,
         Cashless,
-        CardAccount
+        CardAccount,
+        DebitCard
     }
 }
