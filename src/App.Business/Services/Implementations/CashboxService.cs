@@ -14,11 +14,13 @@ namespace App.Business.Services.Implementations
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IDateTimeService _dt;
 
-        public CashboxService(IUnitOfWork unitOfWork, IMapper mapper)
+        public CashboxService(IUnitOfWork unitOfWork, IMapper mapper, IDateTimeService dt)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _dt = dt;
         }
 
         public async Task<CashboxResponse> CreateCashboxAsync(CreateCashboxRequest dto)
@@ -303,7 +305,7 @@ namespace App.Business.Services.Implementations
                 Type = type,
                 Amount = dto.Amount,
                 Note = dto.Note,
-                OperationDate = dto.OperationDate ?? DateTime.UtcNow
+                OperationDate = dto.OperationDate ?? _dt.Now
             };
 
             await _unitOfWork.CashboxOperations.AddAsync(operation);
@@ -319,6 +321,105 @@ namespace App.Business.Services.Implementations
                 Note = operation.Note,
                 OperationDate = operation.OperationDate
             };
+        }
+
+        public async Task<CashboxTransferResponse> TransferAsync(CashboxTransferRequest dto)
+        {
+            if (dto.FromCashboxId == dto.ToCashboxId)
+                throw new ValidationException("Eyni kassaya köçürmə edilə bilməz.");
+
+            if (dto.Amount <= 0)
+                throw new ValidationException("Köçürmə məbləği sıfırdan böyük olmalıdır.");
+
+            var fromCashbox = await _unitOfWork.Cashboxes.GetByIdWithPaymentsAsync(dto.FromCashboxId)
+                ?? throw new EntityNotFoundException($"{dto.FromCashboxId} ID-li kassa tapılmadı.");
+
+            var toCashbox = await _unitOfWork.Cashboxes.GetByIdWithPaymentsAsync(dto.ToCashboxId)
+                ?? throw new EntityNotFoundException($"{dto.ToCashboxId} ID-li kassa tapılmadı.");
+
+            if (!fromCashbox.IsActive)
+                throw new ValidationException($"'{fromCashbox.Name}' kassası deaktivdir.");
+
+            if (!toCashbox.IsActive)
+                throw new ValidationException($"'{toCashbox.Name}' kassası deaktivdir.");
+
+            // Göndərən kassanın cari balansını hesabla
+            var fromOperations = await _unitOfWork.CashboxOperations.GetByCashboxAsync(dto.FromCashboxId);
+            var fromBalance = CalculateCashboxBalance(fromCashbox.Payments, fromOperations);
+
+            if (dto.Amount > fromBalance)
+                throw new ValidationException(
+                    $"'{fromCashbox.Name}' kassasında kifayət qədər vəsait yoxdur. " +
+                    $"Mövcud balans: {fromBalance:N2} ₼, tələb olunan: {dto.Amount:N2} ₼.");
+
+            var now = _dt.Now;
+            var transferNote = dto.Note ?? $"Kassalar arası köçürmə: {fromCashbox.Name} → {toCashbox.Name}";
+
+            // Göndərən kassadan məxaric
+            var expense = new CashboxOperation
+            {
+                CashboxId     = dto.FromCashboxId,
+                Type          = CashboxOperationType.Expense,
+                Amount        = dto.Amount,
+                Note          = transferNote,
+                OperationDate = now
+            };
+            await _unitOfWork.CashboxOperations.AddAsync(expense);
+
+            // Qəbul edən kassaya mədaxil
+            var income = new CashboxOperation
+            {
+                CashboxId     = dto.ToCashboxId,
+                Type          = CashboxOperationType.Income,
+                Amount        = dto.Amount,
+                Note          = transferNote,
+                OperationDate = now
+            };
+            await _unitOfWork.CashboxOperations.AddAsync(income);
+
+            // Köçürmə tarixçəsi
+            await _unitOfWork.CashboxTransfers.AddAsync(new CashboxTransfer
+            {
+                FromCashboxId = dto.FromCashboxId,
+                ToCashboxId   = dto.ToCashboxId,
+                Amount        = dto.Amount,
+                Note          = dto.Note,
+                TransferDate  = now
+            });
+
+            await _unitOfWork.SaveChangesAsync();
+
+            // Yeni balansları hesabla
+            var toOperations = await _unitOfWork.CashboxOperations.GetByCashboxAsync(dto.ToCashboxId);
+            var toUpdatedCashbox = await _unitOfWork.Cashboxes.GetByIdWithPaymentsAsync(dto.ToCashboxId);
+
+            var fromAllOps = await _unitOfWork.CashboxOperations.GetByCashboxAsync(dto.FromCashboxId);
+            var fromUpdatedCashbox = await _unitOfWork.Cashboxes.GetByIdWithPaymentsAsync(dto.FromCashboxId);
+
+            return new CashboxTransferResponse
+            {
+                FromCashboxName        = fromCashbox.Name,
+                ToCashboxName          = toCashbox.Name,
+                Amount                 = dto.Amount,
+                FromCashboxBalanceAfter = CalculateCashboxBalance(fromUpdatedCashbox!.Payments, fromAllOps),
+                ToCashboxBalanceAfter  = CalculateCashboxBalance(toUpdatedCashbox!.Payments, toOperations)
+            };
+        }
+
+        public async Task<IEnumerable<CashboxTransferHistoryResponse>> GetTransferHistoryAsync(int? cashboxId = null)
+        {
+            var transfers = await _unitOfWork.CashboxTransfers.GetAllAsync(cashboxId);
+            return transfers.Select(t => new CashboxTransferHistoryResponse
+            {
+                Id               = t.Id,
+                FromCashboxId    = t.FromCashboxId,
+                FromCashboxName  = t.FromCashbox.Name,
+                ToCashboxId      = t.ToCashboxId,
+                ToCashboxName    = t.ToCashbox.Name,
+                Amount           = t.Amount,
+                Note             = t.Note,
+                TransferDate     = t.TransferDate
+            });
         }
 
         private static decimal CalculateCashboxBalance(IEnumerable<Payment> payments, IEnumerable<CashboxOperation> operations)

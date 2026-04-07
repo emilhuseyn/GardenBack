@@ -37,8 +37,13 @@ namespace App.Business.Services.Implementations
             var config = await _unitOfWork.ScheduleConfigs.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException($"{id} ID-li qrafik konfiqurasiyasi tapılmadı.");
 
-            config.StartTime = dto.StartTime;
-            config.EndTime = dto.EndTime;
+            if (!TimeOnly.TryParse(dto.StartTime, out var startTime))
+                throw new App.Core.Exceptions.ValidationException("Başlama vaxtı düzgün formatda deyil (HH:mm).");
+            if (!TimeOnly.TryParse(dto.EndTime, out var endTime))
+                throw new App.Core.Exceptions.ValidationException("Bitmə vaxtı düzgün formatda deyil (HH:mm).");
+
+            config.StartTime = startTime;
+            config.EndTime = endTime;
             config.UpdatedById = updatedById;
 
             await _unitOfWork.ScheduleConfigs.UpdateAsync(config);

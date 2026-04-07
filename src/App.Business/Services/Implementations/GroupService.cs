@@ -226,9 +226,10 @@ namespace App.Business.Services.Implementations
             var groupTeachers = await _unitOfWork.GroupTeachers.GetByGroupAsync(groupId);
             return groupTeachers.Select(gt => new GroupTeacherResponse
             {
-                UserId    = gt.UserId,
-                FullName  = $"{gt.User.FirstName} {gt.User.LastName}".Trim(),
-                Email     = gt.User.Email ?? string.Empty,
+                UserId     = gt.UserId,
+                FullName   = $"{gt.User.FirstName} {gt.User.LastName}".Trim(),
+                Email      = gt.User.Email ?? string.Empty,
+                IsActive   = gt.User.IsActive,
                 AssignedAt = gt.AssignedAt
             });
         }
@@ -267,6 +268,35 @@ namespace App.Business.Services.Implementations
                 ?? throw new EntityNotFoundException("Bu tərbiyəçi bu qrupda tapılmadı.");
 
             await _unitOfWork.GroupTeachers.RemoveAsync(record);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Moves a teacher from one group to another.
+        /// </summary>
+        public async Task MoveTeacherAsync(int fromGroupId, string userId, int toGroupId)
+        {
+            if (fromGroupId == toGroupId)
+                throw new App.Core.Exceptions.ValidationException("Müəllim artıq bu qrupdadır.");
+
+            if (!await _unitOfWork.Groups.ExistsAsync(toGroupId))
+                throw new EntityNotFoundException($"{toGroupId} ID-li qrup tapılmadı.");
+
+            var record = await _unitOfWork.GroupTeachers.GetAsync(fromGroupId, userId)
+                ?? throw new EntityNotFoundException("Bu tərbiyəçi bu qrupda tapılmadı.");
+
+            var alreadyInTarget = await _unitOfWork.GroupTeachers.GetAsync(toGroupId, userId);
+            if (alreadyInTarget != null)
+                throw new App.Core.Exceptions.ValidationException("Bu müəllim hədəf qrupa artıq təyin edilib.");
+
+            await _unitOfWork.GroupTeachers.RemoveAsync(record);
+            await _unitOfWork.GroupTeachers.AddAsync(new GroupTeacher
+            {
+                GroupId    = toGroupId,
+                UserId     = userId,
+                AssignedAt = _dt.Now
+            });
+
             await _unitOfWork.SaveChangesAsync();
         }
     }

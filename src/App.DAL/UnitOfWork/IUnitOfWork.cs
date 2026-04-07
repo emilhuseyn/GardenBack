@@ -13,6 +13,7 @@ namespace App.DAL.UnitOfWork
         ICashboxMonthlyBalanceRepository CashboxBalances { get; }
         IGroupRepository Groups { get; }
         IGroupTeacherRepository GroupTeachers { get; }
+        ICashboxTransferRepository CashboxTransfers { get; }
         IGroupLogRepository GroupLogs { get; }
         IDivisionRepository Divisions { get; }
         IScheduleConfigRepository ScheduleConfigs { get; }

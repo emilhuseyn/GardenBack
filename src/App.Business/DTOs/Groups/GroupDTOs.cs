@@ -58,12 +58,18 @@ namespace App.Business.DTOs.Groups
         public string UserId { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
         public DateTime AssignedAt { get; set; }
     }
 
     public class AddGroupTeacherRequest
     {
         public string UserId { get; set; } = string.Empty;
+    }
+
+    public class MoveTeacherRequest
+    {
+        public int ToGroupId { get; set; }
     }
 
     public class GroupLogResponse

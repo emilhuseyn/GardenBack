@@ -15,5 +15,7 @@ namespace App.Business.Services.Interfaces
         Task<CashboxOperationResponse> AddIncomeAsync(int cashboxId, CashboxOperationRequest dto);
         Task<CashboxOperationResponse> AddExpenseAsync(int cashboxId, CashboxOperationRequest dto);
         Task<IEnumerable<CashboxOperationResponse>> GetOperationsAsync(int cashboxId, int? month = null, int? year = null);
+        Task<CashboxTransferResponse> TransferAsync(CashboxTransferRequest dto);
+        Task<IEnumerable<CashboxTransferHistoryResponse>> GetTransferHistoryAsync(int? cashboxId = null);
     }
 }

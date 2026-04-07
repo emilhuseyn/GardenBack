@@ -13,7 +13,7 @@ namespace App.Business.DTOs.Schedule
 
     public class UpdateScheduleRequest
     {
-        public TimeOnly StartTime { get; set; }
-        public TimeOnly EndTime { get; set; }
+        public string StartTime { get; set; } = string.Empty;
+        public string EndTime { get; set; } = string.Empty;
     }
 }

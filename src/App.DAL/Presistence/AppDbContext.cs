@@ -32,6 +32,7 @@ namespace App.DAL.Presistence
         public DbSet<GroupLog> GroupLogs { get; set; }
         public DbSet<CashboxMonthlyBalance> CashboxMonthlyBalances { get; set; }
         public DbSet<GroupTeacher> GroupTeachers { get; set; }
+        public DbSet<CashboxTransfer> CashboxTransfers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

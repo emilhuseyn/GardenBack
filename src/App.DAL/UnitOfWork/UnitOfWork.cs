@@ -1,5 +1,6 @@
 using App.DAL.Presistence;
 using App.DAL.Repositories.Abstractions;
+using App.DAL.Repositories.Implementations;
 using App.DAL.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -19,6 +20,7 @@ namespace App.DAL.UnitOfWork
         private ICashboxMonthlyBalanceRepository? _cashboxBalances;
         private IGroupRepository? _groups;
         private IGroupTeacherRepository? _groupTeachers;
+        private ICashboxTransferRepository? _cashboxTransfers;
         private IGroupLogRepository? _groupLogs;
         private IDivisionRepository? _divisions;
         private IScheduleConfigRepository? _scheduleConfigs;
@@ -53,6 +55,9 @@ namespace App.DAL.UnitOfWork
 
         public IGroupTeacherRepository GroupTeachers =>
             _groupTeachers ??= new GroupTeacherRepository(_context);
+
+        public ICashboxTransferRepository CashboxTransfers =>
+            _cashboxTransfers ??= new CashboxTransferRepository(_context);
 
         public IGroupLogRepository GroupLogs =>
             _groupLogs ??= new GroupLogRepository(_context);

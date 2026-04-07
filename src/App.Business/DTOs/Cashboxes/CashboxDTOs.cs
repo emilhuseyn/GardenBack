@@ -38,6 +38,35 @@ namespace App.Business.DTOs.Cashboxes
     }
 
 
+    public class CashboxTransferRequest
+    {
+        public int FromCashboxId { get; set; }
+        public int ToCashboxId { get; set; }
+        public decimal Amount { get; set; }
+        public string? Note { get; set; }
+    }
+
+    public class CashboxTransferResponse
+    {
+        public string FromCashboxName { get; set; } = string.Empty;
+        public string ToCashboxName { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public decimal FromCashboxBalanceAfter { get; set; }
+        public decimal ToCashboxBalanceAfter { get; set; }
+    }
+
+    public class CashboxTransferHistoryResponse
+    {
+        public int Id { get; set; }
+        public int FromCashboxId { get; set; }
+        public string FromCashboxName { get; set; } = string.Empty;
+        public int ToCashboxId { get; set; }
+        public string ToCashboxName { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public string? Note { get; set; }
+        public DateTime TransferDate { get; set; }
+    }
+
     public class CreateCashboxRequest
     {
         public string Name { get; set; } = string.Empty;

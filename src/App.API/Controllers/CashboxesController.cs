@@ -105,6 +105,24 @@ namespace App.API.Controllers
             return Ok(ApiResponse<CashboxOperationResponse>.SuccessResponse(result, "Kassadan məxaric qeyd olundu."));
         }
 
+        // ── Kassalar arası köçürmə ───────────────────────────────────────────
+
+        [HttpPost("transfer")]
+        [Authorize(Policy = "AdminOrAccountant")]
+        public async Task<IActionResult> Transfer([FromBody] CashboxTransferRequest dto)
+        {
+            var result = await _cashboxService.TransferAsync(dto);
+            return Ok(ApiResponse<CashboxTransferResponse>.SuccessResponse(result, $"{result.Amount:N2} ₼ köçürüldü."));
+        }
+
+        [HttpGet("transfers")]
+        [Authorize(Policy = "PaymentView")]
+        public async Task<IActionResult> GetTransferHistory([FromQuery] int? cashboxId = null)
+        {
+            var result = await _cashboxService.GetTransferHistoryAsync(cashboxId);
+            return Ok(ApiResponse<IEnumerable<CashboxTransferHistoryResponse>>.SuccessResponse(result));
+        }
+
         [HttpGet("{id}/operations")]
         [Authorize(Policy = "PaymentView")]
         public async Task<IActionResult> GetOperations(int id, [FromQuery] int? month, [FromQuery] int? year)
