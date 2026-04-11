@@ -261,6 +261,50 @@ namespace App.DAL.Presistence
             ["clever"]      = ["Nuriyeva Qızaman",     "Hacıbalayeva Erena", "Məmmədzadə Ətirə"],
         };
 
+        // Face/turnstile sistemindən gələn PersonId uyğunluqları (ad+soyad üzrə)
+        private static readonly Dictionary<string, int> PersonIdsByName = new(StringComparer.Ordinal)
+        {
+            [PersonKey("Ceyla", "Dadaşova")] = 49,
+            [PersonKey("Çinar", "Quliyev")] = 52,
+            [PersonKey("Leyli", "Mirzəyeva")] = 53,
+            [PersonKey("Milana", "Qurbanzadə")] = 54,
+            [PersonKey("Emiliya", "Abbasova")] = 55,
+            [PersonKey("Ayla", "Hüseynli")] = 56,
+            [PersonKey("Raul", "Canməmmədov")] = 57,
+            [PersonKey("Solmaz", "Qədirova")] = 59,
+            [PersonKey("Camal", "Məmmədov")] = 60,
+
+            [PersonKey("Şəms", "Əsgərova")] = 139,
+            [PersonKey("Sofiya", "Hacıyeva")] = 141,
+            [PersonKey("Maqsud", "Həsənov")] = 142,
+            [PersonKey("Asya", "Məmmədova")] = 143,
+            [PersonKey("Fuad", "Talıblı")] = 144,
+            [PersonKey("Kamil", "Əliyev")] = 145,
+            [PersonKey("Ziya", "Mahmudov")] = 148,
+            [PersonKey("Asya", "Cəfərzadə")] = 150,
+            [PersonKey("Sofiya", "Həsənova")] = 151,
+            [PersonKey("Mənsur", "Babazadə")] = 152,
+            [PersonKey("Cəlil", "Hüseynov")] = 155,
+            [PersonKey("Melina", "Nematova")] = 157,
+            [PersonKey("İsa", "Məmmədov")] = 159,
+
+            [PersonKey("İzel", "Əfəndiyeva")] = 214,
+            [PersonKey("Adil", "Hüseynov")] = 216,
+            [PersonKey("Abzal", "Denment")] = 217,
+            [PersonKey("Fatimə", "Abbasova")] = 219,
+            [PersonKey("Safiya", "Kərimli")] = 222,
+            [PersonKey("Rəvan", "Əmirullayev")] = 223,
+            [PersonKey("Məryəm", "Həsənova")] = 225,
+            [PersonKey("İlham", "Şahinzadə")] = 226,
+            [PersonKey("Tamerlan", "Nəsrullayev")] = 227,
+            [PersonKey("Cahan", "Abbasova")] = 228,
+            [PersonKey("Nazel", "Abbasova")] = 229,
+            [PersonKey("Toğrul", "Nəcəfov")] = 230,
+            [PersonKey("Büsə", "Əsgərzadə")] = 235,
+            [PersonKey("Sübhan", "Hacıyev")] = 237,
+            [PersonKey("Tunar", "İsmayılov")] = 238,
+        };
+
         public static async Task SeedAsync(AppDbContext context, UserManager<User> userManager)
         {
             Console.WriteLine("[ExcelSeed] Başlayır...");
@@ -304,11 +348,19 @@ namespace App.DAL.Presistence
                 var phone    = NormalizePhone(row.Ph);
                 var schedule = row.Full ? ScheduleType.FullDay : ScheduleType.HalfDay;
                 var payDay   = Math.Min(row.PDay, 28);
+                var personId = ResolvePersonId(firstName, lastName);
 
-                var exists = await context.Children.IgnoreQueryFilters()
-                    .AnyAsync(c => c.FirstName == firstName && c.LastName == lastName && c.GroupId == groupId);
+                var existingChild = await context.Children.IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(c => c.FirstName == firstName && c.LastName == lastName && c.GroupId == groupId);
 
-                if (exists) { skipped++; continue; }
+                if (existingChild != null)
+                {
+                    if (personId.HasValue && existingChild.PersonId != personId.Value)
+                        existingChild.PersonId = personId.Value;
+
+                    skipped++;
+                    continue;
+                }
 
                 context.Children.Add(new Child
                 {
@@ -323,6 +375,7 @@ namespace App.DAL.Presistence
                     ParentPhone      = phone,
                     RegistrationDate = DateTime.UtcNow,
                     Status           = ChildStatus.Active,
+                    PersonId         = personId,
                 });
                 added++;
             }
@@ -448,6 +501,28 @@ namespace App.DAL.Presistence
                 return "+994" + ph;
 
             return ph;
+        }
+
+        private static int? ResolvePersonId(string firstName, string lastName)
+            => PersonIdsByName.TryGetValue(PersonKey(firstName, lastName), out var id) ? id : null;
+
+        private static string PersonKey(string firstName, string lastName)
+            => $"{NormalizeName(firstName)} {NormalizeName(lastName)}";
+
+        private static string NormalizeName(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+
+            return value.Trim().ToLowerInvariant()
+                .Replace('ə', 'e').Replace('Ə', 'e')
+                .Replace('ş', 's').Replace('Ş', 's')
+                .Replace('ğ', 'g').Replace('Ğ', 'g')
+                .Replace('ü', 'u').Replace('Ü', 'u')
+                .Replace('ö', 'o').Replace('Ö', 'o')
+                .Replace('ç', 'c').Replace('Ç', 'c')
+                .Replace('ı', 'i').Replace('İ', 'i')
+                .Replace('é', 'e').Replace('É', 'e')
+                .Replace('á', 'a').Replace('Á', 'a');
         }
     }
 }
