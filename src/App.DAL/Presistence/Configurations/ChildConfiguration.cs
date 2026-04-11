@@ -22,6 +22,8 @@ namespace App.DAL.Presistence.Configurations
             builder.Property(c => c.SecondParentPhone).HasMaxLength(20);
             builder.Property(c => c.ParentEmail).HasMaxLength(200);
             builder.Property(c => c.FaceIdToken).HasMaxLength(500);
+            builder.Property(c => c.PersonId).IsRequired(false);
+            builder.HasIndex(c => c.PersonId).IsUnique().HasFilter("[PersonId] IS NOT NULL");
 
             builder.HasOne(c => c.Group)
                 .WithMany(g => g.Children)

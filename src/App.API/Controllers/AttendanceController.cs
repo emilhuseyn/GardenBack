@@ -1,9 +1,11 @@
 using App.Business.DTOs.Attendance;
+using App.Business.Services.Implementations;
 using App.Business.Services.Interfaces;
 using App.Core.Common;
 using App.Core.Enums;
 using App.Core.Exceptions;
 using App.DAL.UnitOfWork;
+using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -97,6 +99,18 @@ namespace App.API.Controllers
         {
             var result = await _attendanceService.MarkDepartureAsync(id, departureTime);
             return Ok(ApiResponse<AttendanceResponse>.SuccessResponse(result));
+        }
+
+        [HttpPost("hikvision-sync")]
+        [Authorize(Policy = "AdminOnly")]
+        public IActionResult TriggerHikvisionSync([FromQuery] DateOnly date)
+        {
+            var jobId = BackgroundJob.Enqueue<HikvisionAttendanceSyncJob>(
+                s => s.SyncAttendanceForDateAsync(date));
+
+            return Accepted(ApiResponse<object>.SuccessResponse(
+                new { jobId },
+                $"{date:dd.MM.yyyy} tarixi üçün davamiyyət sinxronizasiyası növbəyə alındı."));
         }
 
         // Müəllimin qrupunu tapır

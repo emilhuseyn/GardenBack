@@ -57,6 +57,7 @@ namespace App.Business
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IBackupService, BackupService>();
             services.AddScoped<IAgreementService, AgreementService>();
+            services.AddScoped<HikvisionAttendanceSyncJob>();
         }
 
         private static void RegisterAutoMapper(this IServiceCollection services)

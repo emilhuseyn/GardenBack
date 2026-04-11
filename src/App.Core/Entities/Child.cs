@@ -21,6 +21,7 @@ namespace App.Core.Entities
         public string? SecondParentPhone { get; set; }
         public string? ParentEmail { get; set; }
         public string? FaceIdToken { get; set; }
+        public int? PersonId { get; set; }
 
         public Group Group { get; set; } = null!;
         public ICollection<Payment> Payments { get; set; } = new List<Payment>();
