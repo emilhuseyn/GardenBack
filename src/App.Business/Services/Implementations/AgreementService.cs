@@ -179,15 +179,18 @@ namespace App.Business.Services.Implementations
             FillLineBeforeAnchor(doc, "and the PARENT accepting these services, undertakes to pays to the KINDERGARTEN for", childNameEn);
             FillPreviousUnderscoreLine(doc, "and the PARENT accepting these services, undertakes to pays to the KINDERGARTEN for", childNameEn);
 
-            // ── Rekvizitlər hissəsi (AZ) ─────────────────────────────────
+            // ── Rekvizitlər hissəsi (yalnız ad-soyad + mobil) ────────────
             var parentPhone = child.ParentPhone ?? string.Empty;
             var parentPhoneEn = parentPhone;
-            ReplaceInlineAfterLabel(doc, "A.S.A", parentName);
-            ReplaceInlineAfterLabel(doc, "Mob:", parentPhone);
 
-            // ── Rekvizitlər hissəsi (EN) ─────────────────────────────────
-            ReplaceInlineAfterLabel(doc, "N.S.P.", parentNameEn);
-            ReplaceInlineAfterLabel(doc, "Mob.:", parentPhoneEn);
+            // AZ
+            ReplaceFieldValue(doc, "A.S.A", parentName, withColon: true);
+            ReplaceFieldValue(doc, "Mob:", parentPhone);
+
+            // EN
+            ReplaceFieldValue(doc, "N.S.P.", parentNameEn);
+            ReplaceFieldValue(doc, "Mob.:", parentPhoneEn);
+            ReplaceFieldValue(doc, "Mob.", parentPhoneEn);
 
             using var output = new MemoryStream();
             doc.SaveToStream(output, FileFormat.Doc);
@@ -443,38 +446,44 @@ namespace App.Business.Services.Implementations
         }
 
         /// <summary>
-        /// "A.S.A ___..." kimi label + alt xətt olan abzasda alt xətti value ilə əvəz edir.
+        /// "Label ______" formatında yalnız həmin label-dan sonrakı alt xətti value ilə doldurur.
+        /// Digər sahələrə (I.D, Address və s.) toxunmur.
         /// </summary>
-        private static void ReplaceInlineAfterLabel(Document doc, string label, string value)
+        private static void ReplaceFieldValue(Document doc, string label, string value, bool withColon = false)
         {
             if (string.IsNullOrWhiteSpace(value)) return;
 
-            foreach (Section section in doc.Sections)
+            var selections = doc.FindAllString(label, false, false);
+            if (selections == null || selections.Length == 0)
+                return;
+
+            var processed = new HashSet<Paragraph>();
+            foreach (TextSelection selection in selections)
             {
-                foreach (DocumentObject obj in section.Body.ChildObjects)
+                var range = selection.GetAsOneRange();
+                if (range.Owner is not Paragraph paragraph) continue;
+                if (!processed.Add(paragraph)) continue;
+
+                var text = paragraph.Text ?? string.Empty;
+                if (!text.Contains(label, StringComparison.OrdinalIgnoreCase)) continue;
+                if (text.Contains(value, StringComparison.OrdinalIgnoreCase)) continue;
+
+                var pattern = $@"({Regex.Escape(label)}\s*)(_+)";
+                var replacementLabel = withColon ? $"{label}: " : "$1";
+                var updated = Regex.Replace(text, pattern, withColon ? $"{replacementLabel}{value}" : $"$1{value}", RegexOptions.IgnoreCase);
+
+                if (updated == text)
                 {
-                    if (obj is not Paragraph paragraph) continue;
-                    var text = paragraph.Text ?? string.Empty;
-                    if (!text.Contains(label, StringComparison.OrdinalIgnoreCase)) continue;
-                    if (!text.Contains('_')) continue;
-                    if (text.Contains(value, StringComparison.OrdinalIgnoreCase)) continue;
-
-                    // label-dan sonraki alt xəttləri value ilə əvəz et
-                    var labelIdx = text.IndexOf(label, StringComparison.OrdinalIgnoreCase);
-                    var afterLabel = text[(labelIdx + label.Length)..];
-                    var start = afterLabel.IndexOf('_');
-                    if (start < 0) continue;
-                    var end = afterLabel.LastIndexOf('_');
-
-                    var updated = text[..(labelIdx + label.Length)]
-                        + afterLabel[..start]
-                        + value
-                        + afterLabel[(end + 1)..];
-
-                    paragraph.ChildObjects.Clear();
-                    paragraph.AppendText(updated);
-                    ApplyParagraphFont(paragraph, "Times New Roman");
+                    // Bəzi şablonlarda alt xətlər arasında boşluqlar olur
+                    pattern = $@"({Regex.Escape(label)}\s*)([_\s]{{3,}})";
+                    updated = Regex.Replace(text, pattern, withColon ? $"{replacementLabel}{value}" : $"$1{value}", RegexOptions.IgnoreCase);
                 }
+
+                if (updated == text) continue;
+
+                paragraph.ChildObjects.Clear();
+                paragraph.AppendText(updated);
+                ApplyParagraphFont(paragraph, "Times New Roman");
             }
         }
 

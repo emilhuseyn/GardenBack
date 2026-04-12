@@ -6,3 +6,4 @@
 - User wants payment receipt 'Dövr' to be clearly dynamic and show exact start-end date range for the specific paid period.
 - When a child leaves, the workflow should use deactivation (not deletion) and must record the leave date.
 - Project should track historical group activity via persistent logs (child added/removed, group edited) with timestamps because hard delete is used.
+- For contract footer, parent address and ID number fields should be left blank, and user explicitly does not want model/schema changes.

@@ -41,6 +41,7 @@ namespace App.Business.DTOs.Children
     public class ChildResponse
     {
         public int Id { get; set; }
+        public int? PersonId { get; set; }
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public DateTime DateOfBirth { get; set; }
