@@ -179,6 +179,16 @@ namespace App.Business.Services.Implementations
             FillLineBeforeAnchor(doc, "and the PARENT accepting these services, undertakes to pays to the KINDERGARTEN for", childNameEn);
             FillPreviousUnderscoreLine(doc, "and the PARENT accepting these services, undertakes to pays to the KINDERGARTEN for", childNameEn);
 
+            // ── Rekvizitlər hissəsi (AZ) ─────────────────────────────────
+            var parentPhone = child.ParentPhone ?? string.Empty;
+            var parentPhoneEn = parentPhone;
+            ReplaceInlineAfterLabel(doc, "A.S.A", parentName);
+            ReplaceInlineAfterLabel(doc, "Mob:", parentPhone);
+
+            // ── Rekvizitlər hissəsi (EN) ─────────────────────────────────
+            ReplaceInlineAfterLabel(doc, "N.S.P.", parentNameEn);
+            ReplaceInlineAfterLabel(doc, "Mob.:", parentPhoneEn);
+
             using var output = new MemoryStream();
             doc.SaveToStream(output, FileFormat.Doc);
 
@@ -424,6 +434,42 @@ namespace App.Business.Services.Implementations
 
                     if (updated == text)
                         continue;
+
+                    paragraph.ChildObjects.Clear();
+                    paragraph.AppendText(updated);
+                    ApplyParagraphFont(paragraph, "Times New Roman");
+                }
+            }
+        }
+
+        /// <summary>
+        /// "A.S.A ___..." kimi label + alt xətt olan abzasda alt xətti value ilə əvəz edir.
+        /// </summary>
+        private static void ReplaceInlineAfterLabel(Document doc, string label, string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return;
+
+            foreach (Section section in doc.Sections)
+            {
+                foreach (DocumentObject obj in section.Body.ChildObjects)
+                {
+                    if (obj is not Paragraph paragraph) continue;
+                    var text = paragraph.Text ?? string.Empty;
+                    if (!text.Contains(label, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (!text.Contains('_')) continue;
+                    if (text.Contains(value, StringComparison.OrdinalIgnoreCase)) continue;
+
+                    // label-dan sonraki alt xəttləri value ilə əvəz et
+                    var labelIdx = text.IndexOf(label, StringComparison.OrdinalIgnoreCase);
+                    var afterLabel = text[(labelIdx + label.Length)..];
+                    var start = afterLabel.IndexOf('_');
+                    if (start < 0) continue;
+                    var end = afterLabel.LastIndexOf('_');
+
+                    var updated = text[..(labelIdx + label.Length)]
+                        + afterLabel[..start]
+                        + value
+                        + afterLabel[(end + 1)..];
 
                     paragraph.ChildObjects.Clear();
                     paragraph.AppendText(updated);
