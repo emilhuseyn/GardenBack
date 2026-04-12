@@ -35,6 +35,7 @@ namespace App.Business.DTOs.Children
         public string? ParentPhone { get; set; }
         public string? SecondParentPhone { get; set; }
         public string? ParentEmail { get; set; }
+        public int? PersonId { get; set; }
         public string? FaceIdToken { get; set; }
     }
 
