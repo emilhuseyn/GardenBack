@@ -108,7 +108,8 @@ namespace App.Business.Services.Implementations
             if (dto.ParentPhone != null) child.ParentPhone = dto.ParentPhone;
             if (dto.SecondParentPhone != null) child.SecondParentPhone = dto.SecondParentPhone;
             if (dto.ParentEmail != null) child.ParentEmail = dto.ParentEmail;
-            if (dto.PersonId.HasValue) child.PersonId = dto.PersonId.Value == 0 ? null : dto.PersonId.Value;
+            // null = sil, dəyər = yaz (explicit olaraq göndərilib)
+            child.PersonId = dto.PersonId.HasValue && dto.PersonId.Value > 0 ? dto.PersonId.Value : null;
             if (dto.FaceIdToken != null) child.FaceIdToken = dto.FaceIdToken;
 
             await _unitOfWork.Children.UpdateAsync(child);
