@@ -128,14 +128,6 @@ namespace App.Business.Services.Implementations
                 await _unitOfWork.SaveChangesAsync();
             }
 
-            if (payment.Status == PaymentStatus.Paid)
-                throw new Core.Exceptions.ValidationException($"Bu ödəniş artıq tam ödənilib. ({payment.Month}/{payment.Year})");
-
-            var remaining = payment.FinalAmount - payment.PaidAmount;
-            if (dto.Amount > remaining)
-                throw new Core.Exceptions.ValidationException(
-                    $"Ödəniş məbləği ({dto.Amount:F2} AZN) qalan borcu ({remaining:F2} AZN) aşa bilməz.");
-
             payment.PaidAmount += dto.Amount;
             payment.CashboxId = dto.CashboxId;
             payment.PaymentDate = _dt.Now;
@@ -214,11 +206,21 @@ namespace App.Business.Services.Implementations
             var nowBaku = TimeZoneInfo.ConvertTimeFromUtc(_dt.Now, bakuTimeZone);
             var paidDateAz = $"{paidDateBaku.Day} {MonthNameAz(paidDateBaku.Month)} {paidDateBaku.Year}";
             var paymentDay = Math.Max(payment.Child.PaymentDay, 1);
-            var periodEndDay = Math.Min(paymentDay, DateTime.DaysInMonth(payment.Year, payment.Month));
-            var periodEnd = new DateTime(payment.Year, payment.Month, periodEndDay, 0, 0, 0, DateTimeKind.Utc);
-            var previousMonth = periodEnd.AddMonths(-1);
-            var periodStartDay = Math.Min(paymentDay, DateTime.DaysInMonth(previousMonth.Year, previousMonth.Month));
-            var periodStart = new DateTime(previousMonth.Year, previousMonth.Month, periodStartDay, 0, 0, 0, DateTimeKind.Utc);
+            var thisMonthDays = DateTime.DaysInMonth(payment.Year, payment.Month);
+            var periodStart = new DateTime(payment.Year, payment.Month, Math.Min(paymentDay, thisMonthDays), 0, 0, 0, DateTimeKind.Utc);
+            DateTime periodEnd;
+            if (paymentDay == 1)
+            {
+                // Ödəniş günü 1-dirsə: ayın 1-dən sonuna kimi (məs. 01.04 – 30.04)
+                periodEnd = new DateTime(payment.Year, payment.Month, thisMonthDays, 0, 0, 0, DateTimeKind.Utc);
+            }
+            else
+            {
+                // Digər günlər: bu ayın N-dən gələn ayın N-nə kimi (məs. 12.04 – 12.05)
+                var nextMonth = periodStart.AddMonths(1);
+                var nextMonthDays = DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month);
+                periodEnd = new DateTime(nextMonth.Year, nextMonth.Month, Math.Min(paymentDay, nextMonthDays), 0, 0, 0, DateTimeKind.Utc);
+            }
             var periodRange = $"{periodStart:dd.MM.yyyy}-{periodEnd:dd.MM.yyyy}";
             var remaining = Math.Max(0, payment.FinalAmount - payment.PaidAmount);
             var statusText = payment.Status switch

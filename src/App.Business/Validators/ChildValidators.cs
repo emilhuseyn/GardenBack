@@ -43,7 +43,7 @@ namespace App.Business.Validators
                 .Matches(@"^\+994\d{9}$").WithMessage("Telefon Azərbaycan formatında olmalıdır (+994XXXXXXXXX).");
 
             RuleFor(x => x.SecondParentPhone)
-                .Matches(@"^\+994\d{9}$").When(x => x.SecondParentPhone != null)
+                .Matches(@"^\+994\d{9}$").When(x => !string.IsNullOrEmpty(x.SecondParentPhone))
                 .WithMessage("İkinci valideynin telefonu Azərbaycan formatında olmalıdır (+994XXXXXXXXX).");
 
             RuleFor(x => x.ParentEmail)
@@ -80,7 +80,7 @@ namespace App.Business.Validators
                 .WithMessage("Telefon Azərbaycan formatında olmalıdır (+994XXXXXXXXX).");
 
             RuleFor(x => x.SecondParentPhone)
-                .Matches(@"^\+994\d{9}$").When(x => x.SecondParentPhone != null)
+                .Matches(@"^\+994\d{9}$").When(x => !string.IsNullOrEmpty(x.SecondParentPhone))
                 .WithMessage("İkinci valideynin telefonu Azərbaycan formatında olmalıdır (+994XXXXXXXXX).");
 
             RuleFor(x => x.SecondParentFullName)
