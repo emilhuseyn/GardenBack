@@ -40,11 +40,11 @@ namespace App.Business.Validators
 
             RuleFor(x => x.ParentPhone)
                 .NotEmpty().WithMessage("Valideynin telefon nömrəsi tələb olunur.")
-                .Matches(@"^\+994\d{9}$").WithMessage("Telefon Azərbaycan formatında olmalıdır (+994XXXXXXXXX).");
+                .Matches(@"^\+?[1-9]\d{7,14}$").WithMessage("Telefon nömrəsi düzgün formatda olmalıdır.");
 
             RuleFor(x => x.SecondParentPhone)
-                .Matches(@"^\+994\d{9}$").When(x => !string.IsNullOrEmpty(x.SecondParentPhone))
-                .WithMessage("İkinci valideynin telefonu Azərbaycan formatında olmalıdır (+994XXXXXXXXX).");
+                .Matches(@"^\+?[1-9]\d{7,14}$").When(x => !string.IsNullOrEmpty(x.SecondParentPhone))
+                .WithMessage("İkinci valideynin telefonu düzgün formatda olmalıdır.");
 
             RuleFor(x => x.ParentEmail)
                 .EmailAddress().When(x => !string.IsNullOrEmpty(x.ParentEmail))
@@ -76,12 +76,12 @@ namespace App.Business.Validators
                 .WithMessage("Ödəniş günü 1 ilə 28 arasında olmalıdır.");
 
             RuleFor(x => x.ParentPhone)
-                .Matches(@"^\+994\d{9}$").When(x => x.ParentPhone != null)
-                .WithMessage("Telefon Azərbaycan formatında olmalıdır (+994XXXXXXXXX).");
+                .Matches(@"^\+?[1-9]\d{7,14}$").When(x => x.ParentPhone != null)
+                .WithMessage("Telefon nömrəsi düzgün formatda olmalıdır.");
 
             RuleFor(x => x.SecondParentPhone)
-                .Matches(@"^\+994\d{9}$").When(x => !string.IsNullOrEmpty(x.SecondParentPhone))
-                .WithMessage("İkinci valideynin telefonu Azərbaycan formatında olmalıdır (+994XXXXXXXXX).");
+                .Matches(@"^\+?[1-9]\d{7,14}$").When(x => !string.IsNullOrEmpty(x.SecondParentPhone))
+                .WithMessage("İkinci valideynin telefonu düzgün formatda olmalıdır.");
 
             RuleFor(x => x.SecondParentFullName)
                 .MaximumLength(200)
