@@ -39,7 +39,7 @@ namespace App.Business.Validators
                 .When(x => x.SecondParentFullName != null);
 
             RuleFor(x => x.ParentPhone)
-                .NotEmpty().WithMessage("Valideynin telefon nömrəsi tələb olunur.")
+                .NotEmpty().WithMessage("Valideynin telefon nömrəsi tələb olunur")
                 .Matches(@"^\+?[1-9]\d{7,14}$").WithMessage("Telefon nömrəsi düzgün formatda olmalıdır.");
 
             RuleFor(x => x.SecondParentPhone)
