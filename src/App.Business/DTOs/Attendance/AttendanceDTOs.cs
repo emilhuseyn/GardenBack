@@ -34,6 +34,8 @@ namespace App.Business.DTOs.Attendance
         public string RecordSource { get; set; } = "manual";
         /// <summary>Only set when RecordSource is "manual"</summary>
         public string? RecordedByName { get; set; }
+        /// <summary>When this record was created/last updated</summary>
+        public DateTime? RecordedAt { get; set; }
     }
 
     public class DailyAttendanceReport

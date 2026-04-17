@@ -62,7 +62,8 @@ namespace App.Business.MappingProfiles
                 .ForMember(d => d.GroupName, opt => opt.MapFrom(s => s.Child != null && s.Child.Group != null ? s.Child.Group.Name : string.Empty))
                 .ForMember(d => d.RecordSource, opt => opt.MapFrom(s =>
                     s.RecordedById == "hikvision-sync" ? "faceid" :
-                    s.RecordedById == "auto-absent"    ? "auto"   : "manual"));
+                    s.RecordedById == "auto-absent"    ? "auto"   : "manual"))
+                .ForMember(d => d.RecordedAt, opt => opt.MapFrom(s => s.UpdatedAt ?? s.CreatedAt));
 
             // Payment
             CreateMap<Payment, PaymentResponse>()
