@@ -1,6 +1,7 @@
 using App.Business.DTOs.Attendance;
 using App.Business.Services.Interfaces;
 using App.Core.Entities;
+using App.Core.Entities.Identity;
 using App.Core.Enums;
 using App.Core.Exceptions;
 using App.Core.Exceptions.Commons;
@@ -8,6 +9,7 @@ using App.Core.Services;
 using App.DAL.UnitOfWork;
 using App.Shared.Interfaces;
 using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace App.Business.Services.Implementations
@@ -21,13 +23,34 @@ namespace App.Business.Services.Implementations
         private readonly IMapper _mapper;
         private readonly IDateTimeService _dt;
         private readonly IClaimService _claimService;
+        private readonly UserManager<User> _userManager;
 
-        public AttendanceService(IUnitOfWork unitOfWork, IMapper mapper, IDateTimeService dt, IClaimService claimService)
+        public AttendanceService(IUnitOfWork unitOfWork, IMapper mapper, IDateTimeService dt, IClaimService claimService, UserManager<User> userManager)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _dt = dt;
             _claimService = claimService;
+            _userManager = userManager;
+        }
+
+        private async Task<Dictionary<string, string>> BuildUserNameMapAsync(IEnumerable<Attendance> attendances)
+        {
+            var systemIds = new HashSet<string> { "hikvision-sync", "auto-absent" };
+            var userIds = attendances
+                .Where(a => a.RecordedById != null && !systemIds.Contains(a.RecordedById))
+                .Select(a => a.RecordedById!)
+                .Distinct()
+                .ToList();
+
+            var map = new Dictionary<string, string>();
+            foreach (var id in userIds)
+            {
+                var user = await _userManager.FindByIdAsync(id);
+                if (user != null)
+                    map[id] = $"{user.FirstName} {user.LastName}".Trim();
+            }
+            return map;
         }
 
         /// <summary>
@@ -139,7 +162,19 @@ namespace App.Business.Services.Implementations
                 ? await _unitOfWork.Attendances.GetGroupAttendanceAsync(groupId.Value, date)
                 : await _unitOfWork.Attendances.GetDailyAttendanceAsync(date);
 
-            var entries = _mapper.Map<List<AttendanceResponse>>(attendances);
+            var attendanceList = attendances.ToList();
+            var userNameMap = await BuildUserNameMapAsync(attendanceList);
+
+            var entries = _mapper.Map<List<AttendanceResponse>>(attendanceList);
+
+            // Enrich RecordedByName for manual entries
+            var idList = attendanceList.ToList();
+            for (int i = 0; i < entries.Count; i++)
+            {
+                var raw = idList[i];
+                if (entries[i].RecordSource == "manual" && raw.RecordedById != null && userNameMap.TryGetValue(raw.RecordedById, out var name))
+                    entries[i].RecordedByName = name;
+            }
 
             return new DailyAttendanceReport
             {

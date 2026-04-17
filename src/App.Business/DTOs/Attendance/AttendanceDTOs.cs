@@ -32,6 +32,8 @@ namespace App.Business.DTOs.Attendance
         public string? Notes { get; set; }
         /// <summary>manual | faceid | auto</summary>
         public string RecordSource { get; set; } = "manual";
+        /// <summary>Only set when RecordSource is "manual"</summary>
+        public string? RecordedByName { get; set; }
     }
 
     public class DailyAttendanceReport
