@@ -30,6 +30,8 @@ namespace App.Business.DTOs.Attendance
         public bool IsLate { get; set; }
         public bool IsEarlyLeave { get; set; }
         public string? Notes { get; set; }
+        /// <summary>manual | faceid | auto</summary>
+        public string RecordSource { get; set; } = "manual";
     }
 
     public class DailyAttendanceReport

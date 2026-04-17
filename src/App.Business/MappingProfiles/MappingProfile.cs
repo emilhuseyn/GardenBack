@@ -59,7 +59,10 @@ namespace App.Business.MappingProfiles
             CreateMap<MarkAttendanceRequest, Attendance>();
             CreateMap<Attendance, AttendanceResponse>()
                 .ForMember(d => d.ChildFullName, opt => opt.MapFrom(s => s.Child != null ? $"{s.Child.FirstName} {s.Child.LastName}" : string.Empty))
-                .ForMember(d => d.GroupName, opt => opt.MapFrom(s => s.Child != null && s.Child.Group != null ? s.Child.Group.Name : string.Empty));
+                .ForMember(d => d.GroupName, opt => opt.MapFrom(s => s.Child != null && s.Child.Group != null ? s.Child.Group.Name : string.Empty))
+                .ForMember(d => d.RecordSource, opt => opt.MapFrom(s =>
+                    s.RecordedById == "hikvision-sync" ? "faceid" :
+                    s.RecordedById == "auto-absent"    ? "auto"   : "manual"));
 
             // Payment
             CreateMap<Payment, PaymentResponse>()
