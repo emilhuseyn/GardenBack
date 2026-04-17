@@ -41,5 +41,11 @@ namespace App.Business.Services.Interfaces
         /// Auto-detects late arrivals and early leaves based on ScheduleConfig.
         /// </summary>
         Task AutoDetectLateAndEarlyLeave();
+
+        /// <summary>
+        /// Marks all active children without an attendance record for today as Absent.
+        /// Runs at end of day so children who were not recorded (manually or via face ID) get "gəlmədi".
+        /// </summary>
+        Task AutoMarkAbsentAsync();
     }
 }

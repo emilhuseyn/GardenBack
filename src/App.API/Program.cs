@@ -126,6 +126,13 @@ RecurringJob.AddOrUpdate<INotificationService>(
     Cron.Daily(20, 0),
     new RecurringJobOptions { TimeZone = bakuZone });
 
+// Hər gün saat 23:50-də — davamiyyəti qeyd olunmayan aktiv uşaqları "Gəlmədi" kimi işarələ
+RecurringJob.AddOrUpdate<IAttendanceService>(
+    "auto-mark-absent",
+    s => s.AutoMarkAbsentAsync(),
+    Cron.Daily(23, 50),
+    new RecurringJobOptions { TimeZone = bakuZone });
+
 app.MapControllers();
 
 //app.Run("http://0.0.0.0:5034");

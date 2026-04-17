@@ -199,6 +199,40 @@ namespace App.Business.Services.Implementations
         }
 
         /// <summary>
+        /// Marks all active children without an attendance record for today as Absent.
+        /// </summary>
+        public async Task AutoMarkAbsentAsync()
+        {
+            var today = DateOnly.FromDateTime(_dt.Now);
+
+            // Get all active children (not deactivated)
+            var allChildren = await _unitOfWork.Children.FindAsync(
+                c => c.DeactivationDate == null || c.DeactivationDate > _dt.Now);
+
+            // Get today's existing attendance records
+            var todayAttendances = await _unitOfWork.Attendances.GetDailyAttendanceAsync(today);
+            var recordedChildIds = new HashSet<int>(todayAttendances.Select(a => a.ChildId));
+
+            // Find children with no record today
+            var absentChildren = allChildren.Where(c => !recordedChildIds.Contains(c.Id)).ToList();
+
+            foreach (var child in absentChildren)
+            {
+                var attendance = new Attendance
+                {
+                    ChildId = child.Id,
+                    Date = today,
+                    Status = AttendanceStatus.Absent,
+                    RecordedById = "auto-absent"
+                };
+                await _unitOfWork.Attendances.AddAsync(attendance);
+            }
+
+            if (absentChildren.Count > 0)
+                await _unitOfWork.SaveChangesAsync();
+        }
+
+        /// <summary>
         /// Auto-detects late arrivals and early leaves based on ScheduleConfig.
         /// </summary>
         public async Task AutoDetectLateAndEarlyLeave()
