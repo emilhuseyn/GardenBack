@@ -297,9 +297,6 @@ namespace App.Business.Services.Implementations
                         table.Cell().Text("Əsas ödəniş");
                         table.Cell().AlignRight().Text($"{payment.OriginalAmount:F2} AZN");
 
-                        table.Cell().Text($"Endirim ({payment.DiscountType})");
-                        table.Cell().AlignRight().Text($"-{payment.DiscountValue:F2} AZN");
-
                         table.Cell().Text("Yekun məbləğ").SemiBold();
                         table.Cell().AlignRight().Text($"{payment.FinalAmount:F2} AZN").SemiBold();
 
