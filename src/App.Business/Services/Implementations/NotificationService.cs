@@ -15,9 +15,14 @@ namespace App.Business.Services.Implementations
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<NotificationService> _logger;
         private readonly HttpClient _httpClient;
-        private readonly string _whatsAppServiceUrl;
-
         private readonly IDateTimeService _dt;
+        private readonly string _wabaApiUrl;
+        private readonly string _wabaToken;
+
+        // WABA template names
+        private const string TplReminder  = "xatirlatma_wp"; // {{1}} = ödəniş tarixi
+        private const string TplPayment   = "odenish_wp";    // {{1}} = tarix, {{2}} = məbləğ, {{3}} = qalıq borc
+        private const string TplOverdue   = "gecikme_wp";    // parametr yoxdur
 
         public NotificationService(
             IUnitOfWork unitOfWork,
@@ -26,14 +31,142 @@ namespace App.Business.Services.Implementations
             IConfiguration configuration,
             IDateTimeService dt)
         {
-            _unitOfWork         = unitOfWork;
-            _logger             = logger;
-            _httpClient         = httpClientFactory.CreateClient("WhatsApp");
-            _whatsAppServiceUrl = configuration["WhatsApp:ServiceUrl"] ?? "http://localhost:3001";
-            _dt                 = dt;
+            _unitOfWork  = unitOfWork;
+            _logger      = logger;
+            _httpClient  = httpClientFactory.CreateClient();
+            _dt          = dt;
+            _wabaApiUrl  = configuration["Waba:ApiUrl"]  ?? "https://api.soft10.io/v1/waba/message/send";
+            _wabaToken   = configuration["Waba:Token"]   ?? string.Empty;
         }
 
-        /// <summary>Bir uşağın borcunu yoxlayır, gecikibsə WhatsApp mesajı göndərir.</summary>
+        // ────────────────────────────────────────────────────────────────
+        // 1. Ödəniş günündən 1 gün əvvəl saat 10:00 — xatirlatma_wp
+        // ────────────────────────────────────────────────────────────────
+        public async Task<SendResult> SendPaymentDueRemindersAsync()
+        {
+            var tomorrow = _dt.Now.Date.AddDays(1);
+            var activeChildren = await _unitOfWork.Children.GetActiveChildrenAsync();
+            var toRemind = activeChildren.Where(c => c.PaymentDay == tomorrow.Day).ToList();
+
+            _logger.LogInformation("WABA xatırlatma: {Count} uşaq (gün: {Day})", toRemind.Count, tomorrow.Day);
+
+            int sent = 0, failed = 0;
+            var errors = new List<string>();
+
+            foreach (var child in toRemind)
+            {
+                try
+                {
+                    var payment = (await _unitOfWork.Payments
+                        .FindAsync(p => p.ChildId == child.Id && p.Month == tomorrow.Month && p.Year == tomorrow.Year))
+                        .FirstOrDefault();
+
+                    if (payment?.Status == PaymentStatus.Paid) continue;
+
+                    // {{1}} = ödəniş tarixi  DD.MM.YYYY
+                    var payDate = $"{tomorrow.Day:D2}.{tomorrow.Month:D2}.{tomorrow.Year}";
+                    var error = await SendWabaAsync(child.ParentPhone, TplReminder, [payDate], child.Id);
+
+                    if (error == null) sent++; else { failed++; errors.Add(error); }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Xatırlatma göndərilmədi (childId={Id})", child.Id);
+                    failed++; errors.Add(ex.Message);
+                }
+            }
+
+            _logger.LogInformation("WABA xatırlatma tamamlandı. Sent={S} Failed={F}", sent, failed);
+            return new SendResult(sent, failed, errors);
+        }
+
+        // ────────────────────────────────────────────────────────────────
+        // 2. Ödəniş qeydə alınanda — odenish_wp
+        // ────────────────────────────────────────────────────────────────
+        public async Task<SendResult> SendPaymentConfirmationAsync(int paymentId)
+        {
+            var payment = await _unitOfWork.Payments.GetByIdAsync(p => p.Id == paymentId, p => p.Child)
+                          ?? new Payment();
+
+            if (payment.Child == null || payment.Id == 0)
+                return new SendResult(0, 1, ["Ödəniş tapılmadı."]);
+
+            try
+            {
+                var child      = payment.Child;
+                var payDate    = payment.PaymentDate.HasValue
+                    ? $"{payment.PaymentDate.Value:dd.MM.yyyy}"
+                    : $"{_dt.Now:dd.MM.yyyy}";
+                var paidAmount    = payment.PaidAmount.ToString("F0");
+                var remaining     = Math.Max(0, payment.FinalAmount - payment.PaidAmount).ToString("F0");
+
+                // {{1}} = tarix, {{2}} = ödənilən məbləğ, {{3}} = qalıq borc
+                var error = await SendWabaAsync(child.ParentPhone, TplPayment,
+                    [payDate, paidAmount, remaining], child.Id);
+
+                if (error == null)
+                {
+                    _logger.LogInformation("WABA ödəniş təsdiqi göndərildi → paymentId={Id}", paymentId);
+                    return new SendResult(1, 0, []);
+                }
+                _logger.LogWarning("WABA ödəniş təsdiqi xəta → {Error}", error);
+                return new SendResult(0, 1, [error]);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "SendPaymentConfirmationAsync xəta → paymentId={Id}", paymentId);
+                return new SendResult(0, 1, [ex.Message]);
+            }
+        }
+
+        // ────────────────────────────────────────────────────────────────
+        // 3. Ödəniş günündən 3 gün sonra saat 10:00 — gecikme_wp
+        // ────────────────────────────────────────────────────────────────
+        public async Task<SendResult> SendPaymentOverdueRemindersAsync()
+        {
+            var today = _dt.Now.Date;
+            var overdueDay = today.AddDays(-3); // 3 gün əvvəl ödəniş günü olmalıydı
+
+            var activeChildren = await _unitOfWork.Children.GetActiveChildrenAsync();
+            var overdueChildren = activeChildren
+                .Where(c => c.PaymentDay == overdueDay.Day)
+                .ToList();
+
+            _logger.LogInformation("WABA gecikme: {Count} uşaq yoxlanılır", overdueChildren.Count);
+
+            int sent = 0, failed = 0;
+            var errors = new List<string>();
+
+            foreach (var child in overdueChildren)
+            {
+                try
+                {
+                    var payment = (await _unitOfWork.Payments
+                        .FindAsync(p => p.ChildId == child.Id && p.Month == today.Month && p.Year == today.Year))
+                        .FirstOrDefault();
+
+                    // Ödəniş edilibsə keç
+                    if (payment?.Status == PaymentStatus.Paid) continue;
+
+                    // gecikme_wp — parametrsiz template
+                    var error = await SendWabaAsync(child.ParentPhone, TplOverdue, [], child.Id);
+
+                    if (error == null) sent++; else { failed++; errors.Add(error); }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Gecikme mesajı göndərilmədi (childId={Id})", child.Id);
+                    failed++; errors.Add(ex.Message);
+                }
+            }
+
+            _logger.LogInformation("WABA gecikme tamamlandı. Sent={S} Failed={F}", sent, failed);
+            return new SendResult(sent, failed, errors);
+        }
+
+        // ────────────────────────────────────────────────────────────────
+        // Köhnə metodlar (saxlanılır, lazım olsa istifadə olunur)
+        // ────────────────────────────────────────────────────────────────
         public async Task<SendResult> SendPaymentReminderAsync(int childId)
         {
             var child = await _unitOfWork.Children.GetByIdAsync(childId);
@@ -44,169 +177,72 @@ namespace App.Business.Services.Implementations
 
             if (!debts.Any()) return new SendResult(0, 0, []);
 
-            var totalDebt = debts.Sum(p => p.FinalAmount - p.PaidAmount);
-            var monthDetails = debts.Select(d => (d.Month, d.Year, d.FinalAmount - d.PaidAmount)).ToList();
-            var message = BuildDebtMessage(
-                child.ParentFullName,
-                $"{child.FirstName} {child.LastName}",
-                totalDebt,
-                monthDetails);
-
-            var error = await SendWhatsAppAsync(child.ParentPhone, message, childId);
+            // Ən yaxın ödəniş tarixini göndər
+            var payDate = $"{_dt.Now.Day:D2}.{_dt.Now.Month:D2}.{_dt.Now.Year}";
+            var error = await SendWabaAsync(child.ParentPhone, TplReminder, [payDate], childId);
             return error == null ? new SendResult(1, 0, []) : new SendResult(0, 1, [error]);
         }
 
-        /// <summary>Bütün borclu valideynlərə toplu xatırlatma göndərir.</summary>
         public async Task<SendResult> SendBulkRemindersToDebtorsAsync()
         {
             var debts   = await _unitOfWork.Payments.GetDebtorsAsync();
             var grouped = debts.GroupBy(p => p.ChildId).ToList();
-
-            _logger.LogInformation("WhatsApp: {Count} borcluya mesaj gonderilir...", grouped.Count);
+            _logger.LogInformation("WABA toplu xatırlatma: {Count} borclu", grouped.Count);
 
             int sent = 0, failed = 0;
             var errors = new List<string>();
             foreach (var group in grouped)
             {
                 var r = await SendPaymentReminderAsync(group.Key);
-                sent   += r.Sent;
-                failed += r.Failed;
-                errors.AddRange(r.Errors);
+                sent += r.Sent; failed += r.Failed; errors.AddRange(r.Errors);
             }
-
-            _logger.LogInformation("WhatsApp: Toplu gondermə tamamlandi. Sent={S} Failed={F}", sent, failed);
             return new SendResult(sent, failed, errors);
         }
 
-        /// <summary>Yarın ödəniş günü olan uşaqların valideynlərinə xatırlatma göndərir.</summary>
-        public async Task<SendResult> SendPaymentDueRemindersAsync()
+        // ────────────────────────────────────────────────────────────────
+        // WABA API çağırışı
+        // ────────────────────────────────────────────────────────────────
+        private async Task<string?> SendWabaAsync(string toPhone, string template, string[] parameters, int childId)
         {
-            var tomorrow = _dt.Now.Date.AddDays(1);
+            // Telefon nömrəsini E.164 rəqəmsal formatına çevir (+ işarəsini sil)
+            var phone = toPhone.TrimStart('+').Replace(" ", "").Replace("-", "");
 
-            var activeChildren = await _unitOfWork.Children.GetActiveChildrenAsync();
-            var childrenToRemind = activeChildren
-                .Where(c => c.PaymentDay == tomorrow.Day)
-                .ToList();
-
-            _logger.LogInformation("Yarın ödəniş xatırlatması: {Count} uşaq (gün: {Day})", childrenToRemind.Count, tomorrow.Day);
-
-            int sent = 0, failed = 0;
-            var errors = new List<string>();
-
-            foreach (var child in childrenToRemind)
+            var payload = new
             {
-                try
-                {
-                    var payment = (await _unitOfWork.Payments
-                        .FindAsync(p => p.ChildId == child.Id && p.Month == tomorrow.Month && p.Year == tomorrow.Year))
-                        .FirstOrDefault();
+                phone,
+                template,
+                @params = parameters
+            };
 
-                    if (payment?.Status == PaymentStatus.Paid)
-                        continue;
-
-                    var amount = payment == null
-                        ? child.MonthlyFee
-                        : Math.Max(0, payment.FinalAmount - payment.PaidAmount);
-
-                    var message = BuildPaymentDueReminderMessage(
-                        child.ParentFullName,
-                        $"{child.FirstName} {child.LastName}",
-                        amount,
-                        tomorrow.Month,
-                        tomorrow.Year);
-
-                    var error = await SendWhatsAppAsync(child.ParentPhone, message, child.Id);
-                    if (error == null)
-                        sent++;
-                    else
-                    {
-                        failed++;
-                        errors.Add(error);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Ödəniş xatırlatması göndərilməsi uğursuz");
-                    failed++;
-                    errors.Add(ex.Message);
-                }
-            }
-
-            _logger.LogInformation("Yarın ödəniş xatırlatması tamamlandi. Sent={S} Failed={F}", sent, failed);
-            return new SendResult(sent, failed, errors);
-        }
-
-        /// <summary>Ödəniş edilərkən valideynə təsdiqləmə mesajı göndərir.</summary>
-        public async Task<SendResult> SendPaymentConfirmationAsync(int paymentId)
-        {
-            var payment = await _unitOfWork.Payments.GetByIdAsync(
-                p => p.Id == paymentId,
-                p => p.Child)
-                ?? new Payment();
-
-            if (payment.Child == null || payment.Id == 0)
-                return new SendResult(0, 1, ["Ödəniş əylentisi tapılmadı."]);
+            var logMsg = $"[WABA] template={template} params=[{string.Join(",", parameters)}]";
 
             try
             {
-                var child = payment.Child;
-                var message = BuildPaymentConfirmationMessage(
-                    child.ParentFullName,
-                    $"{child.FirstName} {child.LastName}",
-                    payment.PaidAmount,
-                    payment.Month,
-                    payment.Year);
+                var body    = JsonSerializer.Serialize(payload);
+                var request = new HttpRequestMessage(HttpMethod.Post, _wabaApiUrl);
+                request.Headers.Add("Authorization", $"Bearer {_wabaToken}");
+                request.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
-                var error = await SendWhatsAppAsync(child.ParentPhone, message, child.Id);
-                
-                if (error == null)
-                {
-                    _logger.LogInformation("Ödəniş təsdiqləməsi göndərildi → {PaymentId} (Uşaq: {ChildId})", paymentId, child.Id);
-                    return new SendResult(1, 0, []);
-                }
-                
-                _logger.LogWarning("Ödəniş təsdiqləməsi göndərilməsi xətası → {PaymentId}: {Error}", paymentId, error);
-                return new SendResult(0, 1, [error]);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Ödəniş təsdiqləməsi prosesi xətaya düşdü → {PaymentId}", paymentId);
-                return new SendResult(0, 1, [ex.Message]);
-            }
-        }
-
-        // ──────────────────────────────────────────
-        // Private helpers
-        // ──────────────────────────────────────────
-
-        // Returns null on success, error string on failure
-        private async Task<string?> SendWhatsAppAsync(string toPhone, string message, int childId)
-        {
-            try
-            {
-                var body    = JsonSerializer.Serialize(new { phone = toPhone, message });
-                var content = new StringContent(body, Encoding.UTF8, "application/json");
-
-                var response = await _httpClient.PostAsync($"{_whatsAppServiceUrl}/send", content);
+                var response = await _httpClient.SendAsync(request);
                 var resBody  = await response.Content.ReadAsStringAsync();
 
                 if (response.IsSuccessStatusCode)
                 {
-                    _logger.LogInformation("WhatsApp gondərildi → {Phone}", toPhone);
-                    await LogNotificationAsync(toPhone, message, childId, isSuccessful: true);
+                    _logger.LogInformation("WABA göndərildi → {Phone} [{Template}]", phone, template);
+                    await LogNotificationAsync(toPhone, logMsg, childId, isSuccessful: true);
                     return null;
                 }
 
-                var errMsg = $"{toPhone}: {resBody}";
-                _logger.LogError("WhatsApp xeta: {Status} → {Body}", (int)response.StatusCode, resBody);
-                await LogNotificationAsync(toPhone, message, childId, isSuccessful: false, error: resBody);
+                var errMsg = $"{phone}: HTTP {(int)response.StatusCode} — {resBody}";
+                _logger.LogError("WABA xəta: {Status} → {Body}", (int)response.StatusCode, resBody);
+                await LogNotificationAsync(toPhone, logMsg, childId, isSuccessful: false, error: resBody);
                 return errMsg;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "WhatsApp servisine qoşulmaq olmadi → {Phone}", toPhone);
-                await LogNotificationAsync(toPhone, message, childId, isSuccessful: false, error: ex.Message);
-                return $"{toPhone}: {ex.Message}";
+                _logger.LogError(ex, "WABA servisinə qoşulmaq olmadı → {Phone}", phone);
+                await LogNotificationAsync(toPhone, logMsg, childId, isSuccessful: false, error: ex.Message);
+                return $"{phone}: {ex.Message}";
             }
         }
 
@@ -221,76 +257,8 @@ namespace App.Business.Services.Implementations
                 IsSuccessful   = isSuccessful,
                 ChildId        = childId
             };
-
             await _unitOfWork.Context.SMSNotifications.AddAsync(log);
             await _unitOfWork.SaveChangesAsync();
-        }
-
-        private static string BuildDebtMessage(
-            string parentName, string childName, decimal debt, List<(int Month, int Year, decimal Amount)> monthDetails)
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine($"🌸 *Hörmətli {parentName}!*\n");
-            sb.AppendLine($"Uşaq bağçamıza göstərdiyiniz etimada görə təşəkkür edirik.\n");
-            sb.AppendLine($"Sizə xatırlatmaq istəyirik ki, *{childName}* adlı övladınızın aşağıdakı aylara aid ödənişləri hələ tamamlanmayıb:\n");
-            sb.AppendLine($"📅 *Aylar və məbləğlər:*\n" + string.Join("\n", monthDetails.Select(x => $"- {MonthName(x.Month)} {x.Year}: {x.Amount:F2} AZN")));
-            sb.AppendLine($"💰 *Ümumi borc:* {debt:F2} AZN\n");
-            sb.AppendLine($"Zəhmət olmasa ödənişi ən qısa müddətdə həyata keçirməyinizi xahiş edirik.\n");
-            sb.AppendLine($"Əlavə suallarınız olarsa, bağça rəhbərliyi ilə əlaqə saxlaya bilərsiniz.\n");
-            sb.AppendLine($"Hörmətlə,\n*Uşaq Bağçası Administrasiyası* 🌸");
-            return sb.ToString();
-        }
-
-        private static string BuildPaymentDueReminderMessage(
-            string parentName, string childName, decimal amount, int month, int year)
-            => $"🌸 *Hörmətli {parentName}!*\n\n" +
-               $"Uşaq bağçamıza göstərdiyiniz etimada görə təşəkkür edirik.\n\n" +
-               $"Sizə xatırlatmaq istərdik ki, sabah *{childName}* adlı övladınızın *{MonthName(month)} {year}* ayına aid ödəniş günüdür.\n\n" +
-               $"💰 *Ödəniş məbləği:* {amount:F2} AZN\n\n" +
-               $"Zəhmət olmasa ödənişi vaxtında etməyinizi xahiş edirik.\n\n" +
-               $"Hörmətlə,\n*Uşaq Bağçası Administrasiyası* 🌸";
-
-        private static string BuildPaymentConfirmationMessage(
-            string parentName, string childName, decimal paidAmount, int month, int year)
-            => $"🌸 *Hörmətli {parentName}!*\n\n" +
-               $"Ödənişinizin qeydə alındığını bildiririk.\n\n" +
-               $"*{childName}* adlı övladınızın *{MonthName(month)} {year}* ayına aid ödənişi uğurla qeydə alınmışdır.\n\n" +
-               $"💰 *Ödədiyi məbləğ:* {paidAmount:F2} AZN\n\n" +
-               $"Bağçamıza göstərdiyiniz etimada görə təşəkkür edirik! 💝\n\n" +
-               $"Hörmətlə,\n*Uşaq Bağçası Administrasiyası* 🌸";
-
-        private static string MonthName(int month) => month switch
-        {
-            1  => "Yanvar",
-            2  => "Fevral",
-            3  => "Mart",
-            4  => "Aprel",
-            5  => "May",
-            6  => "İyun",
-            7  => "İyul",
-            8  => "Avqust",
-            9  => "Sentyabr",
-            10 => "Oktyabr",
-            11 => "Noyabr",
-            12 => "Dekabr",
-            _  => month.ToString()
-        };
-
-        private static DateTime BuildDueDate(Payment payment)
-        {
-            var day = payment.Child?.PaymentDay ?? 1;
-            var maxDay = DateTime.DaysInMonth(payment.Year, payment.Month);
-            return new DateTime(payment.Year, payment.Month, Math.Min(day, maxDay));
-        }
-
-        private static TimeZoneInfo GetBakuTimeZone()
-        {
-            try { return TimeZoneInfo.FindSystemTimeZoneById("Azerbaijan Standard Time"); }
-            catch
-            {
-                try { return TimeZoneInfo.FindSystemTimeZoneById("Asia/Baku"); }
-                catch { return TimeZoneInfo.Utc; }
-            }
         }
     }
 }
