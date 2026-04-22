@@ -105,11 +105,11 @@ RecurringJob.AddOrUpdate<IAttendanceService>(
     Cron.Daily(18, 30),
     new RecurringJobOptions { TimeZone = bakuZone });
 
-// Hər saatda bir — Hikvision kameradan davamiyyəti sinxronlaşdır
+// Hər 30 dəqiqədən bir — Hikvision kameradan davamiyyəti sinxronlaşdır
 RecurringJob.AddOrUpdate<HikvisionAttendanceSyncJob>(
     "hikvision-attendance-sync",
     s => s.SyncTodayAttendanceAsync(),
-    "0 * * * *",
+    "*/30 * * * *",
     new RecurringJobOptions { TimeZone = bakuZone });
 
 // Hər gecə saat 02:00-da — gündəlik verilənlər bazası backup-ı
