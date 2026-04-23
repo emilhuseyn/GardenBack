@@ -140,6 +140,13 @@ RecurringJob.AddOrUpdate<IAttendanceService>(
     Cron.Daily(23, 50),
     new RecurringJobOptions { TimeZone = bakuZone });
 
+// Hər gün saat 06:00-da — gecə job-u qaçırılıbsa dünənin "Gəlmədi" qeydlərini bərpa et
+RecurringJob.AddOrUpdate<IAttendanceService>(
+    "recover-missed-absent-marks",
+    s => s.RecoverMissedAbsentMarksAsync(),
+    Cron.Daily(6, 0),
+    new RecurringJobOptions { TimeZone = bakuZone });
+
 app.MapControllers();
 
 //app.Run("http://0.0.0.0:5034");

@@ -27,6 +27,10 @@ namespace App.Business.Validators
             RuleFor(x => x.MonthlyFee)
                 .GreaterThan(0).WithMessage("Aylıq ödəniş 0-dan böyük olmalıdır.");
 
+            RuleFor(x => x.DiscountPercentage)
+                .InclusiveBetween(0, 100).When(x => x.DiscountPercentage.HasValue)
+                .WithMessage("Endirim faizi 0 ilə 100 arasında olmalıdır.");
+
             RuleFor(x => x.PaymentDay)
                 .InclusiveBetween(1, 28).WithMessage("Ödəniş günü 1 ilə 28 arasında olmalıdır.");
 
@@ -70,6 +74,10 @@ namespace App.Business.Validators
             RuleFor(x => x.MonthlyFee)
                 .GreaterThan(0).When(x => x.MonthlyFee.HasValue)
                 .WithMessage("Aylıq ödəniş 0-dan böyük olmalıdır.");
+
+            RuleFor(x => x.DiscountPercentage)
+                .InclusiveBetween(0, 100).When(x => x.DiscountPercentage.HasValue)
+                .WithMessage("Endirim faizi 0 ilə 100 arasında olmalıdır.");
 
             RuleFor(x => x.PaymentDay)
                 .InclusiveBetween(1, 28).When(x => x.PaymentDay.HasValue)

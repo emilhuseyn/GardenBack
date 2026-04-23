@@ -62,17 +62,22 @@ namespace App.Business.Services.Implementations
 
                     if (existing != null) continue;
 
+                    var discountPercent = child.DiscountPercentage ?? 0;
+                    var hasDiscount = discountPercent > 0;
+
                     var payment = new Payment
                     {
                         ChildId = child.Id,
                         Month = month,
                         Year = year,
                         OriginalAmount = child.MonthlyFee,
-                        FinalAmount = child.MonthlyFee,
+                        FinalAmount = hasDiscount
+                            ? CalculateFinalAmount(child.MonthlyFee, DiscountType.Percentage, discountPercent)
+                            : child.MonthlyFee,
                         PaidAmount = 0,
                         Status = PaymentStatus.Debt,
-                        DiscountType = DiscountType.None,
-                        DiscountValue = 0,
+                        DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
+                        DiscountValue = hasDiscount ? discountPercent : 0,
                         RecordedById = "system"
                     };
 
@@ -110,17 +115,22 @@ namespace App.Business.Services.Implementations
                 var child = await _unitOfWork.Children.GetByIdAsync(dto.ChildId)
                     ?? throw new EntityNotFoundException($"{dto.ChildId} ID-li uşaq tapılmadı.");
 
+                var discountPercent = child.DiscountPercentage ?? 0;
+                var hasDiscount = discountPercent > 0;
+
                 payment = new Payment
                 {
                     ChildId = dto.ChildId,
                     Month = dto.Month,
                     Year = dto.Year,
                     OriginalAmount = child.MonthlyFee,
-                    FinalAmount = child.MonthlyFee,
+                    FinalAmount = hasDiscount
+                        ? CalculateFinalAmount(child.MonthlyFee, DiscountType.Percentage, discountPercent)
+                        : child.MonthlyFee,
                     PaidAmount = 0,
                     Status = PaymentStatus.Debt,
-                    DiscountType = DiscountType.None,
-                    DiscountValue = 0,
+                    DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
+                    DiscountValue = hasDiscount ? discountPercent : 0,
                     RecordedById = recordedById
                 };
 

@@ -47,5 +47,11 @@ namespace App.Business.Services.Interfaces
         /// Runs at end of day so children who were not recorded (manually or via face ID) get "gəlmədi".
         /// </summary>
         Task AutoMarkAbsentAsync();
+
+        /// <summary>
+        /// Recovery job: marks yesterday's missing attendance records as Absent.
+        /// Used when end-of-day job did not run.
+        /// </summary>
+        Task RecoverMissedAbsentMarksAsync();
     }
 }

@@ -10,6 +10,7 @@ namespace App.Business.DTOs.Children
         public int GroupId { get; set; }
         public ScheduleType ScheduleType { get; set; }
         public decimal MonthlyFee { get; set; }
+        public decimal? DiscountPercentage { get; set; }
         public int PaymentDay { get; set; } = 1;
         public string ParentFullName { get; set; } = string.Empty;
         public string? SecondParentFullName { get; set; }
@@ -27,6 +28,7 @@ namespace App.Business.DTOs.Children
         public int? GroupId { get; set; }
         public ScheduleType? ScheduleType { get; set; }
         public decimal? MonthlyFee { get; set; }
+        public decimal? DiscountPercentage { get; set; }
         public int? PaymentDay { get; set; }
         public DateTime? RegistrationDate { get; set; }
         public DateTime? DeactivationDate { get; set; }
@@ -51,6 +53,7 @@ namespace App.Business.DTOs.Children
         public string DivisionName { get; set; } = string.Empty;
         public string ScheduleType { get; set; } = string.Empty;
         public decimal MonthlyFee { get; set; }
+        public decimal? DiscountPercentage { get; set; }
         public int PaymentDay { get; set; }
         public DateTime? DeactivationDate { get; set; }
         public string Status { get; set; } = string.Empty;

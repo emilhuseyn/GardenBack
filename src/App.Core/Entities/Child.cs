@@ -11,6 +11,7 @@ namespace App.Core.Entities
         public int GroupId { get; set; }
         public ScheduleType ScheduleType { get; set; }
         public decimal MonthlyFee { get; set; }
+        public decimal? DiscountPercentage { get; set; }
         public int PaymentDay { get; set; } = 1;
         public DateTime RegistrationDate { get; set; } = DateTime.UtcNow;
         public DateTime? DeactivationDate { get; set; }

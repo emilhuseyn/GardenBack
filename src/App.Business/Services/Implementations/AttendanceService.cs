@@ -239,13 +239,28 @@ namespace App.Business.Services.Implementations
         public async Task AutoMarkAbsentAsync()
         {
             var today = DateOnly.FromDateTime(_dt.Now);
+            await MarkAbsentForDateAsync(today);
+        }
+
+        /// <summary>
+        /// Recovery job: marks yesterday's missing attendance records as Absent.
+        /// </summary>
+        public async Task RecoverMissedAbsentMarksAsync()
+        {
+            var yesterday = DateOnly.FromDateTime(_dt.Now.AddDays(-1));
+            await MarkAbsentForDateAsync(yesterday);
+        }
+
+        private async Task MarkAbsentForDateAsync(DateOnly date)
+        {
+            var dayStart = date.ToDateTime(TimeOnly.MinValue);
 
             // Get all active children (not deactivated)
             var allChildren = await _unitOfWork.Children.FindAsync(
-                c => c.DeactivationDate == null || c.DeactivationDate > _dt.Now);
+                c => c.DeactivationDate == null || c.DeactivationDate > dayStart);
 
-            // Get today's existing attendance records
-            var todayAttendances = await _unitOfWork.Attendances.GetDailyAttendanceAsync(today);
+            // Get existing attendance records for target date
+            var todayAttendances = await _unitOfWork.Attendances.GetDailyAttendanceAsync(date);
             var recordedChildIds = new HashSet<int>(todayAttendances.Select(a => a.ChildId));
 
             // Find children with no record today
@@ -256,7 +271,7 @@ namespace App.Business.Services.Implementations
                 var attendance = new Attendance
                 {
                     ChildId = child.Id,
-                    Date = today,
+                    Date = date,
                     Status = AttendanceStatus.Absent,
                     RecordedById = "auto-absent"
                 };

@@ -100,6 +100,7 @@ namespace App.Business.Services.Implementations
             if (dto.GroupId.HasValue) child.GroupId = dto.GroupId.Value;
             if (dto.ScheduleType.HasValue) child.ScheduleType = dto.ScheduleType.Value;
             if (dto.MonthlyFee.HasValue) child.MonthlyFee = dto.MonthlyFee.Value;
+            if (dto.DiscountPercentage.HasValue) child.DiscountPercentage = dto.DiscountPercentage.Value;
             if (dto.PaymentDay.HasValue) child.PaymentDay = dto.PaymentDay.Value;
             if (dto.RegistrationDate.HasValue) child.RegistrationDate = dto.RegistrationDate.Value;
             if (dto.DeactivationDate.HasValue) child.DeactivationDate = dto.DeactivationDate.Value;
