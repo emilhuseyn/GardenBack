@@ -238,7 +238,14 @@ namespace App.Business.Services.Implementations
         /// </summary>
         public async Task AutoMarkAbsentAsync()
         {
-            var today = DateOnly.FromDateTime(_dt.Now);
+            var now = _dt.Now;
+            var nowTime = TimeOnly.FromDateTime(now);
+
+            // Manual/late trigger hallarında gündüz saatlarında auto-absent işləməsin.
+            if (nowTime < new TimeOnly(23, 0) || nowTime > new TimeOnly(23, 59, 59))
+                return;
+
+            var today = DateOnly.FromDateTime(now);
             await MarkAbsentForDateAsync(today);
         }
 

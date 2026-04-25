@@ -2,8 +2,6 @@ using App.Business.Services.Interfaces;
 using App.Core.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
-using System.Text.Json;
 
 namespace App.API.Controllers
 {
@@ -13,58 +11,42 @@ namespace App.API.Controllers
     public class NotificationsController : ControllerBase
     {
         private readonly INotificationService _notificationService;
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IConfiguration _configuration;
-        private readonly IWebHostEnvironment _env;
-        private readonly string _whatsAppServiceUrl;
+        private readonly string _wabaApiUrl;
+        private readonly string _wabaToken;
 
         public NotificationsController(
             INotificationService notificationService,
-            IHttpClientFactory httpClientFactory,
-            IConfiguration configuration,
-            IWebHostEnvironment env)
+            IConfiguration configuration)
         {
             _notificationService = notificationService;
-            _httpClientFactory   = httpClientFactory;
-            _configuration       = configuration;
-            _env                 = env;
-            _whatsAppServiceUrl  = configuration["WhatsApp:ServiceUrl"] ?? "http://localhost:3001";
+            _wabaApiUrl = configuration["Waba:ApiUrl"] ?? string.Empty;
+            _wabaToken = configuration["Waba:Token"] ?? string.Empty;
         }
 
-        /// <summary>WhatsApp servisinin bağlantı vəziyyətini qaytarır.</summary>
+        /// <summary>Soft10 WABA konfiqurasiya vəziyyətini qaytarır.</summary>
+        [HttpGet("waba/status")]
         [HttpGet("whatsapp/status")]
-        public async Task<IActionResult> GetWhatsAppStatus()
+        public IActionResult GetWabaStatus()
         {
-            try
+            var hasApiUrl = !string.IsNullOrWhiteSpace(_wabaApiUrl);
+            var hasToken = !string.IsNullOrWhiteSpace(_wabaToken);
+
+            return Ok(ApiResponse<object>.SuccessResponse(new
             {
-                var client   = _httpClientFactory.CreateClient("WhatsApp");
-                client.Timeout = TimeSpan.FromSeconds(3);
-                var response = await client.GetAsync($"{_whatsAppServiceUrl}/status");
-                var body     = await response.Content.ReadAsStringAsync();
-                var json     = JsonSerializer.Deserialize<object>(body);
-                return Ok(ApiResponse<object>.SuccessResponse(json!));
-            }
-            catch
-            {
-                return Ok(ApiResponse<object>.SuccessResponse(new
-                {
-                    connected = false,
-                    hasQR    = false,
-                    running  = false,
-                    message  = "WhatsApp servisi işləmir."
-                }));
-            }
+                provider = "soft10-waba",
+                connected = hasApiUrl && hasToken,
+                hasQR = false,
+                running = true,
+                message = hasApiUrl && hasToken
+                    ? "Soft10 WABA konfiqurasiyası hazırdır."
+                    : "Soft10 WABA konfiqurasiyası natamamdır (ApiUrl/Token)."
+            }));
         }
 
         /// <summary>Sabah ödəniş günü olanlara mesaj göndərir.</summary>
         [HttpPost("send-due-alerts")]
         public async Task<IActionResult> SendDueAlerts()
         {
-            var status = await GetWhatsAppConnectedStatus();
-            if (!status)
-                return BadRequest(ApiResponse<string>.ErrorResponse(
-                    "WhatsApp qoşulmayıb. Əvvəlcə /whatsapp/start ilə qoşulun."));
-
             var result = await _notificationService.SendPaymentDueRemindersAsync();
             return Ok(ApiResponse<object>.SuccessResponse(new
             {
@@ -75,142 +57,10 @@ namespace App.API.Controllers
             }));
         }
 
-        /// <summary>Node.js WhatsApp servisini avtomatik başladır ("Qoşul" düyməsi).</summary>
-        [HttpPost("whatsapp/start")]
-        public async Task<IActionResult> StartWhatsAppService()
-        {
-            // Artıq işləyib-işləmədiyini yoxla
-            try
-            {
-                var client = _httpClientFactory.CreateClient("WhatsApp");
-                client.Timeout = TimeSpan.FromSeconds(2);
-                var check = await client.GetAsync($"{_whatsAppServiceUrl}/status");
-                if (check.IsSuccessStatusCode)
-                    return Ok(ApiResponse<object>.SuccessResponse(
-                        new { started = true, message = "Servis artıq işləyir." }));
-            }
-            catch { /* işləmir, davam et */ }
-
-            // ContentRootPath-ə görə düzgün path hesabla
-            var relativePath = _configuration["WhatsApp:ServicePath"] ?? "..\\..\\whatsapp-service";
-            var absolutePath = Path.GetFullPath(Path.Combine(_env.ContentRootPath, relativePath));
-
-            if (!Directory.Exists(absolutePath))
-                return BadRequest(ApiResponse<string>.ErrorResponse(
-                    $"WhatsApp servis qovluğu tapılmadı: {absolutePath}"));
-
-            if (!Directory.Exists(Path.Combine(absolutePath, "node_modules")))
-            {
-                try
-                {
-                    var install = Process.Start(new ProcessStartInfo
-                    {
-                        FileName         = "cmd.exe",
-                        Arguments        = "/c npm install",
-                        WorkingDirectory = absolutePath,
-                        UseShellExecute  = false,
-                        CreateNoWindow   = true
-                    });
-                    install?.WaitForExit(60_000);
-                }
-                catch (Exception ex)
-                {
-                    return StatusCode(500, ApiResponse<string>.ErrorResponse(
-                        $"npm install uğursuz oldu: {ex.Message}"));
-                }
-            }
-
-            try
-            {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName         = "cmd.exe",
-                    Arguments        = "/c start /b node server.js",
-                    WorkingDirectory = absolutePath,
-                    UseShellExecute  = false,
-                    CreateNoWindow   = true
-                });
-
-                // Sabit gözləmə əvəzinə polling — hər saniyə yoxla, max 15 saniyə
-                var pollClient = _httpClientFactory.CreateClient("WhatsApp");
-                pollClient.Timeout = TimeSpan.FromSeconds(2);
-
-                for (int i = 0; i < 15; i++)
-                {
-                    await Task.Delay(1000);
-                    try
-                    {
-                        var ping = await pollClient.GetAsync($"{_whatsAppServiceUrl}/status");
-                        if (ping.IsSuccessStatusCode)
-                            return Ok(ApiResponse<object>.SuccessResponse(new
-                            {
-                                started = true,
-                                message = "WhatsApp servisi başladıldı. QR üçün /whatsapp/qr-ə müraciət edin."
-                            }));
-                    }
-                    catch { /* hələ hazır deyil */ }
-                }
-
-                return StatusCode(503, ApiResponse<string>.ErrorResponse(
-                    "Servis başladıldı amma 15 saniyə ərzində cavab vermədi. " +
-                    "whatsapp-service qovluğunda 'node server.js' əmrini manual işlədin və xətaları yoxlayın."));
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ApiResponse<string>.ErrorResponse(
-                    $"Servis başladıla bilmədi: {ex.Message}"));
-            }
-        }
-
-        /// <summary>QR kodu base64 image kimi qaytarır.</summary>
-        [HttpGet("whatsapp/qr")]
-        public async Task<IActionResult> GetWhatsAppQr()
-        {
-            try
-            {
-                var client   = _httpClientFactory.CreateClient("WhatsApp");
-                var response = await client.GetAsync($"{_whatsAppServiceUrl}/qr");
-                var body     = await response.Content.ReadAsStringAsync();
-                var json     = JsonSerializer.Deserialize<object>(body);
-                return StatusCode((int)response.StatusCode, json);
-            }
-            catch
-            {
-                return StatusCode(503, new { message = "WhatsApp servisi əlçatan deyil." });
-            }
-        }
-
-        /// <summary>WhatsApp sessiyanı silir — fərqli nömrə ilə qoşulmaq üçün.</summary>
-        [HttpDelete("whatsapp/disconnect")]
-        [HttpPost("whatsapp/disconnect")]
-        public async Task<IActionResult> DisconnectWhatsApp()
-        {
-            try
-            {
-                var client   = _httpClientFactory.CreateClient("WhatsApp");
-                client.Timeout = TimeSpan.FromSeconds(10);
-                var response = await client.DeleteAsync($"{_whatsAppServiceUrl}/session");
-                var body     = await response.Content.ReadAsStringAsync();
-                var json     = JsonSerializer.Deserialize<object>(body);
-                return StatusCode((int)response.StatusCode,
-                    ApiResponse<object>.SuccessResponse(json!, "WhatsApp sessiyası silindi. Yeni QR yaradılır..."));
-            }
-            catch
-            {
-                return StatusCode(503, ApiResponse<string>.ErrorResponse(
-                    "WhatsApp servisi əlçatan deyil. Servis işləyirmi yoxlayın."));
-            }
-        }
-
         /// <summary>Bütün borclu valideynlərə WhatsApp xatırlatması göndərir.</summary>
         [HttpPost("send-reminders")]
         public async Task<IActionResult> SendBulkReminders()
         {
-            var status = await GetWhatsAppConnectedStatus();
-            if (!status)
-                return BadRequest(ApiResponse<string>.ErrorResponse(
-                    "WhatsApp qoşulmayıb. Əvvəlcə /whatsapp/start ilə qoşulun."));
-
             var result = await _notificationService.SendBulkRemindersToDebtorsAsync();
             return Ok(ApiResponse<object>.SuccessResponse(new
             {
@@ -225,32 +75,12 @@ namespace App.API.Controllers
         [HttpPost("send-reminder/{childId}")]
         public async Task<IActionResult> SendReminderToChild(int childId)
         {
-            var status = await GetWhatsAppConnectedStatus();
-            if (!status)
-                return BadRequest(ApiResponse<string>.ErrorResponse(
-                    "WhatsApp qoşulmayıb. Əvvəlcə /whatsapp/start ilə qoşulun."));
-
             var result = await _notificationService.SendPaymentReminderAsync(childId);
             if (result.Failed > 0)
                 return StatusCode(502, ApiResponse<object>.ErrorResponse(
                     $"Mesaj göndərilə bilmədi: {string.Join("; ", result.Errors)}"));
 
             return Ok(ApiResponse<string>.SuccessResponse("Xatırlatma göndərildi."));
-        }
-
-        // ──────────────────────────────────────────
-        private async Task<bool> GetWhatsAppConnectedStatus()
-        {
-            try
-            {
-                var c = _httpClientFactory.CreateClient("WhatsApp");
-                c.Timeout = TimeSpan.FromSeconds(3);
-                var r    = await c.GetAsync($"{_whatsAppServiceUrl}/status");
-                var body = await r.Content.ReadAsStringAsync();
-                using var doc = System.Text.Json.JsonDocument.Parse(body);
-                return doc.RootElement.TryGetProperty("connected", out var v) && v.GetBoolean();
-            }
-            catch { return false; }
         }
     }
 }

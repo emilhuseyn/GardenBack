@@ -204,17 +204,45 @@ namespace App.Business.Services.Implementations
         // ────────────────────────────────────────────────────────────────
         private async Task<string?> SendWabaAsync(string toPhone, string template, string[] parameters, int childId)
         {
-            // Telefon nömrəsini E.164 rəqəmsal formatına çevir (+ işarəsini sil)
-            var phone = toPhone.TrimStart('+').Replace(" ", "").Replace("-", "");
+            var phone = new string(toPhone.Where(char.IsDigit).ToArray());
 
-            var payload = new
+            object payload;
+            if (parameters.Length > 0)
             {
-                phone,
-                template,
-                @params = parameters
-            };
+                payload = new
+                {
+                    to = phone,
+                    type = "template",
+                    template = new
+                    {
+                        name = template,
+                        language = "az",
+                        components = new[]
+                        {
+                            new
+                            {
+                                type = "body",
+                                parameters = parameters.Select(p => new { type = "text", text = p }).ToArray()
+                            }
+                        }
+                    }
+                };
+            }
+            else
+            {
+                payload = new
+                {
+                    to = phone,
+                    type = "template",
+                    template = new
+                    {
+                        name = template,
+                        language = "az"
+                    }
+                };
+            }
 
-            var logMsg = $"[WABA] template={template} params=[{string.Join(",", parameters)}]";
+            var logMsg = $"[WABA] to={phone} type=template template={template} params=[{string.Join(",", parameters)}]";
 
             try
             {
