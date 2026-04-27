@@ -12,6 +12,10 @@ namespace App.Business.Services.Implementations
 {
     public class NotificationService : INotificationService
     {
+        // Müvəqqəti olaraq mesaj göndərməni dayandırır.
+        // Yenidən aktiv etmək üçün true edin.
+        private const bool MessagingEnabled = false;
+
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<NotificationService> _logger;
         private readonly HttpClient _httpClient;
@@ -44,6 +48,9 @@ namespace App.Business.Services.Implementations
         // ────────────────────────────────────────────────────────────────
         public async Task<SendResult> SendPaymentDueRemindersAsync()
         {
+            if (!MessagingEnabled)
+                return DisabledResult();
+
             var tomorrow = _dt.Now.Date.AddDays(1);
             var activeChildren = await _unitOfWork.Children.GetActiveChildrenAsync();
             var toRemind = activeChildren.Where(c => c.PaymentDay == tomorrow.Day).ToList();
@@ -85,6 +92,9 @@ namespace App.Business.Services.Implementations
         // ────────────────────────────────────────────────────────────────
         public async Task<SendResult> SendPaymentConfirmationAsync(int paymentId)
         {
+            if (!MessagingEnabled)
+                return DisabledResult();
+
             var payment = await _unitOfWork.Payments.GetByIdAsync(p => p.Id == paymentId, p => p.Child)
                           ?? new Payment();
 
@@ -124,6 +134,9 @@ namespace App.Business.Services.Implementations
         // ────────────────────────────────────────────────────────────────
         public async Task<SendResult> SendPaymentOverdueRemindersAsync()
         {
+            if (!MessagingEnabled)
+                return DisabledResult();
+
             var today = _dt.Now.Date;
             var overdueDay = today.AddDays(-3); // 3 gün əvvəl ödəniş günü olmalıydı
 
@@ -169,6 +182,9 @@ namespace App.Business.Services.Implementations
         // ────────────────────────────────────────────────────────────────
         public async Task<SendResult> SendPaymentReminderAsync(int childId)
         {
+            if (!MessagingEnabled)
+                return DisabledResult();
+
             var child = await _unitOfWork.Children.GetByIdAsync(childId);
             if (child == null) return new SendResult(0, 0, []);
 
@@ -185,6 +201,9 @@ namespace App.Business.Services.Implementations
 
         public async Task<SendResult> SendBulkRemindersToDebtorsAsync()
         {
+            if (!MessagingEnabled)
+                return DisabledResult();
+
             var debts   = await _unitOfWork.Payments.GetDebtorsAsync();
             var grouped = debts.GroupBy(p => p.ChildId).ToList();
             _logger.LogInformation("WABA toplu xatırlatma: {Count} borclu", grouped.Count);
@@ -287,6 +306,12 @@ namespace App.Business.Services.Implementations
             };
             await _unitOfWork.Context.SMSNotifications.AddAsync(log);
             await _unitOfWork.SaveChangesAsync();
+        }
+
+        private SendResult DisabledResult()
+        {
+            _logger.LogInformation("Mesaj göndərmə müvəqqəti deaktivdir.");
+            return new SendResult(0, 1, ["Mesaj göndərmə müvəqqəti deaktiv edilib."]);
         }
     }
 }

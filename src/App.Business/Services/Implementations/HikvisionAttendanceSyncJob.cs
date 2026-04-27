@@ -51,18 +51,21 @@ namespace App.Business.Services.Implementations
         public async Task SyncTodayAttendanceAsync()
         {
             var today = DateOnly.FromDateTime(_dt.Now);
-            await SyncAttendanceForDateAsync(today);
+            await SyncAttendanceForDateAsync(today, isManual: false);
         }
 
-        public async Task SyncAttendanceForDateAsync(DateOnly date)
+        public async Task SyncAttendanceForDateAsync(DateOnly date, bool isManual = true)
         {
-            _logger.LogInformation("[Hikvision] {Date} tarixi üçün davamiyyət sinxronizasiyası başlayır.", date);
+            var syncStartTime = _dt.Now;
+            _logger.LogInformation("[Hikvision] {Date} tarixi üçün davamiyyət sinxronizasiyası başlayır. Auto/Manual: {IsManual}", date, isManual);
 
             var events = await FetchAllEventsAsync(date);
 
             if (!events.Any())
             {
                 _logger.LogInformation("[Hikvision] {Date} tarixi üçün heç bir hadisə tapılmadı.", date);
+
+                await LogSyncToDbAsync(date, syncStartTime, 0, 0, isManual, "No events found");
                 return;
             }
 
@@ -93,11 +96,21 @@ namespace App.Business.Services.Implementations
                 }
 
                 var sorted = group.OrderBy(e => e.Time).ToList();
-                var first = sorted.First();
-                var last = sorted.Count > 1 ? sorted.Last() : null;
+                var parsedTimes = sorted
+                    .Select(e => ParseTime(e.Time))
+                    .Where(t => t.HasValue)
+                    .Select(t => t!.Value)
+                    .ToList();
 
-                var arrivalTime = ParseTime(first.Time);
-                var departureTime = last != null ? ParseTime(last.Time) : (TimeOnly?)null;
+                var arrivalTime = parsedTimes.Count > 0 ? parsedTimes.First() : (TimeOnly?)null;
+                TimeOnly? departureTime = null;
+                if (arrivalTime.HasValue)
+                {
+                    var minDepartureTime = arrivalTime.Value.AddHours(1);
+                    var lastAfterThreshold = parsedTimes.LastOrDefault(t => t >= minDepartureTime);
+                    if (lastAfterThreshold != default || parsedTimes.Any(t => t >= minDepartureTime))
+                        departureTime = lastAfterThreshold;
+                }
 
                 // Mövcud qeydi yoxla
                 var existing = (await _unitOfWork.Attendances.FindAsync(
@@ -133,6 +146,25 @@ namespace App.Business.Services.Implementations
             _logger.LogInformation(
                 "[Hikvision] {Date} sinxronizasiyası tamamlandı. Yazılan: {Synced}, Tapılmayan: {Skipped}.",
                 date, synced, skipped);
+
+            await LogSyncToDbAsync(date, syncStartTime, synced, skipped, isManual, "Success");
+        }
+
+        private async Task LogSyncToDbAsync(DateOnly date, DateTime startTime, int synced, int skipped, bool isManual, string details)
+        {
+            var log = new HikvisionSyncLog
+            {
+                SyncDate = date,
+                SyncTime = startTime,
+                SyncedCount = synced,
+                SkippedCount = skipped,
+                IsManual = isManual,
+                TriggeredBy = isManual ? "Admin/Manual" : "SystemJob",
+                Details = details
+            };
+
+            await _unitOfWork.HikvisionSyncLogs.AddAsync(log);
+            await _unitOfWork.SaveChangesAsync();
         }
 
         private async Task<List<HikvisionEvent>> FetchAllEventsAsync(DateOnly date)

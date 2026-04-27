@@ -33,6 +33,7 @@ namespace App.DAL.Presistence
         public DbSet<CashboxMonthlyBalance> CashboxMonthlyBalances { get; set; }
         public DbSet<GroupTeacher> GroupTeachers { get; set; }
         public DbSet<CashboxTransfer> CashboxTransfers { get; set; }
+        public DbSet<HikvisionSyncLog> HikvisionSyncLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -2,6 +2,7 @@ using App.Business.DTOs.Attendance;
 using App.Business.Services.Implementations;
 using App.Business.Services.Interfaces;
 using App.Core.Common;
+using App.Core.Entities;
 using App.Core.Enums;
 using App.Core.Exceptions;
 using App.DAL.UnitOfWork;
@@ -106,11 +107,30 @@ namespace App.API.Controllers
         public IActionResult TriggerHikvisionSync([FromQuery] DateOnly date)
         {
             var jobId = BackgroundJob.Enqueue<HikvisionAttendanceSyncJob>(
-                s => s.SyncAttendanceForDateAsync(date));
+                s => s.SyncAttendanceForDateAsync(date, true));
 
             return Accepted(ApiResponse<object>.SuccessResponse(
                 new { jobId },
                 $"{date:dd.MM.yyyy} tarixi üçün davamiyyət sinxronizasiyası növbəyə alındı."));
+        }
+
+        [HttpGet("hikvision-logs")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> GetHikvisionLogs([FromQuery] DateOnly? from, [FromQuery] DateOnly? to)
+        {
+            var logs = (await _unitOfWork.HikvisionSyncLogs.GetAllAsync()).AsQueryable();
+
+            if (from.HasValue)
+                logs = logs.Where(l => l.SyncDate >= from.Value);
+
+            if (to.HasValue)
+                logs = logs.Where(l => l.SyncDate <= to.Value);
+
+            var result = logs
+                .OrderByDescending(l => l.SyncTime)
+                .ToList();
+
+            return Ok(ApiResponse<List<HikvisionSyncLog>>.SuccessResponse(result));
         }
 
         // Müəllimin qrupunu tapır
