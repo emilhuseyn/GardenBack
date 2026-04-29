@@ -64,7 +64,18 @@ namespace App.Business.Services.Implementations
             {
                 var existingPerson = (await _unitOfWork.Children.FindAsync(c => c.PersonId == dto.PersonId.Value)).FirstOrDefault();
                 if (existingPerson != null)
-                    throw new Core.Exceptions.ValidationException(new[] { $"Bu İVMS ID artıq {existingPerson.FirstName} {existingPerson.LastName} üçün istifadə olunur ({dto.PersonId.Value})" });
+                {
+                    if (existingPerson.IsDeleted)
+                    {
+                        // Transfer PersonId from the deleted child to the new one
+                        existingPerson.PersonId = null;
+                        await _unitOfWork.Children.UpdateAsync(existingPerson);
+                    }
+                    else
+                    {
+                        throw new Core.Exceptions.ValidationException(new[] { $"Bu İVMS ID artıq {existingPerson.FirstName} {existingPerson.LastName} üçün istifadə olunur ({dto.PersonId.Value})" });
+                    }
+                }
             }
 
             var child = _mapper.Map<Child>(dto);
@@ -125,7 +136,18 @@ namespace App.Business.Services.Implementations
             {
                 var existingPerson = (await _unitOfWork.Children.FindAsync(c => c.PersonId == newPersonId.Value && c.Id != id)).FirstOrDefault();
                 if (existingPerson != null)
-                    throw new Core.Exceptions.ValidationException(new[] { $"Bu İVMS ID artıq {existingPerson.FirstName} {existingPerson.LastName} üçün istifadə olunur ({newPersonId.Value})" });
+                {
+                    if (existingPerson.IsDeleted)
+                    {
+                        // Transfer PersonId from the deleted child to the new one
+                        existingPerson.PersonId = null;
+                        await _unitOfWork.Children.UpdateAsync(existingPerson);
+                    }
+                    else
+                    {
+                        throw new Core.Exceptions.ValidationException(new[] { $"Bu İVMS ID artıq {existingPerson.FirstName} {existingPerson.LastName} üçün istifadə olunur ({newPersonId.Value})" });
+                    }
+                }
             }
 
             child.PersonId = newPersonId;

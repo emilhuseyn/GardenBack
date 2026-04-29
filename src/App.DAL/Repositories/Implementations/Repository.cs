@@ -30,7 +30,7 @@ namespace App.DAL.Repositories.Abstractions
 
         public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
         {
-            return await DbSet.Where(predicate).ToListAsync();
+            return await DbSet.IgnoreQueryFilters().Where(predicate).ToListAsync();
         }
 
         public virtual async Task<T?> GetByIdAsync(Expression<Func<T, bool>> predicate,
