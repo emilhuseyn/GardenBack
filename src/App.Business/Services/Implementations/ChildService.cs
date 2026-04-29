@@ -120,7 +120,8 @@ namespace App.Business.Services.Implementations
 
             // Check PersonId uniqueness BEFORE updating
             var newPersonId = dto.PersonId.HasValue && dto.PersonId.Value > 0 ? dto.PersonId.Value : (int?)null;
-            if (newPersonId.HasValue && newPersonId != child.PersonId)
+
+            if (newPersonId.HasValue)
             {
                 var existingPerson = (await _unitOfWork.Children.FindAsync(c => c.PersonId == newPersonId.Value && c.Id != id)).FirstOrDefault();
                 if (existingPerson != null)
