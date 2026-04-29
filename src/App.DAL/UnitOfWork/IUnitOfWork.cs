@@ -18,6 +18,7 @@ namespace App.DAL.UnitOfWork
         IDivisionRepository Divisions { get; }
         IScheduleConfigRepository ScheduleConfigs { get; }
         IHikvisionSyncLogRepository HikvisionSyncLogs { get; }
+        ISystemSettingRepository SystemSettings { get; }
         AppDbContext Context { get; }
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();

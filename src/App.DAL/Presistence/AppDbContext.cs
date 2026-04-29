@@ -34,6 +34,7 @@ namespace App.DAL.Presistence
         public DbSet<GroupTeacher> GroupTeachers { get; set; }
         public DbSet<CashboxTransfer> CashboxTransfers { get; set; }
         public DbSet<HikvisionSyncLog> HikvisionSyncLogs { get; set; }
+        public DbSet<SystemSetting> SystemSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

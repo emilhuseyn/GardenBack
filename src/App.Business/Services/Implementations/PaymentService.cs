@@ -257,9 +257,7 @@ namespace App.Business.Services.Implementations
 
                         if (logoBytes != null)
                         {
-                            row.ConstantItem(80)
-                                .Height(38)
-                                .Image(logoBytes, ImageScaling.FitArea);
+                            row.ConstantItem(80).AlignRight().Height(38).Image(logoBytes, ImageScaling.FitArea);
                         }
                     });
 

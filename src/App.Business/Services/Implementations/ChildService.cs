@@ -59,6 +59,14 @@ namespace App.Business.Services.Implementations
             if (!groupExists)
                 throw new EntityNotFoundException($"{dto.GroupId} ID-li qrup tapılmadı.");
 
+            // Check PersonId uniqueness BEFORE creating
+            if (dto.PersonId.HasValue && dto.PersonId.Value > 0)
+            {
+                var existingPerson = (await _unitOfWork.Children.FindAsync(c => c.PersonId == dto.PersonId.Value)).FirstOrDefault();
+                if (existingPerson != null)
+                    throw new Core.Exceptions.ValidationException(new[] { $"Bu İVMS ID artıq {existingPerson.FirstName} {existingPerson.LastName} üçün istifadə olunur ({dto.PersonId.Value})" });
+            }
+
             var child = _mapper.Map<Child>(dto);
             child.RegistrationDate = _dt.Now;
             child.Status = ChildStatus.Active;
@@ -109,8 +117,17 @@ namespace App.Business.Services.Implementations
             if (dto.ParentPhone != null) child.ParentPhone = dto.ParentPhone;
             if (dto.SecondParentPhone != null) child.SecondParentPhone = dto.SecondParentPhone;
             if (dto.ParentEmail != null) child.ParentEmail = dto.ParentEmail;
-            // null = sil, dəyər = yaz (explicit olaraq göndərilib)
-            child.PersonId = dto.PersonId.HasValue && dto.PersonId.Value > 0 ? dto.PersonId.Value : null;
+
+            // Check PersonId uniqueness BEFORE updating
+            var newPersonId = dto.PersonId.HasValue && dto.PersonId.Value > 0 ? dto.PersonId.Value : (int?)null;
+            if (newPersonId.HasValue && newPersonId != child.PersonId)
+            {
+                var existingPerson = (await _unitOfWork.Children.FindAsync(c => c.PersonId == newPersonId.Value && c.Id != id)).FirstOrDefault();
+                if (existingPerson != null)
+                    throw new Core.Exceptions.ValidationException(new[] { $"Bu İVMS ID artıq {existingPerson.FirstName} {existingPerson.LastName} üçün istifadə olunur ({newPersonId.Value})" });
+            }
+
+            child.PersonId = newPersonId;
             if (dto.FaceIdToken != null) child.FaceIdToken = dto.FaceIdToken;
 
             await _unitOfWork.Children.UpdateAsync(child);

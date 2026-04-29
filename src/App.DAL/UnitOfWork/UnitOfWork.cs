@@ -25,6 +25,7 @@ namespace App.DAL.UnitOfWork
         private IDivisionRepository? _divisions;
         private IScheduleConfigRepository? _scheduleConfigs;
         private IHikvisionSyncLogRepository? _hikvisionSyncLogs;
+        private ISystemSettingRepository? _systemSettings;
 
         public UnitOfWork(AppDbContext context)
         {
@@ -71,6 +72,9 @@ namespace App.DAL.UnitOfWork
 
         public IHikvisionSyncLogRepository HikvisionSyncLogs =>
             _hikvisionSyncLogs ??= new HikvisionSyncLogRepository(_context);
+
+        public ISystemSettingRepository SystemSettings =>
+            _systemSettings ??= new SystemSettingRepository(_context);
 
         public async Task<int> SaveChangesAsync()
         {
