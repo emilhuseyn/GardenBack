@@ -119,18 +119,18 @@ RecurringJob.AddOrUpdate<IBackupService>(
     "0 2 * * *",
     new RecurringJobOptions { TimeZone = bakuZone });
 
-// Hər gün saat 10:00-da — sabah ödəniş günü olan valideynlərə WABA xatırlatması (xatirlatma_wp)
+// Hər gün saat 12:30-da — sabah ödəniş günü olan valideynlərə WABA xatırlatması (xatirlatma_wp)
 RecurringJob.AddOrUpdate<INotificationService>(
     "send-payment-due-reminders",
     s => s.SendPaymentDueRemindersAsync(),
-    Cron.Daily(10, 0),
+    Cron.Daily(12, 30),
     new RecurringJobOptions { TimeZone = bakuZone });
 
-// Hər gün saat 10:00-da — ödəniş günündən 3 gün keçmiş, hələ ödəməyənlərə WABA gecikme xəbərdarlığı (gecikme_wp)
+// Hər gün saat 12:30-da — ödəniş günündən 3 gün keçmiş, hələ ödəməyənlərə WABA gecikme xəbərdarlığı (gecikme_wp)
 RecurringJob.AddOrUpdate<INotificationService>(
     "send-payment-overdue-reminders",
     s => s.SendPaymentOverdueRemindersAsync(),
-    Cron.Daily(10, 0),
+    Cron.Daily(12, 30),
     new RecurringJobOptions { TimeZone = bakuZone });
 
 // Hər gün saat 23:50-də — davamiyyəti qeyd olunmayan aktiv uşaqları "Gəlmədi" kimi işarələ
