@@ -242,7 +242,7 @@ namespace App.Business.Services.Implementations
 
             void BuildReceiptCopy(IContainer container, string copyTitle)
             {
-                container.Border(1).BorderColor(Colors.Grey.Lighten1).Padding(10).Column(column =>
+                container.Border(1).BorderColor(Colors.Grey.Lighten1).Padding(12).Column(column =>
                 {
                     column.Spacing(8);
 
@@ -250,14 +250,14 @@ namespace App.Business.Services.Implementations
                     {
                         row.RelativeItem().Column(left =>
                         {
-                            left.Item().Text("KINDERGARTEN BAKI").Bold().FontSize(14).FontColor(Colors.Blue.Darken2);
-                            left.Item().Text("RƏSMİ ÖDƏNİŞ ÇEKİ").SemiBold().FontSize(10).FontColor(Colors.Grey.Darken2);
+                            left.Item().Text("KINDERGARTEN BAKI").Bold().FontSize(15).FontColor(Colors.Blue.Darken2);
+                            left.Item().Text("RƏSMİ ÖDƏNİŞ ÇEKİ").SemiBold().FontSize(11).FontColor(Colors.Grey.Darken2);
                             left.Item().Text(copyTitle).SemiBold().FontSize(9).FontColor(Colors.Grey.Darken1);
                         });
 
                         if (logoBytes != null)
                         {
-                            row.ConstantItem(80).AlignRight().Height(38).Image(logoBytes, ImageScaling.FitArea);
+                            row.ConstantItem(115).AlignRight().Height(72).Image(logoBytes, ImageScaling.FitArea);
                         }
                     });
 
@@ -330,15 +330,16 @@ namespace App.Business.Services.Implementations
             {
                 container.Page(page =>
                 {
-                    page.Margin(20);
-                    page.Size(PageSizes.A4.Landscape());
+                    page.Margin(12);
+                    page.Size(PageSizes.A4);
                     page.DefaultTextStyle(x => x.FontSize(10));
 
-                    page.Content().Row(row =>
+                    page.Content().Column(column =>
                     {
-                        row.Spacing(10);
-                        row.RelativeItem().Element(x => BuildReceiptCopy(x, "Müştəri nüsxəsi"));
-                        row.RelativeItem().Element(x => BuildReceiptCopy(x, "Müəssisə nüsxəsi"));
+                        column.Spacing(12);
+                        column.Item().MinHeight(350).Element(x => BuildReceiptCopy(x, "Müştəri nüsxəsi"));
+                        column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                        column.Item().MinHeight(350).Element(x => BuildReceiptCopy(x, "Müəssisə nüsxəsi"));
                     });
 
                     page.Footer().Column(footer =>
