@@ -75,6 +75,7 @@ namespace App.Business.Services.Implementations
                             ? CalculateFinalAmount(child.MonthlyFee, DiscountType.Percentage, discountPercent)
                             : child.MonthlyFee,
                         PaidAmount = 0,
+                    LastPaymentAmount = 0,
                         Status = PaymentStatus.Debt,
                         DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
                         DiscountValue = hasDiscount ? discountPercent : 0,
@@ -128,6 +129,7 @@ namespace App.Business.Services.Implementations
                         ? CalculateFinalAmount(child.MonthlyFee, DiscountType.Percentage, discountPercent)
                         : child.MonthlyFee,
                     PaidAmount = 0,
+                    LastPaymentAmount = 0,
                     Status = PaymentStatus.Debt,
                     DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
                     DiscountValue = hasDiscount ? discountPercent : 0,
@@ -139,6 +141,7 @@ namespace App.Business.Services.Implementations
             }
 
             payment.PaidAmount += dto.Amount;
+            payment.LastPaymentAmount = dto.Amount;
             payment.CashboxId = dto.CashboxId;
             payment.PaymentDate = _dt.Now;
             payment.RecordedById = recordedById;
@@ -226,13 +229,17 @@ namespace App.Business.Services.Implementations
             }
             else
             {
-                // Digər günlər: bu ayın N-dən gələn ayın N-nə kimi (məs. 12.04 – 12.05)
+                // Digər günlər: bu ayın N-dən gələn ayın (N-1)-nə kimi (məs. 02.05 – 01.06)
                 var nextMonth = periodStart.AddMonths(1);
+                var endDay = Math.Max(paymentDay - 1, 1);
                 var nextMonthDays = DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month);
-                periodEnd = new DateTime(nextMonth.Year, nextMonth.Month, Math.Min(paymentDay, nextMonthDays), 0, 0, 0, DateTimeKind.Utc);
+                periodEnd = new DateTime(nextMonth.Year, nextMonth.Month, Math.Min(endDay, nextMonthDays), 0, 0, 0, DateTimeKind.Utc);
             }
             var periodRange = $"{periodStart:dd.MM.yyyy}-{periodEnd:dd.MM.yyyy}";
             var remaining = Math.Max(0, payment.FinalAmount - payment.PaidAmount);
+            var installmentAmount = payment.LastPaymentAmount > 0
+                ? payment.LastPaymentAmount
+                : payment.PaidAmount;
             var statusText = payment.Status switch
             {
                 PaymentStatus.Paid => "ÖDƏNİB",
@@ -242,28 +249,28 @@ namespace App.Business.Services.Implementations
 
             void BuildReceiptCopy(IContainer container, string copyTitle)
             {
-                container.Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).Column(column =>
+                container.Border(1).BorderColor(Colors.Grey.Lighten1).Padding(9).Column(column =>
                 {
-                    column.Spacing(4);
+                    column.Spacing(5);
 
                     column.Item().Row(row =>
                     {
                         row.RelativeItem().Column(left =>
                         {
-                            left.Item().Text("KINDERGARTEN BAKI").Bold().FontSize(13).FontColor(Colors.Blue.Darken2);
-                            left.Item().Text("RƏSMİ ÖDƏNİŞ ÇEKİ").SemiBold().FontSize(9).FontColor(Colors.Grey.Darken2);
-                            left.Item().Text(copyTitle).SemiBold().FontSize(8).FontColor(Colors.Grey.Darken1);
+                            left.Item().Text("KINDERGARTEN BAKI").Bold().FontSize(14).FontColor(Colors.Blue.Darken2);
+                            left.Item().Text("RƏSMİ ÖDƏNİŞ ÇEKİ").SemiBold().FontSize(10).FontColor(Colors.Grey.Darken2);
+                            left.Item().Text(copyTitle).SemiBold().FontSize(9).FontColor(Colors.Grey.Darken1);
                         });
 
                         if (logoBytes != null)
                         {
-                            row.ConstantItem(95).AlignRight().Height(54).Image(logoBytes, ImageScaling.FitArea);
+                            row.ConstantItem(105).AlignRight().Height(60).Image(logoBytes, ImageScaling.FitArea);
                         }
                     });
 
                     column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
 
-                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(6).Row(row =>
+                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Row(row =>
                     {
                         row.RelativeItem().Column(c =>
                         {
@@ -272,17 +279,17 @@ namespace App.Business.Services.Implementations
                             c.Item().Text($"Dövr: {periodRange}");
                         });
 
-                        row.ConstantItem(120).AlignRight().Column(c =>
+                        row.ConstantItem(125).AlignRight().Column(c =>
                         {
-                            c.Item().Text("Status").FontSize(8).FontColor(Colors.Grey.Darken1);
-                            c.Item().Background(Colors.Blue.Lighten4).Padding(4)
+                            c.Item().Text("Status").FontSize(9).FontColor(Colors.Grey.Darken1);
+                            c.Item().Background(Colors.Blue.Lighten4).Padding(5)
                                 .AlignCenter().Text(statusText).Bold().FontColor(Colors.Blue.Darken3);
                         });
                     });
 
-                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(6).Column(c =>
+                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Column(c =>
                     {
-                        c.Spacing(2);
+                        c.Spacing(3);
                         c.Item().Text("Ödəyici məlumatı").SemiBold().FontColor(Colors.Grey.Darken2);
                         c.Item().Text($"Valideyn: {payment.Child.ParentFullName}");
                         c.Item().Text($"Əlaqə: {payment.Child.ParentPhone}");
@@ -291,7 +298,7 @@ namespace App.Business.Services.Implementations
                         c.Item().Text($"Kassa: {payment.Cashbox?.Name ?? "-"} ({payment.Cashbox?.Type.ToString() ?? "-"})");
                     });
 
-                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(6).Table(table =>
+                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Table(table =>
                     {
                         table.ColumnsDefinition(columns =>
                         {
@@ -309,19 +316,19 @@ namespace App.Business.Services.Implementations
                         table.Cell().AlignRight().Text($"{payment.FinalAmount:F2} AZN").SemiBold();
 
                         table.Cell().Text("Ödənilmiş məbləğ").SemiBold();
-                        table.Cell().AlignRight().Text($"{payment.PaidAmount:F2} AZN").SemiBold().FontColor(Colors.Green.Darken2);
+                        table.Cell().AlignRight().Text($"{installmentAmount:F2} AZN").SemiBold().FontColor(Colors.Green.Darken2);
 
                         table.Cell().Text("Qalıq borc");
                         table.Cell().AlignRight().Text($"{remaining:F2} AZN").FontColor(remaining > 0 ? Colors.Red.Darken1 : Colors.Green.Darken2);
                     });
 
                     if (!string.IsNullOrWhiteSpace(payment.Notes))
-                        column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(6).Text($"Qeyd: {payment.Notes}");
+                        column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Text($"Qeyd: {payment.Notes}");
 
-                    column.Item().PaddingTop(4).Row(row =>
+                    column.Item().PaddingTop(5).Row(row =>
                     {
-                        row.RelativeItem().Text("Qəbul edən: __________________").FontSize(8);
-                        row.RelativeItem().AlignRight().Text("İmza: __________________").FontSize(8);
+                        row.RelativeItem().Text("Qəbul edən: __________________").FontSize(9);
+                        row.RelativeItem().AlignRight().Text("İmza: __________________").FontSize(9);
                     });
                 });
             }
@@ -330,16 +337,16 @@ namespace App.Business.Services.Implementations
             {
                 container.Page(page =>
                 {
-                    page.Margin(8);
+                    page.Margin(9);
                     page.Size(PageSizes.A4);
                     page.DefaultTextStyle(x => x.FontSize(9));
 
                     page.Content().Column(column =>
                     {
                         column.Spacing(6);
-                        column.Item().MinHeight(300).Element(x => BuildReceiptCopy(x, "Müştəri nüsxəsi"));
+                        column.Item().MinHeight(305).Element(x => BuildReceiptCopy(x, "Müştəri nüsxəsi"));
                         column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-                        column.Item().MinHeight(300).Element(x => BuildReceiptCopy(x, "Müəssisə nüsxəsi"));
+                        column.Item().MinHeight(305).Element(x => BuildReceiptCopy(x, "Müəssisə nüsxəsi"));
                     });
 
                     page.Footer().Column(footer =>
