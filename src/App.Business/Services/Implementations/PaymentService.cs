@@ -249,28 +249,28 @@ namespace App.Business.Services.Implementations
 
             void BuildReceiptCopy(IContainer container, string copyTitle)
             {
-                container.Border(1).BorderColor(Colors.Grey.Lighten1).Padding(10).Column(column =>
+                container.Border(1).BorderColor(Colors.Grey.Lighten1).Padding(11).Column(column =>
                 {
-                    column.Spacing(6);
+                    column.Spacing(7);
 
                     column.Item().Row(row =>
                     {
                         row.RelativeItem().Column(left =>
                         {
-                            left.Item().Text("KINDERGARTEN BAKI").Bold().FontSize(15).FontColor(Colors.Blue.Darken2);
-                            left.Item().Text("RƏSMİ ÖDƏNİŞ ÇEKİ").SemiBold().FontSize(11).FontColor(Colors.Grey.Darken2);
+                            left.Item().Text("KINDERGARTEN BAKI").Bold().FontSize(16).FontColor(Colors.Blue.Darken2);
+                            left.Item().Text("RƏSMİ ÖDƏNİŞ ÇEKİ").SemiBold().FontSize(12).FontColor(Colors.Grey.Darken2);
                             left.Item().Text(copyTitle).SemiBold().FontSize(9).FontColor(Colors.Grey.Darken1);
                         });
 
                         if (logoBytes != null)
                         {
-                            row.ConstantItem(118).AlignRight().Height(68).Image(logoBytes, ImageScaling.FitArea);
+                            row.ConstantItem(126).AlignRight().Height(74).Image(logoBytes, ImageScaling.FitArea);
                         }
                     });
 
                     column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
 
-                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Row(row =>
+                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(9).Row(row =>
                     {
                         row.RelativeItem().Column(c =>
                         {
@@ -279,17 +279,17 @@ namespace App.Business.Services.Implementations
                             c.Item().Text($"Dövr: {periodRange}");
                         });
 
-                        row.ConstantItem(135).AlignRight().Column(c =>
+                        row.ConstantItem(140).AlignRight().Column(c =>
                         {
                             c.Item().Text("Status").FontSize(9).FontColor(Colors.Grey.Darken1);
-                            c.Item().Background(Colors.Blue.Lighten4).Padding(5)
+                            c.Item().Background(Colors.Blue.Lighten4).Padding(6)
                                 .AlignCenter().Text(statusText).Bold().FontColor(Colors.Blue.Darken3);
                         });
                     });
 
-                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Column(c =>
+                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(9).Column(c =>
                     {
-                        c.Spacing(3);
+                        c.Spacing(4);
                         c.Item().Text("Ödəyici məlumatı").SemiBold().FontColor(Colors.Grey.Darken2);
                         c.Item().Text($"Valideyn: {payment.Child.ParentFullName}");
                         c.Item().Text($"Əlaqə: {payment.Child.ParentPhone}");
@@ -298,7 +298,7 @@ namespace App.Business.Services.Implementations
                         c.Item().Text($"Kassa: {payment.Cashbox?.Name ?? "-"} ({payment.Cashbox?.Type.ToString() ?? "-"})");
                     });
 
-                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Table(table =>
+                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(9).Table(table =>
                     {
                         table.ColumnsDefinition(columns =>
                         {
@@ -323,9 +323,9 @@ namespace App.Business.Services.Implementations
                     });
 
                     if (!string.IsNullOrWhiteSpace(payment.Notes))
-                        column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Text($"Qeyd: {payment.Notes}");
+                        column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(9).Text($"Qeyd: {payment.Notes}");
 
-                    column.Item().PaddingTop(6).Row(row =>
+                    column.Item().PaddingTop(7).Row(row =>
                     {
                         row.RelativeItem().Text("Qəbul edən: __________________").FontSize(9);
                         row.RelativeItem().AlignRight().Text("İmza: __________________").FontSize(9);
@@ -337,16 +337,16 @@ namespace App.Business.Services.Implementations
             {
                 container.Page(page =>
                 {
-                    page.Margin(8);
+                    page.Margin(7);
                     page.Size(PageSizes.A4);
                     page.DefaultTextStyle(x => x.FontSize(9));
 
                     page.Content().Column(column =>
                     {
                         column.Spacing(6);
-                        column.Item().MinHeight(320).Element(x => BuildReceiptCopy(x, "Müştəri nüsxəsi"));
+                        column.Item().MinHeight(335).Element(x => BuildReceiptCopy(x, "Müştəri nüsxəsi"));
                         column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-                        column.Item().MinHeight(320).Element(x => BuildReceiptCopy(x, "Müəssisə nüsxəsi"));
+                        column.Item().MinHeight(335).Element(x => BuildReceiptCopy(x, "Müəssisə nüsxəsi"));
                     });
 
                     page.Footer().Column(footer =>
