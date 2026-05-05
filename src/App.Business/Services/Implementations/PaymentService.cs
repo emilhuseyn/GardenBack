@@ -339,7 +339,7 @@ namespace App.Business.Services.Implementations
                 {
                     page.Margin(7);
                     page.Size(PageSizes.A4);
-                    page.DefaultTextStyle(x => x.FontSize(10));
+                    page.DefaultTextStyle(x => x.FontSize(11));
 
                     page.Content().Column(column =>
                     {
@@ -352,7 +352,7 @@ namespace App.Business.Services.Implementations
                     page.Footer().Column(footer =>
                     {
                         footer.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten1);
-                        footer.Item().PaddingTop(2).AlignCenter().Text($"Uşaq Bağçası İdarəetmə Sistemi • {nowBaku:dd.MM.yyyy HH:mm}").FontSize(9).FontColor(Colors.Grey.Darken1);
+                        footer.Item().PaddingTop(2).AlignCenter().Text($"Uşaq Bağçası İdarəetmə Sistemi • {nowBaku:dd.MM.yyyy HH:mm}").FontSize(10).FontColor(Colors.Grey.Darken1);
                     });
                 });
             }).GeneratePdf();
