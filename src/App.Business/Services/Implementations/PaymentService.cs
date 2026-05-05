@@ -75,7 +75,7 @@ namespace App.Business.Services.Implementations
                             ? CalculateFinalAmount(child.MonthlyFee, DiscountType.Percentage, discountPercent)
                             : child.MonthlyFee,
                         PaidAmount = 0,
-                    LastPaymentAmount = 0,
+                    LastPaymentAmount = null,
                         Status = PaymentStatus.Debt,
                         DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
                         DiscountValue = hasDiscount ? discountPercent : 0,
@@ -129,7 +129,7 @@ namespace App.Business.Services.Implementations
                         ? CalculateFinalAmount(child.MonthlyFee, DiscountType.Percentage, discountPercent)
                         : child.MonthlyFee,
                     PaidAmount = 0,
-                    LastPaymentAmount = 0,
+                    LastPaymentAmount = null,
                     Status = PaymentStatus.Debt,
                     DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
                     DiscountValue = hasDiscount ? discountPercent : 0,
@@ -237,8 +237,8 @@ namespace App.Business.Services.Implementations
             }
             var periodRange = $"{periodStart:dd.MM.yyyy}-{periodEnd:dd.MM.yyyy}";
             var remaining = Math.Max(0, payment.FinalAmount - payment.PaidAmount);
-            var installmentAmount = payment.LastPaymentAmount > 0
-                ? payment.LastPaymentAmount
+            var installmentAmount = (payment.LastPaymentAmount ?? 0) > 0
+                ? payment.LastPaymentAmount.Value
                 : payment.PaidAmount;
             var statusText = payment.Status switch
             {

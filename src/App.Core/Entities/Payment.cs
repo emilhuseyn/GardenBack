@@ -13,7 +13,7 @@ namespace App.Core.Entities
         public decimal DiscountValue { get; set; }
         public decimal FinalAmount { get; set; }
         public decimal PaidAmount { get; set; }
-        public decimal LastPaymentAmount { get; set; }
+        public decimal? LastPaymentAmount { get; set; }
         public int? CashboxId { get; set; }
         public DateTime? PaymentDate { get; set; }
         public PaymentStatus Status { get; set; } = PaymentStatus.Debt;
