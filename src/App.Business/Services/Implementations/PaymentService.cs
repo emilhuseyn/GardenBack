@@ -96,6 +96,49 @@ namespace App.Business.Services.Implementations
         }
 
         /// <summary>
+        /// Bulk-marks all non-paid payments for the given month/year as fully paid.
+        /// Returns the count of records updated.
+        /// </summary>
+        public async Task<int> BulkMarkAsPaidAsync(int month, int year, string userId)
+        {
+            var payments = (await _unitOfWork.Payments.GetMonthlyPaymentsAsync(month, year))
+                .Where(p => p.Status != PaymentStatus.Paid)
+                .ToList();
+
+            if (payments.Count == 0) return 0;
+
+            var now = _dt.Now;
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                foreach (var payment in payments)
+                {
+                    payment.PaidAmount = payment.FinalAmount;
+                    payment.LastPaymentAmount = payment.FinalAmount;
+                    payment.Status = PaymentStatus.Paid;
+                    payment.PaymentDate = now;
+                    payment.RecordedById = userId;
+                    payment.Notes = string.IsNullOrWhiteSpace(payment.Notes)
+                        ? "Kütləvi ödənilmiş (sistem köçürməsi)"
+                        : payment.Notes + " | Kütləvi ödənilmiş";
+
+                    await _unitOfWork.Payments.UpdateAsync(payment);
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
+            }
+            catch
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
+            }
+
+            return payments.Count;
+        }
+
+        /// <summary>
         /// Records a payment against a child's debt.
         /// If no payment record exists for the given month/year, one is created automatically.
         /// </summary>
@@ -249,9 +292,9 @@ namespace App.Business.Services.Implementations
 
             void BuildReceiptCopy(IContainer container, string copyTitle)
             {
-                container.Border(1).BorderColor(Colors.Grey.Lighten1).Padding(11).Column(column =>
+                container.Border(1).BorderColor(Colors.Grey.Lighten1).Padding(9).Column(column =>
                 {
-                    column.Spacing(7);
+                    column.Spacing(5);
 
                     column.Item().Row(row =>
                     {
@@ -270,7 +313,7 @@ namespace App.Business.Services.Implementations
 
                     column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
 
-                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(9).Row(row =>
+                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Row(row =>
                     {
                         row.RelativeItem().Column(c =>
                         {
@@ -287,7 +330,7 @@ namespace App.Business.Services.Implementations
                         });
                     });
 
-                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(9).Column(c =>
+                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Column(c =>
                     {
                         c.Spacing(4);
                         c.Item().Text("Ödəyici məlumatı").SemiBold().FontColor(Colors.Grey.Darken2);
@@ -298,7 +341,7 @@ namespace App.Business.Services.Implementations
                         c.Item().Text($"Kassa: {payment.Cashbox?.Name ?? "-"} ({payment.Cashbox?.Type.ToString() ?? "-"})");
                     });
 
-                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(9).Table(table =>
+                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Table(table =>
                     {
                         table.ColumnsDefinition(columns =>
                         {
@@ -323,7 +366,7 @@ namespace App.Business.Services.Implementations
                     });
 
                     if (!string.IsNullOrWhiteSpace(payment.Notes))
-                        column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(9).Text($"Qeyd: {payment.Notes}");
+                        column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Text($"Qeyd: {payment.Notes}");
 
                     column.Item().PaddingTop(7).Row(row =>
                     {
@@ -337,16 +380,16 @@ namespace App.Business.Services.Implementations
             {
                 container.Page(page =>
                 {
-                    page.Margin(7);
+                    page.Margin(6);
                     page.Size(PageSizes.A4);
                     page.DefaultTextStyle(x => x.FontSize(11));
 
                     page.Content().Column(column =>
                     {
-                        column.Spacing(6);
-                        column.Item().MinHeight(335).Element(x => BuildReceiptCopy(x, "Müştəri nüsxəsi"));
+                        column.Spacing(5);
+                        column.Item().MinHeight(320).Element(x => BuildReceiptCopy(x, "Müştəri nüsxəsi"));
                         column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-                        column.Item().MinHeight(335).Element(x => BuildReceiptCopy(x, "Müəssisə nüsxəsi"));
+                        column.Item().MinHeight(320).Element(x => BuildReceiptCopy(x, "Müəssisə nüsxəsi"));
                     });
 
                     page.Footer().Column(footer =>

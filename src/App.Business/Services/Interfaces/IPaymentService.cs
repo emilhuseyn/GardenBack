@@ -76,6 +76,12 @@ namespace App.Business.Services.Interfaces
         Task<MonthlyCashReport> GetDivisionIncomeReportAsync(int divisionId, int month, int year);
 
         /// <summary>
+        /// Bulk-marks all non-paid payments for the given month/year as fully paid.
+        /// Returns the number of records updated.
+        /// </summary>
+        Task<int> BulkMarkAsPaidAsync(int month, int year, string userId);
+
+        /// <summary>
         /// Calculates the final amount after discount.
         /// </summary>
         decimal CalculateFinalAmount(decimal original, DiscountType type, decimal value);

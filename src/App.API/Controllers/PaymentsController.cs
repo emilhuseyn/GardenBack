@@ -102,6 +102,18 @@ namespace App.API.Controllers
             return Ok(ApiResponse<string>.SuccessResponse($"{month}/{year} üçün borclar yaradıldı."));
         }
 
+        // Yalnız Administrator — aylıq ödənişləri kütləvi ödənilmiş kimi işarələ
+        [HttpPost("bulk-mark-paid")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> BulkMarkAsPaid([FromQuery] int month, [FromQuery] int year)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var count = await _paymentService.BulkMarkAsPaidAsync(month, year, userId);
+            return Ok(ApiResponse<object>.SuccessResponse(
+                new { updatedCount = count },
+                $"{month}/{year} üçün {count} ödəniş ödənilmiş kimi işarələndi."));
+        }
+
         // Administrator + Mühasib — endirim tətbiqi
         [HttpPatch("{id}/discount")]
         public async Task<IActionResult> ApplyDiscount(int id, [FromBody] DiscountRequest dto)
