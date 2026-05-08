@@ -24,7 +24,8 @@ namespace App.DAL.Repositories.Abstractions
         public async Task<IEnumerable<Payment>> GetDebtorsAsync()
         {
             return await DbSet
-                .Where(p => p.Status == PaymentStatus.Debt || p.Status == PaymentStatus.PartiallyPaid)
+                .Where(p => (p.Status == PaymentStatus.Debt || p.Status == PaymentStatus.PartiallyPaid)
+                         && p.FinalAmount > 0)
                 .Include(p => p.Child)
                     .ThenInclude(c => c.Group)
                         .ThenInclude(g => g.Division)

@@ -75,18 +75,21 @@ namespace App.Business.Services.Implementations
                         ? child.MonthlyFee
                         : Math.Round(child.MonthlyFee * daysActive / daysInMonth, 2);
 
+                    var finalAmount = hasDiscount
+                        ? CalculateFinalAmount(baseAmount, DiscountType.Percentage, discountPercent)
+                        : baseAmount;
+
                     var payment = new Payment
                     {
                         ChildId = child.Id,
                         Month = month,
                         Year = year,
                         OriginalAmount = baseAmount,
-                        FinalAmount = hasDiscount
-                            ? CalculateFinalAmount(baseAmount, DiscountType.Percentage, discountPercent)
-                            : baseAmount,
+                        FinalAmount = finalAmount,
                         PaidAmount = 0,
                         LastPaymentAmount = null,
-                        Status = PaymentStatus.Debt,
+                        // If fee is 0 (e.g. 100% discount) — no payment needed, mark Paid immediately
+                        Status = finalAmount <= 0 ? PaymentStatus.Paid : PaymentStatus.Debt,
                         DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
                         DiscountValue = hasDiscount ? discountPercent : 0,
                         Notes = startDay > 1 ? $"Dövr: {startDay}-{daysInMonth} ({daysActive} gün)" : null,
