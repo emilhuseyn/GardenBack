@@ -65,20 +65,31 @@ namespace App.Business.Services.Implementations
                     var discountPercent = child.DiscountPercentage ?? 0;
                     var hasDiscount = discountPercent > 0;
 
+                    // Pro-rate for children who joined mid-month
+                    var daysInMonth = DateTime.DaysInMonth(year, month);
+                    var startDay = (child.RegistrationDate.Year == year && child.RegistrationDate.Month == month)
+                        ? child.RegistrationDate.Day
+                        : 1;
+                    var daysActive = daysInMonth - startDay + 1;
+                    var baseAmount = startDay == 1
+                        ? child.MonthlyFee
+                        : Math.Round(child.MonthlyFee * daysActive / daysInMonth, 2);
+
                     var payment = new Payment
                     {
                         ChildId = child.Id,
                         Month = month,
                         Year = year,
-                        OriginalAmount = child.MonthlyFee,
+                        OriginalAmount = baseAmount,
                         FinalAmount = hasDiscount
-                            ? CalculateFinalAmount(child.MonthlyFee, DiscountType.Percentage, discountPercent)
-                            : child.MonthlyFee,
+                            ? CalculateFinalAmount(baseAmount, DiscountType.Percentage, discountPercent)
+                            : baseAmount,
                         PaidAmount = 0,
-                    LastPaymentAmount = null,
+                        LastPaymentAmount = null,
                         Status = PaymentStatus.Debt,
                         DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
                         DiscountValue = hasDiscount ? discountPercent : 0,
+                        Notes = startDay > 1 ? $"Dövr: {startDay}-{daysInMonth} ({daysActive} gün)" : null,
                         RecordedById = "system"
                     };
 

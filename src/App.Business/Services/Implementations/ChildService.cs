@@ -290,6 +290,68 @@ namespace App.Business.Services.Implementations
         }
 
         /// <summary>
+        /// Creates or adjusts the pro-rated payment for a child leaving mid-month.
+        /// </summary>
+        private async Task ApplyExitMonthPaymentAsync(Child child, DateTime exitDate)
+        {
+            var month = exitDate.Month;
+            var year = exitDate.Year;
+            var exitDay = exitDate.Day;
+            var daysInMonth = DateTime.DaysInMonth(year, month);
+
+            // Fee for days 1..exitDay
+            var proratedBase = Math.Round(child.MonthlyFee * exitDay / daysInMonth, 2);
+            var discountPercent = child.DiscountPercentage ?? 0;
+            var hasDiscount = discountPercent > 0;
+            var finalAmount = hasDiscount
+                ? Math.Round(proratedBase * (1 - discountPercent / 100), 2)
+                : proratedBase;
+
+            var periodNote = $"Dövr: 1-{exitDay} ({exitDay} gün)";
+
+            var existing = (await _unitOfWork.Payments
+                .FindAsync(p => p.ChildId == child.Id && p.Month == month && p.Year == year))
+                .FirstOrDefault();
+
+            if (existing != null)
+            {
+                if (existing.Status == PaymentStatus.Paid) return; // already fully paid – leave as is
+
+                existing.OriginalAmount = proratedBase;
+                existing.FinalAmount = finalAmount;
+                existing.Notes = periodNote;
+
+                if (existing.PaidAmount >= finalAmount)
+                    existing.Status = PaymentStatus.Paid;
+                else if (existing.PaidAmount > 0)
+                    existing.Status = PaymentStatus.PartiallyPaid;
+                else
+                    existing.Status = PaymentStatus.Debt;
+
+                await _unitOfWork.Payments.UpdateAsync(existing);
+            }
+            else
+            {
+                var payment = new Payment
+                {
+                    ChildId = child.Id,
+                    Month = month,
+                    Year = year,
+                    OriginalAmount = proratedBase,
+                    FinalAmount = finalAmount,
+                    PaidAmount = 0,
+                    LastPaymentAmount = null,
+                    Status = PaymentStatus.Debt,
+                    DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
+                    DiscountValue = hasDiscount ? discountPercent : 0,
+                    Notes = periodNote,
+                    RecordedById = "system"
+                };
+                await _unitOfWork.Payments.AddAsync(payment);
+            }
+        }
+
+        /// <summary>
         /// Deactivates a child.
         /// </summary>
         public async Task DeactivateChildAsync(int id)
@@ -297,9 +359,9 @@ namespace App.Business.Services.Implementations
             var child = await _unitOfWork.Children.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException($"{id} ID-li uşaq tapılmadı.");
 
+            var now = _dt.Now;
             child.Status = ChildStatus.Inactive;
-            child.DeactivationDate = _dt.Now;
-            var actionDate = _dt.Now;
+            child.DeactivationDate = now;
 
             await _unitOfWork.GroupLogs.AddAsync(new GroupLog
             {
@@ -307,10 +369,14 @@ namespace App.Business.Services.Implementations
                 ChildId = child.Id,
                 ActionType = GroupLogActionType.ChildRemoved,
                 Message = $"Uşaq çıxarıldı: {child.FirstName} {child.LastName}",
-                ActionDate = actionDate
+                ActionDate = now
             });
 
             await _unitOfWork.Children.UpdateAsync(child);
+
+            // Adjust this month's payment to cover only the days the child attended
+            await ApplyExitMonthPaymentAsync(child, now);
+
             await _unitOfWork.SaveChangesAsync();
         }
 
@@ -349,14 +415,14 @@ namespace App.Business.Services.Implementations
         /// </summary>
         public async Task DeactivateChildrenAsync(List<int> ids)
         {
+            var now = _dt.Now;
             foreach (var id in ids)
             {
                 var child = await _unitOfWork.Children.GetByIdAsync(id);
                 if (child != null)
                 {
                     child.Status = ChildStatus.Inactive;
-                    child.DeactivationDate = _dt.Now;
-                    var actionDate = _dt.Now;
+                    child.DeactivationDate = now;
 
                     await _unitOfWork.GroupLogs.AddAsync(new GroupLog
                     {
@@ -364,10 +430,11 @@ namespace App.Business.Services.Implementations
                         ChildId = child.Id,
                         ActionType = GroupLogActionType.ChildRemoved,
                         Message = $"Uşaq çıxarıldı: {child.FirstName} {child.LastName}",
-                        ActionDate = actionDate
+                        ActionDate = now
                     });
 
                     await _unitOfWork.Children.UpdateAsync(child);
+                    await ApplyExitMonthPaymentAsync(child, now);
                 }
             }
             await _unitOfWork.SaveChangesAsync();
