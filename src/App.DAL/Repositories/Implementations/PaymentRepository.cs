@@ -26,7 +26,8 @@ namespace App.DAL.Repositories.Abstractions
             return await DbSet
                 .Where(p => (p.Status == PaymentStatus.Debt || p.Status == PaymentStatus.PartiallyPaid)
                          && p.FinalAmount > 0
-                         && (p.Child.DiscountPercentage == null || p.Child.DiscountPercentage < 100))
+                         && (p.Child.DiscountPercentage == null || p.Child.DiscountPercentage < 100)
+                         && p.Child.Status == ChildStatus.Active)
                 .Include(p => p.Child)
                     .ThenInclude(c => c.Group)
                         .ThenInclude(g => g.Division)
