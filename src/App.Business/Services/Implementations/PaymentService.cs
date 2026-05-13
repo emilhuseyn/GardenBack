@@ -176,20 +176,39 @@ namespace App.Business.Services.Implementations
                 var discountPercent = child.DiscountPercentage ?? 0;
                 var hasDiscount = discountPercent > 0;
 
+                // Pro-rate when the child joined and/or left mid-month.
+                var daysInMonth = DateTime.DaysInMonth(dto.Year, dto.Month);
+                var startDay = (child.RegistrationDate.Year == dto.Year && child.RegistrationDate.Month == dto.Month)
+                    ? child.RegistrationDate.Day
+                    : 1;
+                var endDay = (child.DeactivationDate.HasValue
+                              && child.DeactivationDate.Value.Year == dto.Year
+                              && child.DeactivationDate.Value.Month == dto.Month)
+                    ? child.DeactivationDate.Value.Day
+                    : daysInMonth;
+                var daysActive = Math.Max(0, endDay - startDay + 1);
+                var isPartialPeriod = startDay != 1 || endDay != daysInMonth;
+                var baseAmount = isPartialPeriod
+                    ? Math.Round(child.MonthlyFee * daysActive / daysInMonth, 2)
+                    : child.MonthlyFee;
+
+                var finalAmount = hasDiscount
+                    ? CalculateFinalAmount(baseAmount, DiscountType.Percentage, discountPercent)
+                    : baseAmount;
+
                 payment = new Payment
                 {
                     ChildId = dto.ChildId,
                     Month = dto.Month,
                     Year = dto.Year,
-                    OriginalAmount = child.MonthlyFee,
-                    FinalAmount = hasDiscount
-                        ? CalculateFinalAmount(child.MonthlyFee, DiscountType.Percentage, discountPercent)
-                        : child.MonthlyFee,
+                    OriginalAmount = baseAmount,
+                    FinalAmount = finalAmount,
                     PaidAmount = 0,
                     LastPaymentAmount = null,
                     Status = PaymentStatus.Debt,
                     DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
                     DiscountValue = hasDiscount ? discountPercent : 0,
+                    Notes = isPartialPeriod ? $"Dövr: {startDay}-{endDay} ({daysActive} gün)" : null,
                     RecordedById = recordedById
                 };
 
@@ -280,15 +299,21 @@ namespace App.Business.Services.Implementations
                     }
                     else
                     {
-                        // Pro-rate when the child joined mid-month
+                        // Pro-rate when the child joined and/or left mid-month
                         var daysInMonth = DateTime.DaysInMonth(dto.Year, month);
                         var startDay = (child.RegistrationDate.Year == dto.Year && child.RegistrationDate.Month == month)
                             ? child.RegistrationDate.Day
                             : 1;
-                        var daysActive = daysInMonth - startDay + 1;
-                        var baseAmount = startDay == 1
-                            ? child.MonthlyFee
-                            : Math.Round(child.MonthlyFee * daysActive / daysInMonth, 2);
+                        var endDay = (child.DeactivationDate.HasValue
+                                      && child.DeactivationDate.Value.Year == dto.Year
+                                      && child.DeactivationDate.Value.Month == month)
+                            ? child.DeactivationDate.Value.Day
+                            : daysInMonth;
+                        var daysActive = Math.Max(0, endDay - startDay + 1);
+                        var isPartialPeriod = startDay != 1 || endDay != daysInMonth;
+                        var baseAmount = isPartialPeriod
+                            ? Math.Round(child.MonthlyFee * daysActive / daysInMonth, 2)
+                            : child.MonthlyFee;
 
                         var finalAmount = hasDiscount
                             ? CalculateFinalAmount(baseAmount, DiscountType.Percentage, discountPercent)
@@ -304,7 +329,7 @@ namespace App.Business.Services.Implementations
                             PaidAmount = 0,
                             DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
                             DiscountValue = hasDiscount ? discountPercent : 0,
-                            Notes = startDay > 1 ? $"Dövr: {startDay}-{daysInMonth} ({daysActive} gün)" : null,
+                            Notes = isPartialPeriod ? $"Dövr: {startDay}-{endDay} ({daysActive} gün)" : null,
                             RecordedById = recordedById,
                             Status = PaymentStatus.Debt
                         };

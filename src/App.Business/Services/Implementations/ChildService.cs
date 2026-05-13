@@ -291,6 +291,8 @@ namespace App.Business.Services.Implementations
 
         /// <summary>
         /// Creates or adjusts the pro-rated payment for a child leaving mid-month.
+        /// Accounts for both the registration day (if same month) and the exit day,
+        /// so a child who arrives on the 5th and leaves on the 25th is billed for 21 days, not 25.
         /// </summary>
         private async Task ApplyExitMonthPaymentAsync(Child child, DateTime exitDate)
         {
@@ -299,15 +301,20 @@ namespace App.Business.Services.Implementations
             var exitDay = exitDate.Day;
             var daysInMonth = DateTime.DaysInMonth(year, month);
 
-            // Fee for days 1..exitDay
-            var proratedBase = Math.Round(child.MonthlyFee * exitDay / daysInMonth, 2);
+            // If the child registered in the same month, count from registration day; otherwise from day 1.
+            var startDay = (child.RegistrationDate.Year == year && child.RegistrationDate.Month == month)
+                ? child.RegistrationDate.Day
+                : 1;
+            var daysActive = Math.Max(0, exitDay - startDay + 1);
+
+            var proratedBase = Math.Round(child.MonthlyFee * daysActive / daysInMonth, 2);
             var discountPercent = child.DiscountPercentage ?? 0;
             var hasDiscount = discountPercent > 0;
             var finalAmount = hasDiscount
                 ? Math.Round(proratedBase * (1 - discountPercent / 100), 2)
                 : proratedBase;
 
-            var periodNote = $"Dövr: 1-{exitDay} ({exitDay} gün)";
+            var periodNote = $"Dövr: {startDay}-{exitDay} ({daysActive} gün)";
 
             var existing = (await _unitOfWork.Payments
                 .FindAsync(p => p.ChildId == child.Id && p.Month == month && p.Year == year))
