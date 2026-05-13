@@ -224,6 +224,148 @@ namespace App.Business.Services.Implementations
         }
 
         /// <summary>
+        /// Records full payments for multiple months at once for a single child.
+        /// Each selected month is created if missing and marked fully paid (PaidAmount = FinalAmount).
+        /// Months that are already fully paid are silently skipped.
+        /// </summary>
+        public async Task<RecordBulkPaymentResponse> RecordBulkPaymentAsync(RecordBulkPaymentRequest dto, string recordedById)
+        {
+            if (dto.Months == null || dto.Months.Count == 0)
+                throw new Core.Exceptions.ValidationException("Ən azı bir ay seçilməlidir.");
+
+            var distinctMonths = dto.Months
+                .Where(m => m >= 1 && m <= 12)
+                .Distinct()
+                .OrderBy(m => m)
+                .ToList();
+
+            if (distinctMonths.Count == 0)
+                throw new Core.Exceptions.ValidationException("Düzgün ay seçilməyib.");
+
+            var child = await _unitOfWork.Children.GetByIdAsync(dto.ChildId)
+                ?? throw new EntityNotFoundException($"{dto.ChildId} ID-li uşaq tapılmadı.");
+
+            var cashbox = await _unitOfWork.Cashboxes.GetByIdAsync(dto.CashboxId)
+                ?? throw new EntityNotFoundException($"{dto.CashboxId} ID-li kassa tapılmadı.");
+
+            if (!cashbox.IsActive)
+                throw new Core.Exceptions.ValidationException("Deaktiv kassaya ödəniş yazıla bilməz.");
+
+            var discountPercent = child.DiscountPercentage ?? 0;
+            var hasDiscount = discountPercent > 0;
+            var now = _dt.Now;
+            var processedPayments = new List<Payment>();
+            decimal totalPaid = 0;
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                foreach (var month in distinctMonths)
+                {
+                    var existing = (await _unitOfWork.Payments
+                        .FindAsync(p => p.ChildId == dto.ChildId && p.Month == month && p.Year == dto.Year))
+                        .FirstOrDefault();
+
+                    if (existing != null && existing.Status == PaymentStatus.Paid)
+                    {
+                        // Already paid — skip silently
+                        continue;
+                    }
+
+                    Payment payment;
+
+                    if (existing != null)
+                    {
+                        payment = existing;
+                    }
+                    else
+                    {
+                        // Pro-rate when the child joined mid-month
+                        var daysInMonth = DateTime.DaysInMonth(dto.Year, month);
+                        var startDay = (child.RegistrationDate.Year == dto.Year && child.RegistrationDate.Month == month)
+                            ? child.RegistrationDate.Day
+                            : 1;
+                        var daysActive = daysInMonth - startDay + 1;
+                        var baseAmount = startDay == 1
+                            ? child.MonthlyFee
+                            : Math.Round(child.MonthlyFee * daysActive / daysInMonth, 2);
+
+                        var finalAmount = hasDiscount
+                            ? CalculateFinalAmount(baseAmount, DiscountType.Percentage, discountPercent)
+                            : baseAmount;
+
+                        payment = new Payment
+                        {
+                            ChildId = dto.ChildId,
+                            Month = month,
+                            Year = dto.Year,
+                            OriginalAmount = baseAmount,
+                            FinalAmount = finalAmount,
+                            PaidAmount = 0,
+                            DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
+                            DiscountValue = hasDiscount ? discountPercent : 0,
+                            Notes = startDay > 1 ? $"Dövr: {startDay}-{daysInMonth} ({daysActive} gün)" : null,
+                            RecordedById = recordedById,
+                            Status = PaymentStatus.Debt
+                        };
+                        await _unitOfWork.Payments.AddAsync(payment);
+                    }
+
+                    // If final amount is 0 (e.g. 100% discount), just mark paid without charging anything.
+                    var delta = Math.Max(0, payment.FinalAmount - payment.PaidAmount);
+                    payment.PaidAmount = payment.FinalAmount;
+                    payment.LastPaymentAmount = delta > 0 ? delta : payment.FinalAmount;
+                    payment.Status = PaymentStatus.Paid;
+                    payment.PaymentDate = now;
+                    payment.CashboxId = dto.CashboxId;
+                    payment.RecordedById = recordedById;
+
+                    if (!string.IsNullOrWhiteSpace(dto.Notes))
+                    {
+                        var bulkNote = $"Kütləvi ödəniş: {dto.Notes}";
+                        payment.Notes = string.IsNullOrWhiteSpace(payment.Notes)
+                            ? bulkNote
+                            : payment.Notes + " | " + bulkNote;
+                    }
+
+                    if (existing != null)
+                        await _unitOfWork.Payments.UpdateAsync(payment);
+
+                    processedPayments.Add(payment);
+                    totalPaid += delta;
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
+            }
+            catch
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
+            }
+
+            // Re-fetch with navigation properties for response mapping
+            var responses = new List<PaymentResponse>();
+            foreach (var p in processedPayments)
+            {
+                var full = await _unitOfWork.Payments.GetByIdAsync(
+                    x => x.Id == p.Id,
+                    x => x.Child,
+                    x => x.Child.Group,
+                    x => x.Cashbox);
+                if (full != null)
+                    responses.Add(_mapper.Map<PaymentResponse>(full));
+            }
+
+            return new RecordBulkPaymentResponse
+            {
+                PaidCount = processedPayments.Count,
+                TotalPaid = totalPaid,
+                Payments = responses
+            };
+        }
+
+        /// <summary>
         /// Applies a discount to an existing payment.
         /// </summary>
         public async Task<PaymentResponse> ApplyDiscountAsync(int paymentId, DiscountRequest dto)

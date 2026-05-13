@@ -93,6 +93,17 @@ namespace App.API.Controllers
             return Ok(ApiResponse<PaymentResponse>.SuccessResponse(result, "Ödəniş qeyd edildi."));
         }
 
+        // Administrator + Mühasib — bir uşaq üçün çoxlu ayın ödənişi
+        [HttpPost("record-bulk")]
+        public async Task<IActionResult> RecordBulkPayment([FromBody] RecordBulkPaymentRequest dto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var result = await _paymentService.RecordBulkPaymentAsync(dto, userId);
+            return Ok(ApiResponse<RecordBulkPaymentResponse>.SuccessResponse(
+                result,
+                $"{result.PaidCount} ay üçün ödəniş qeyd edildi (cəmi {result.TotalPaid:F2} ₼)."));
+        }
+
         // Yalnız Administrator — aylıq borc yaratma
         [HttpPost("generate-monthly")]
         [Authorize(Policy = "AdminOnly")]

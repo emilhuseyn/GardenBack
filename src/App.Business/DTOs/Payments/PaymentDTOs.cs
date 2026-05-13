@@ -24,6 +24,26 @@ namespace App.Business.DTOs.Payments
         public string? Notes { get; set; }
     }
 
+    /// <summary>
+    /// Bulk-pay several months at once for one child.
+    /// Every selected month is marked fully paid using the child's effective fee.
+    /// </summary>
+    public class RecordBulkPaymentRequest
+    {
+        public int ChildId { get; set; }
+        public int Year { get; set; }
+        public int CashboxId { get; set; }
+        public List<int> Months { get; set; } = new();
+        public string? Notes { get; set; }
+    }
+
+    public class RecordBulkPaymentResponse
+    {
+        public int PaidCount { get; set; }
+        public decimal TotalPaid { get; set; }
+        public List<PaymentResponse> Payments { get; set; } = new();
+    }
+
     public class DiscountRequest
     {
         public DiscountType DiscountType { get; set; }

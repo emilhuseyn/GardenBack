@@ -26,6 +26,12 @@ namespace App.Business.Services.Interfaces
         Task<PaymentResponse> RecordPaymentAsync(RecordPaymentRequest dto, string recordedById);
 
         /// <summary>
+        /// Records full payments for multiple months at once for a single child.
+        /// Each selected month is created if missing and marked fully paid (PaidAmount = FinalAmount).
+        /// </summary>
+        Task<RecordBulkPaymentResponse> RecordBulkPaymentAsync(RecordBulkPaymentRequest dto, string recordedById);
+
+        /// <summary>
         /// Applies a discount to an existing payment.
         /// </summary>
         Task<PaymentResponse> ApplyDiscountAsync(int paymentId, DiscountRequest dto);
