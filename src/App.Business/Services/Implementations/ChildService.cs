@@ -307,12 +307,14 @@ namespace App.Business.Services.Implementations
                 : 1;
             var daysActive = Math.Max(0, exitDay - startDay + 1);
 
-            var proratedBase = Math.Round(child.MonthlyFee * daysActive / daysInMonth, 2);
+            // Bill in whole manats — no qəpik fractions in the bill
+            var proratedBase = Math.Round(child.MonthlyFee * daysActive / daysInMonth, 0, MidpointRounding.AwayFromZero);
             var discountPercent = child.DiscountPercentage ?? 0;
             var hasDiscount = discountPercent > 0;
-            var finalAmount = hasDiscount
-                ? Math.Round(proratedBase * (1 - discountPercent / 100), 2)
+            var rawFinal = hasDiscount
+                ? proratedBase * (1 - discountPercent / 100)
                 : proratedBase;
+            var finalAmount = Math.Round(rawFinal, 0, MidpointRounding.AwayFromZero);
 
             var periodNote = $"Dövr: {startDay}-{exitDay} ({daysActive} gün)";
 

@@ -22,6 +22,12 @@ namespace App.Business.DTOs.Payments
         public int CashboxId { get; set; }
         public decimal Amount { get; set; }
         public string? Notes { get; set; }
+
+        /// <summary>
+        /// Optional admin courtesy reduction applied to FinalAmount at payment time
+        /// (e.g. bill is 203 ₼, customer pays 200, admin forgives the 3 ₼).
+        /// </summary>
+        public decimal? RoundingDiscount { get; set; }
     }
 
     /// <summary>

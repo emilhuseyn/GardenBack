@@ -65,7 +65,7 @@ namespace App.Business.Services.Implementations
                     var discountPercent = child.DiscountPercentage ?? 0;
                     var hasDiscount = discountPercent > 0;
 
-                    // Pro-rate for children who joined mid-month
+                    // Pro-rate for children who joined mid-month; bill in whole manats (no qəpik)
                     var daysInMonth = DateTime.DaysInMonth(year, month);
                     var startDay = (child.RegistrationDate.Year == year && child.RegistrationDate.Month == month)
                         ? child.RegistrationDate.Day
@@ -73,11 +73,12 @@ namespace App.Business.Services.Implementations
                     var daysActive = daysInMonth - startDay + 1;
                     var baseAmount = startDay == 1
                         ? child.MonthlyFee
-                        : Math.Round(child.MonthlyFee * daysActive / daysInMonth, 2);
+                        : Math.Round(child.MonthlyFee * daysActive / daysInMonth, 0, MidpointRounding.AwayFromZero);
 
-                    var finalAmount = hasDiscount
+                    var rawFinal = hasDiscount
                         ? CalculateFinalAmount(baseAmount, DiscountType.Percentage, discountPercent)
                         : baseAmount;
+                    var finalAmount = Math.Round(rawFinal, 0, MidpointRounding.AwayFromZero);
 
                     var payment = new Payment
                     {
@@ -176,7 +177,7 @@ namespace App.Business.Services.Implementations
                 var discountPercent = child.DiscountPercentage ?? 0;
                 var hasDiscount = discountPercent > 0;
 
-                // Pro-rate when the child joined and/or left mid-month.
+                // Pro-rate when the child joined and/or left mid-month; bill in whole manats
                 var daysInMonth = DateTime.DaysInMonth(dto.Year, dto.Month);
                 var startDay = (child.RegistrationDate.Year == dto.Year && child.RegistrationDate.Month == dto.Month)
                     ? child.RegistrationDate.Day
@@ -189,12 +190,13 @@ namespace App.Business.Services.Implementations
                 var daysActive = Math.Max(0, endDay - startDay + 1);
                 var isPartialPeriod = startDay != 1 || endDay != daysInMonth;
                 var baseAmount = isPartialPeriod
-                    ? Math.Round(child.MonthlyFee * daysActive / daysInMonth, 2)
+                    ? Math.Round(child.MonthlyFee * daysActive / daysInMonth, 0, MidpointRounding.AwayFromZero)
                     : child.MonthlyFee;
 
-                var finalAmount = hasDiscount
+                var rawFinal = hasDiscount
                     ? CalculateFinalAmount(baseAmount, DiscountType.Percentage, discountPercent)
                     : baseAmount;
+                var finalAmount = Math.Round(rawFinal, 0, MidpointRounding.AwayFromZero);
 
                 payment = new Payment
                 {
@@ -221,7 +223,21 @@ namespace App.Business.Services.Implementations
             payment.CashboxId = dto.CashboxId;
             payment.PaymentDate = _dt.Now;
             payment.RecordedById = recordedById;
-            payment.Notes = dto.Notes;
+
+            // Apply admin courtesy rounding (e.g. bill 203 ₼ → customer pays 200 ₼ → forgive 3 ₼)
+            if (dto.RoundingDiscount.HasValue && dto.RoundingDiscount.Value > 0)
+            {
+                var roundingAmt = Math.Min(dto.RoundingDiscount.Value, payment.FinalAmount);
+                payment.FinalAmount = Math.Max(0, payment.FinalAmount - roundingAmt);
+                var discountNote = $"Yuvarlaqlaşdırma endirimi: {roundingAmt:F2} ₼";
+                payment.Notes = string.IsNullOrWhiteSpace(dto.Notes)
+                    ? discountNote
+                    : $"{dto.Notes} | {discountNote}";
+            }
+            else
+            {
+                payment.Notes = dto.Notes;
+            }
 
             if (payment.PaidAmount >= payment.FinalAmount)
                 payment.Status = PaymentStatus.Paid;
@@ -299,7 +315,7 @@ namespace App.Business.Services.Implementations
                     }
                     else
                     {
-                        // Pro-rate when the child joined and/or left mid-month
+                        // Pro-rate when the child joined and/or left mid-month; bill in whole manats
                         var daysInMonth = DateTime.DaysInMonth(dto.Year, month);
                         var startDay = (child.RegistrationDate.Year == dto.Year && child.RegistrationDate.Month == month)
                             ? child.RegistrationDate.Day
@@ -312,12 +328,13 @@ namespace App.Business.Services.Implementations
                         var daysActive = Math.Max(0, endDay - startDay + 1);
                         var isPartialPeriod = startDay != 1 || endDay != daysInMonth;
                         var baseAmount = isPartialPeriod
-                            ? Math.Round(child.MonthlyFee * daysActive / daysInMonth, 2)
+                            ? Math.Round(child.MonthlyFee * daysActive / daysInMonth, 0, MidpointRounding.AwayFromZero)
                             : child.MonthlyFee;
 
-                        var finalAmount = hasDiscount
+                        var rawFinal = hasDiscount
                             ? CalculateFinalAmount(baseAmount, DiscountType.Percentage, discountPercent)
                             : baseAmount;
+                        var finalAmount = Math.Round(rawFinal, 0, MidpointRounding.AwayFromZero);
 
                         payment = new Payment
                         {
