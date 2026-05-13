@@ -7,6 +7,7 @@ namespace App.DAL.Repositories.Interfaces
     {
         Task<IEnumerable<Payment>> GetPaymentsByChildAsync(int childId);
         Task<IEnumerable<Payment>> GetDebtorsAsync();
+        Task<IEnumerable<Payment>> GetInactiveDebtorsAsync();
         Task<IEnumerable<Payment>> GetMonthlyPaymentsAsync(int month, int year);
         Task<IEnumerable<Payment>> GetDailyCollectionAsync(DateOnly date);
         Task<IEnumerable<Payment>> GetPaymentsByGroupAsync(int groupId, int month, int year);

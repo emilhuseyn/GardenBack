@@ -37,6 +37,22 @@ namespace App.DAL.Repositories.Abstractions
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Payment>> GetInactiveDebtorsAsync()
+        {
+            return await DbSet
+                .Where(p => (p.Status == PaymentStatus.Debt || p.Status == PaymentStatus.PartiallyPaid)
+                         && p.FinalAmount > 0
+                         && (p.Child.DiscountPercentage == null || p.Child.DiscountPercentage < 100)
+                         && p.Child.Status == ChildStatus.Inactive)
+                .Include(p => p.Child)
+                    .ThenInclude(c => c.Group)
+                        .ThenInclude(g => g.Division)
+                .Include(p => p.Cashbox)
+                .OrderByDescending(p => p.Year)
+                .ThenByDescending(p => p.Month)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<Payment>> GetMonthlyPaymentsAsync(int month, int year)
         {
             return await DbSet

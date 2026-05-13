@@ -52,6 +52,11 @@ namespace App.Business.Services.Interfaces
         Task<IEnumerable<DebtorListItem>> GetDebtorsAsync();
 
         /// <summary>
+        /// Gets all INACTIVE (deactivated) children that still have unpaid bills.
+        /// </summary>
+        Task<IEnumerable<DebtorListItem>> GetInactiveDebtorsAsync();
+
+        /// <summary>
         /// Gets payment history for a specific child.
         /// </summary>
         Task<IEnumerable<PaymentResponse>> GetChildPaymentHistoryAsync(int childId);

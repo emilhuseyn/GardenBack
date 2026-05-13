@@ -36,6 +36,14 @@ namespace App.API.Controllers
             return Ok(ApiResponse<IEnumerable<DebtorListItem>>.SuccessResponse(result));
         }
 
+        [HttpGet("debtors/inactive")]
+        [Authorize(Policy = "PaymentView")]
+        public async Task<IActionResult> GetInactiveDebtors()
+        {
+            var result = await _paymentService.GetInactiveDebtorsAsync();
+            return Ok(ApiResponse<IEnumerable<DebtorListItem>>.SuccessResponse(result));
+        }
+
         [HttpGet("child/{childId}")]
         [Authorize(Policy = "PaymentView")]
         public async Task<IActionResult> GetChildPaymentHistory(int childId)

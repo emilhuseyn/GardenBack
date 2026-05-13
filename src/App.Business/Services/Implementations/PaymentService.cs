@@ -616,7 +616,20 @@ namespace App.Business.Services.Implementations
         public async Task<IEnumerable<DebtorListItem>> GetDebtorsAsync()
         {
             var debts = await _unitOfWork.Payments.GetDebtorsAsync();
+            return BuildDebtorList(debts);
+        }
 
+        /// <summary>
+        /// Gets all INACTIVE (deactivated) children that still owe money.
+        /// </summary>
+        public async Task<IEnumerable<DebtorListItem>> GetInactiveDebtorsAsync()
+        {
+            var debts = await _unitOfWork.Payments.GetInactiveDebtorsAsync();
+            return BuildDebtorList(debts);
+        }
+
+        private IEnumerable<DebtorListItem> BuildDebtorList(IEnumerable<Payment> debts)
+        {
             return debts
                 .GroupBy(p => p.ChildId)
                 .Select(g =>
