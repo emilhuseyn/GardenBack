@@ -33,6 +33,7 @@ namespace App.Business.DTOs.Payments
     /// <summary>
     /// Bulk-pay several months at once for one child.
     /// Every selected month is marked fully paid using the child's effective fee.
+    /// Per-month period overrides let admins record partial-day ranges (e.g. "1-11 avqust").
     /// </summary>
     public class RecordBulkPaymentRequest
     {
@@ -41,6 +42,19 @@ namespace App.Business.DTOs.Payments
         public int CashboxId { get; set; }
         public List<int> Months { get; set; } = new();
         public string? Notes { get; set; }
+
+        /// <summary>
+        /// Optional: bill specific day ranges for individual months instead of the full month.
+        /// Defaults stay (registration → deactivation → end-of-month) for any month not listed here.
+        /// </summary>
+        public List<MonthPeriodOverride>? MonthOverrides { get; set; }
+    }
+
+    public class MonthPeriodOverride
+    {
+        public int Month { get; set; }
+        public int? StartDay { get; set; }
+        public int? EndDay { get; set; }
     }
 
     public class RecordBulkPaymentResponse

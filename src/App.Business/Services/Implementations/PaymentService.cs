@@ -291,6 +291,10 @@ namespace App.Business.Services.Implementations
             var now = _dt.Now;
             var processedPayments = new List<Payment>();
             decimal totalPaid = 0;
+            var overridesByMonth = (dto.MonthOverrides ?? new List<MonthPeriodOverride>())
+                .Where(o => o.Month >= 1 && o.Month <= 12)
+                .GroupBy(o => o.Month)
+                .ToDictionary(g => g.Key, g => g.Last());
 
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -307,35 +311,61 @@ namespace App.Business.Services.Implementations
                         continue;
                     }
 
+                    // Compute the billing period for this month: respect an admin override if present,
+                    // otherwise fall back to registration / deactivation dates.
+                    overridesByMonth.TryGetValue(month, out var overrideForMonth);
+                    var daysInMonth = DateTime.DaysInMonth(dto.Year, month);
+
+                    int defaultStart = (child.RegistrationDate.Year == dto.Year && child.RegistrationDate.Month == month)
+                        ? child.RegistrationDate.Day
+                        : 1;
+                    int defaultEnd = (child.DeactivationDate.HasValue
+                                       && child.DeactivationDate.Value.Year == dto.Year
+                                       && child.DeactivationDate.Value.Month == month)
+                        ? child.DeactivationDate.Value.Day
+                        : daysInMonth;
+
+                    var startDay = Math.Clamp(overrideForMonth?.StartDay ?? defaultStart, 1, daysInMonth);
+                    var endDay = Math.Clamp(overrideForMonth?.EndDay ?? defaultEnd, 1, daysInMonth);
+                    if (endDay < startDay) endDay = startDay;
+
+                    var daysActive = Math.Max(0, endDay - startDay + 1);
+                    var isPartialPeriod = startDay != 1 || endDay != daysInMonth;
+                    var baseAmount = isPartialPeriod
+                        ? Math.Round(child.MonthlyFee * daysActive / daysInMonth, 0, MidpointRounding.AwayFromZero)
+                        : child.MonthlyFee;
+                    var rawFinal = hasDiscount
+                        ? CalculateFinalAmount(baseAmount, DiscountType.Percentage, discountPercent)
+                        : baseAmount;
+                    var finalAmount = Math.Round(rawFinal, 0, MidpointRounding.AwayFromZero);
+                    var periodNote = isPartialPeriod
+                        ? $"Dövr: {startDay}-{endDay} ({daysActive} gün)"
+                        : null;
+
                     Payment payment;
 
                     if (existing != null)
                     {
                         payment = existing;
+                        // If admin supplied an override (or default partial period changed), rebill the row.
+                        if (payment.OriginalAmount != baseAmount || payment.FinalAmount != finalAmount)
+                        {
+                            payment.OriginalAmount = baseAmount;
+                            payment.FinalAmount = finalAmount;
+                            payment.DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None;
+                            payment.DiscountValue = hasDiscount ? discountPercent : 0;
+                            // Preserve any existing audit prefix, but make sure the new period note is present.
+                            if (periodNote != null)
+                            {
+                                if (string.IsNullOrWhiteSpace(payment.Notes))
+                                    payment.Notes = periodNote;
+                                else if (!payment.Notes.Contains(periodNote, StringComparison.OrdinalIgnoreCase))
+                                    payment.Notes = $"{payment.Notes} | {periodNote}";
+                            }
+                        }
                     }
                     else
                     {
-                        // Pro-rate when the child joined and/or left mid-month; bill in whole manats
-                        var daysInMonth = DateTime.DaysInMonth(dto.Year, month);
-                        var startDay = (child.RegistrationDate.Year == dto.Year && child.RegistrationDate.Month == month)
-                            ? child.RegistrationDate.Day
-                            : 1;
-                        var endDay = (child.DeactivationDate.HasValue
-                                      && child.DeactivationDate.Value.Year == dto.Year
-                                      && child.DeactivationDate.Value.Month == month)
-                            ? child.DeactivationDate.Value.Day
-                            : daysInMonth;
-                        var daysActive = Math.Max(0, endDay - startDay + 1);
-                        var isPartialPeriod = startDay != 1 || endDay != daysInMonth;
-                        var baseAmount = isPartialPeriod
-                            ? Math.Round(child.MonthlyFee * daysActive / daysInMonth, 0, MidpointRounding.AwayFromZero)
-                            : child.MonthlyFee;
-
-                        var rawFinal = hasDiscount
-                            ? CalculateFinalAmount(baseAmount, DiscountType.Percentage, discountPercent)
-                            : baseAmount;
-                        var finalAmount = Math.Round(rawFinal, 0, MidpointRounding.AwayFromZero);
-
                         payment = new Payment
                         {
                             ChildId = dto.ChildId,
@@ -346,7 +376,7 @@ namespace App.Business.Services.Implementations
                             PaidAmount = 0,
                             DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
                             DiscountValue = hasDiscount ? discountPercent : 0,
-                            Notes = isPartialPeriod ? $"Dövr: {startDay}-{endDay} ({daysActive} gün)" : null,
+                            Notes = periodNote,
                             RecordedById = recordedById,
                             Status = PaymentStatus.Debt
                         };
