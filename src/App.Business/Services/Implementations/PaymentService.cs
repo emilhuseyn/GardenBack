@@ -338,9 +338,25 @@ namespace App.Business.Services.Implementations
                         ? CalculateFinalAmount(baseAmount, DiscountType.Percentage, discountPercent)
                         : baseAmount;
                     var finalAmount = Math.Round(rawFinal, 0, MidpointRounding.AwayFromZero);
+
+                    // Apply optional admin courtesy rounding (e.g. 284 ₼ → 280 ₼, forgive 4 ₼)
+                    decimal roundingApplied = 0;
+                    if (overrideForMonth?.RoundingDiscount.HasValue == true && overrideForMonth.RoundingDiscount.Value > 0)
+                    {
+                        roundingApplied = Math.Min(overrideForMonth.RoundingDiscount.Value, finalAmount);
+                        finalAmount = Math.Max(0, finalAmount - roundingApplied);
+                    }
+
                     var periodNote = isPartialPeriod
                         ? $"Dövr: {startDay}-{endDay} ({daysActive} gün)"
                         : null;
+                    if (roundingApplied > 0)
+                    {
+                        var roundNote = $"Yuvarlaqlaşdırma endirimi: {roundingApplied:F2} ₼";
+                        periodNote = string.IsNullOrEmpty(periodNote)
+                            ? roundNote
+                            : $"{periodNote} | {roundNote}";
+                    }
 
                     Payment payment;
 

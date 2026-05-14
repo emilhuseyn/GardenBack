@@ -55,6 +55,12 @@ namespace App.Business.DTOs.Payments
         public int Month { get; set; }
         public int? StartDay { get; set; }
         public int? EndDay { get; set; }
+
+        /// <summary>
+        /// Optional admin courtesy reduction applied to this month's FinalAmount at payment time
+        /// (e.g. 11-day partial bills to 284 ₼ — admin rounds down to 280 ₼, forgiving 4 ₼).
+        /// </summary>
+        public decimal? RoundingDiscount { get; set; }
     }
 
     public class RecordBulkPaymentResponse
