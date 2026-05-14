@@ -10,6 +10,7 @@ using App.DAL.UnitOfWork;
 using App.Shared.Interfaces;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 
 namespace App.Business.Services.Implementations
 {
@@ -113,6 +114,10 @@ namespace App.Business.Services.Implementations
 
             await EnsureTeacherGroupAccessAsync(child.GroupId);
 
+            // Capture pre-change fee/discount so we can resync existing unpaid bills if either of them moves.
+            var oldMonthlyFee  = child.MonthlyFee;
+            var oldDiscountPct = child.DiscountPercentage ?? 0;
+
             if (dto.FirstName != null) child.FirstName = dto.FirstName;
             if (dto.LastName != null) child.LastName = dto.LastName;
             if (dto.DateOfBirth.HasValue) child.DateOfBirth = dto.DateOfBirth.Value;
@@ -154,6 +159,15 @@ namespace App.Business.Services.Implementations
             if (dto.FaceIdToken != null) child.FaceIdToken = dto.FaceIdToken;
 
             await _unitOfWork.Children.UpdateAsync(child);
+
+            // If MonthlyFee or DiscountPercentage moved, retroactively fix every still-open bill for
+            // this child so the parent isn't shown as a debtor for the gap (or as overpaid).
+            var newDiscountPct = child.DiscountPercentage ?? 0;
+            if (child.MonthlyFee != oldMonthlyFee || newDiscountPct != oldDiscountPct)
+            {
+                await ResyncUnpaidPaymentsAfterFeeChangeAsync(child);
+            }
+
             await _unitOfWork.SaveChangesAsync();
 
             var updated = await _unitOfWork.Children.GetByIdAsync(
@@ -162,6 +176,73 @@ namespace App.Business.Services.Implementations
                 c => c.Group.Division);
 
             return _mapper.Map<ChildResponse>(updated);
+        }
+
+        /// <summary>
+        /// Re-bills every still-open payment for this child after their MonthlyFee or DiscountPercentage
+        /// changed. Skips already-Paid rows, preserves pro-rated entry/exit periods (parsed from the Notes),
+        /// reapplies the discount, and re-evaluates Status against PaidAmount.
+        /// </summary>
+        private async Task ResyncUnpaidPaymentsAfterFeeChangeAsync(Child child)
+        {
+            var openPayments = (await _unitOfWork.Payments
+                .FindAsync(p => p.ChildId == child.Id && p.Status != PaymentStatus.Paid))
+                .ToList();
+
+            if (openPayments.Count == 0) return;
+
+            var discountPercent = child.DiscountPercentage ?? 0;
+            var hasDiscount = discountPercent > 0;
+            var periodRegex = new Regex(@"Dövr:\s*\d+\s*-\s*\d+\s*\(\s*(\d+)\s*gün\s*\)", RegexOptions.IgnoreCase);
+
+            foreach (var payment in openPayments)
+            {
+                // Preserve any partial-month period stored in Notes ("Dövr: 5-25 (21 gün)")
+                var daysInMonth = DateTime.DaysInMonth(payment.Year, payment.Month);
+                var daysActive = daysInMonth;
+                if (!string.IsNullOrEmpty(payment.Notes))
+                {
+                    var match = periodRegex.Match(payment.Notes);
+                    if (match.Success && int.TryParse(match.Groups[1].Value, out var parsedDays))
+                    {
+                        daysActive = parsedDays;
+                    }
+                }
+
+                var newOriginal = daysActive == daysInMonth
+                    ? child.MonthlyFee
+                    : Math.Round(child.MonthlyFee * daysActive / daysInMonth, 0, MidpointRounding.AwayFromZero);
+
+                var rawFinal = hasDiscount
+                    ? newOriginal - (newOriginal * discountPercent / 100m)
+                    : newOriginal;
+                var newFinal = Math.Round(rawFinal, 0, MidpointRounding.AwayFromZero);
+
+                if (payment.OriginalAmount == newOriginal && payment.FinalAmount == newFinal) continue;
+
+                var oldFinal = payment.FinalAmount;
+
+                payment.OriginalAmount = newOriginal;
+                payment.FinalAmount = newFinal;
+                payment.DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None;
+                payment.DiscountValue = hasDiscount ? discountPercent : 0;
+
+                // Audit trail in the Notes column
+                var resyncNote = $"Aylıq qiymət yeniləndi: {oldFinal:F0} → {newFinal:F0} ₼";
+                payment.Notes = string.IsNullOrWhiteSpace(payment.Notes)
+                    ? resyncNote
+                    : $"{payment.Notes} | {resyncNote}";
+
+                // Recompute Status against the new FinalAmount
+                if (payment.PaidAmount >= payment.FinalAmount)
+                    payment.Status = PaymentStatus.Paid;
+                else if (payment.PaidAmount > 0)
+                    payment.Status = PaymentStatus.PartiallyPaid;
+                else
+                    payment.Status = PaymentStatus.Debt;
+
+                await _unitOfWork.Payments.UpdateAsync(payment);
+            }
         }
 
         /// <summary>
