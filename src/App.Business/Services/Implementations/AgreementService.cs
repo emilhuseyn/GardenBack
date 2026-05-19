@@ -72,20 +72,20 @@ namespace App.Business.Services.Implementations
             ReplaceAll(doc, "«           » 2026 - ci il",          $"«{day}» {monthAz} {year} - ci il");
             // Köhnə: "(_______) manatı"
             ReplaceAll(doc, "(_______) manatı",           $"({fee}) manatı");
-            // Yeni: "(_______) manat təşkil edir" — yer-tutucu run boundary-lərə görə split ola
-            // bilər, ona görə regex ilə həll edirik. \([_\s]+\) — istənilən _/space kombinasiyası.
-            ReplaceInParagraphRegex(doc,
-                "manat təşkil edir",
-                @"\(\s*[_\s]+\s*\)\s*manat təşkil edir",
-                $"({fee}) manat təşkil edir");
+            // Yeni: "(_______) manat təşkil edir" — bütün paragraph-ları gəzərək brute-force.
+            // "təşkil" / "təşkilı" — şablonda typo varsa da uyğunlaşırıq.
+            // Underscore run-ları rəngli ola bilər, FindAllString anchor-u tapa bilməyə bilər.
+            ReplaceInAllParagraphs(doc,
+                @"\(\s*[_\s]+\s*\)\s*manat\s+təşkilı?\s*edir",
+                $"({fee}) manat təşkil edir",
+                RegexOptions.IgnoreCase);
 
             // AZ ödəniş tarixi: "____"________202___ tarixinə qədər → "{day}" {monthAz} {year} tarixinə qədər
             // Smart quote (“ / ”) və düz quote (") hər ikisini əhatə edən regex.
-            // Pattern: [quote] _+ [quote] _+ 202[_/space]* (sonra "tarixinə qədər" gəlir)
-            ReplaceInParagraphRegex(doc,
-                "tarixinə qədər tam məbləğdə",
-                @"[""“”][_\s]*[""“”][_\s]+202[_\s]*",
-                $"“{day}” {monthAz} {year} ");
+            ReplaceInAllParagraphs(doc,
+                @"[""“”][_\s]*[""“”][_\s]+202[_\s]*(?=\s*tarixinə\s*qədər)",
+                $"“{day}” {monthAz} {year} ",
+                RegexOptions.IgnoreCase);
 
             ReplaceAll(doc, "ogluna( qızına)          yaş", $"ogluna( qızına) {ageGroup} yaş");
 
@@ -105,24 +105,22 @@ namespace App.Business.Services.Implementations
             ReplaceAll(doc, "“___” __________ 2026",
                 $"“{day}” {monthEn} {year}");
 
-            // Yaş qrupu (EN) — regex (run boundary güvənli)
-            ReplaceInParagraphRegex(doc,
-                "(son/daughter) in the",
+            // Yaş qrupu (EN) — brute-force (run boundary güvənli)
+            ReplaceInAllParagraphs(doc,
                 @"\(son/daughter\)\s+in\s+the\s+[_\s]+age\s+group",
                 $"(son/daughter) in the {ageGroup} age group");
 
             // Aylıq qiymət (EN)
             ReplaceAll(doc, "is (___) AZN", $"is ({fee}) AZN");
-            ReplaceInParagraphRegex(doc,
-                "AZN",
+            ReplaceInAllParagraphs(doc,
                 @"is\s+\([_\s]+\)\s+AZN",
                 $"is ({fee}) AZN");
 
             // EN ödəniş tarixi: must be paid in full by "_" __________ 202.
-            ReplaceInParagraphRegex(doc,
-                "must be paid in full by",
+            ReplaceInAllParagraphs(doc,
                 @"must\s+be\s+paid\s+in\s+full\s+by\s+[""“”][_\s]*[""“”]\s+_+\s+202\.?",
-                $"must be paid in full by “{day}” {monthEn} {year}.");
+                $"must be paid in full by “{day}” {monthEn} {year}.",
+                RegexOptions.IgnoreCase);
 
             // Valideyn adı (EN): "(Full name of the parent or legal representative)" əvvəlinə yerləşdir
             FillNameBeforeAnchor(doc, "(Full name of the parent or legal representative)", parentNameEn);
@@ -269,6 +267,53 @@ namespace App.Business.Services.Implementations
 
             var fileName = $"Kontrakt_{child.FirstName}_{child.LastName}_{childId}.doc";
             return (output.ToArray(), fileName);
+        }
+
+        /// <summary>
+        /// Sənəddəki BÜTÜN paragraph-ları (səksiya body + cədvəl xanaları) gəzir və
+        /// regex əsaslı text replace edir. Run boundary-ləri görmür, çünki paragraph.Text
+        /// bütün run-ları birləşdirir. FindAllString-dən fərqli olaraq anchor-a güvənmir.
+        /// </summary>
+        private static int ReplaceInAllParagraphs(Document doc, string pattern, string replacement, RegexOptions options = RegexOptions.None)
+        {
+            int count = 0;
+            var rx = new Regex(pattern, options);
+            foreach (Section section in doc.Sections)
+            {
+                count += ReplaceInChildObjects(section.Body.ChildObjects, rx, replacement);
+            }
+            return count;
+        }
+
+        private static int ReplaceInChildObjects(dynamic objects, Regex rx, string replacement)
+        {
+            int count = 0;
+            foreach (DocumentObject obj in objects)
+            {
+                if (obj is Paragraph p)
+                {
+                    var text = p.Text ?? string.Empty;
+                    if (string.IsNullOrEmpty(text)) continue;
+                    var updated = rx.Replace(text, replacement);
+                    if (updated == text) continue;
+
+                    p.ChildObjects.Clear();
+                    p.AppendText(updated);
+                    ApplyParagraphFont(p, "Times New Roman");
+                    count++;
+                }
+                else if (obj is Table t)
+                {
+                    foreach (TableRow row in t.Rows)
+                    {
+                        foreach (TableCell cell in row.Cells)
+                        {
+                            count += ReplaceInChildObjects(cell.ChildObjects, rx, replacement);
+                        }
+                    }
+                }
+            }
+            return count;
         }
 
         /// <summary>
