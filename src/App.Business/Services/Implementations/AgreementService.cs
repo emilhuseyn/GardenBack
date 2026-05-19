@@ -62,46 +62,65 @@ namespace App.Business.Services.Implementations
             using var doc   = new Document();
             doc.LoadFromStream(input, FileFormat.Doc);
 
-            // ── Azərbaycanca hissə: sadə əvəzetmələr ───────────────────────
+            // ═══════════════════════════════════════════════════════════════
+            // AZ — yeni şablon (2026 mayında yenilənib)
+            // ═══════════════════════════════════════════════════════════════
             ReplaceAll(doc, "«    »_________ 2026 il",    $"«{day}» {monthAz} {year} il");
             ReplaceAll(doc, "Tarixli _________N°",        "Tarixli _________N°");
-            ReplaceAll(doc, "«           » 2026 - ci il", $"«{day}» {monthAz} {year} - ci il");
+            // Yeni şablonda 19 boşluq (köhnə şablonda 11 idi — backward-compat üçün ikisini də saxlayırıq)
+            ReplaceAll(doc, "«                   » 2026 - ci il", $"«{day}» {monthAz} {year} - ci il");
+            ReplaceAll(doc, "«           » 2026 - ci il",          $"«{day}» {monthAz} {year} - ci il");
+            // Yeni: "(_______) manat təşkil edir"; köhnə: "(_______) manatı"
+            ReplaceAll(doc, "(_______) manat təşkil edir", $"({fee}) manat təşkil edir");
             ReplaceAll(doc, "(_______) manatı",           $"({fee}) manatı");
-
-            // ── Valideyn adı (AZ): «Valideyn»-dən sonra gələn boş abzas ──
-            // Şablonda blank paragraph yox; «Valideyn»-dan sonrakı abzas
-            // "(Valideyninvə...)" dir. Onun əvvəlinə yeni abzas əlavə edirik.
-            FillParentNameAz(doc, parentName);
-
-            // ── Uşaq adı (AZ): "Arasında övladı"-dan sonra boş abzas ──────
-            FillChildNameAz(doc, childName);
-
-            // ── ogluna(...) yaş qrupu ────────────────────────────────────
             ReplaceAll(doc, "ogluna( qızına)          yaş", $"ogluna( qızına) {ageGroup} yaş");
 
-            // ── İngilis hissəsi ───────────────────────────────────────────
+            // Valideyn adı (AZ): «Valideyn»-dən sonra "(Valideyninvə...)" əvvəlinə
+            FillParentNameAz(doc, parentName);
+            // Uşaq adı (AZ): "Arasında övladı"-dan sonrakı abzasa
+            FillChildNameAz(doc, childName);
+
+            // ═══════════════════════════════════════════════════════════════
+            // EN — Yeni şablon (struktur tamamilə yenilənib)
+            // ═══════════════════════════════════════════════════════════════
+            // Tarix yer-tutucuları — smart quotes ("/")
+            ReplaceAll(doc, "Dated: “” __________ 2026",
+                $"Dated: “{day}” {monthEn} {year}");
+            ReplaceAll(doc, "Appendix No. 1 to Agreement No. ______ dated “” __________ 2026",
+                $"Appendix No. 1 to Agreement No. ___ dated “{day}” {monthEn} {year}");
+            ReplaceAll(doc, "“___” __________ 2026",
+                $"“{day}” {monthEn} {year}");
+
+            // Yaş qrupu (EN)
+            ReplaceAll(doc, "(son/daughter) in the ______ age group",
+                $"(son/daughter) in the {ageGroup} age group");
+
+            // Aylıq qiymət (EN)
+            ReplaceAll(doc, "is (___) AZN", $"is ({fee}) AZN");
+
+            // Valideyn adı (EN): "(Full name of the parent or legal representative)" əvvəlinə yerləşdir
+            FillNameBeforeAnchor(doc, "(Full name of the parent or legal representative)", parentNameEn);
+            // Uşaq adı (EN): "(son/daughter) in the" əvvəlinə yerləşdir
+            FillNameBeforeAnchor(doc, "(son/daughter) in the", childNameEn);
+
+            // ═══════════════════════════════════════════════════════════════
+            // EN — köhnə şablon (backward-compat — köhnə deploy üçün)
+            // ═══════════════════════════════════════════════════════════════
             ReplaceAll(doc, "AGREEMENT No. _________",      "AGREEMENT No. _________");
             ReplaceAll(doc, "dated «      » _________",     $"dated «{day}» {monthEn}");
             ReplaceAll(doc, "APPENDIX No. 1 to the AGREEMENT No. dated ", $"APPENDIX No. 1 to the AGREEMENT No. dated {day}/{monthEn}/{year} ");
             FillDateBeforeYearInLine(doc, "Baku city", "/2026", $"{day}/{monthEn}");
 
-            // Valideyn adı (EN): 35 alt xətt "in order to render..." əvvəlindən
             ReplaceAll(doc, "___________________________________ in order to render",
                 $"{parentNameEn} in order to render");
-
-            // Valideyn adı (EN): placeholder olan sətrlər
             ReplaceAll(doc, "_______________________", parentNameEn);
             FillLineBeforeAnchor(doc, "in order to render", parentNameEn);
             FillPreviousUnderscoreLine(doc, "in order to render", parentNameEn);
             TrimTextBeforeAnchor(doc, "in order to render", parentNameEn);
 
-            // Uşaq adı (EN): 14 alt xətt + "  in  the age group of"
             ReplaceAll(doc, "______________  in  the age group of",
                 $"{childNameEn}  in  the age group of");
-
-            // Yaş qrupu (EN): "____" + "and based"  (ayrı abzaslarda ola bilər)
             ReplaceAll(doc, "____ and based", $"{ageGroup} and based");
-
             ReplaceAll(doc, "(_______) AZN", $"({fee}) AZN");
 
             using var output = new MemoryStream();
@@ -137,18 +156,47 @@ namespace App.Business.Services.Implementations
             using var doc = new Document();
             doc.LoadFromStream(input, FileFormat.Doc);
 
+            // ═══════════════════════════════════════════════════════════════
+            // AZ — yeni şablon (eyni qalıb, az dəyişiklik)
+            // ═══════════════════════════════════════════════════════════════
             ReplaceAll(doc, "Bakı şəhəri                     “____”_ ___  2026-ci il", $"Bakı şəhəri                     “{day}” {monthAz}  {year}-ci il");
-            ReplaceAll(doc, "Baku city           ___/____/  2026", $"Baku city           {day}/{monthEn}/2026");
-            ReplaceAll(doc, "Baku city							/2026", $"Baku city							{day}/{monthEn}/2026");
+
+            // Valideyn adı (AZ) — eyni placeholder
+            ReplaceAll(doc,
+                "__________________________________________________________ şəxsində valideyn və ya qanuni nümayəndə (bundan sonra “Valideyn”",
+                $"{parentName} şəxsində valideyn və ya qanuni nümayəndə (bundan sonra “Valideyn”");
+
+            // Uşaq adı (AZ) — eyni placeholder
+            ReplaceAll(doc,
+                "________________________________________ məktəbəqədər təlim-tərbiyə xidmətləri göstərir, Valideyn isə göstərilən bu xidmətləri qəbul",
+                $"{childName} məktəbəqədər təlim-tərbiyə xidmətləri göstərir, Valideyn isə göstərilən bu xidmətləri qəbul");
+
+            // ═══════════════════════════════════════════════════════════════
+            // EN — yeni şablon (struktur dəyişib)
+            // ═══════════════════════════════════════════════════════════════
+            // Tarix: "Baku city "____" ______ 2026"
+            ReplaceAll(doc, "Baku city “____” ______ 2026",
+                $"Baku city “{day}” {monthEn} {year}");
+
+            // Valideyn adı (EN) — yenilənmiş ifadə "acting as a parent..."
+            ReplaceAll(doc,
+                "__________________________________________________________ acting as a parent or legal representative",
+                $"{parentNameEn} acting as a parent or legal representative");
+
+            // Uşaq adı (EN) — yeni şablonda ayrı abzasdadır;
+            // "The Parent agrees to accept" əvvəlinə yerləşdir
+            FillNameBeforeAnchor(doc, "The Parent agrees to accept these services", childNameEn);
+
+            // ═══════════════════════════════════════════════════════════════
+            // EN — köhnə şablon (backward-compat)
+            // ═══════════════════════════════════════════════════════════════
+            ReplaceAll(doc, "Baku city           ___/____/  2026", $"Baku city           {day}/{monthEn}/{year}");
+            ReplaceAll(doc, "Baku city							/2026", $"Baku city							{day}/{monthEn}/{year}");
             FillDateBeforeYearInLine(doc, "Baku city", "/2026", $"{day}/{monthEn}");
 
             ReplaceAll(doc, "<Valideynin soyad ad Ata adini yaz>", parentName);
             ReplaceAll(doc, "<Uşağın soyad adı>", childName);
             ReplaceAll(doc, "<Child full name>", childNameEn);
-
-            ReplaceAll(doc,
-                "__________________________________________________________ şəxsində valideyn və ya qanuni nümayəndə (bundan sonra “Valideyn”",
-                $"{parentName} şəxsində valideyn və ya qanuni nümayəndə (bundan sonra “Valideyn”");
 
             ReplaceAll(doc,
                 "__________________________________________________________ represented by parent or legal representative (hereinafter referred to as “Parent”",
@@ -159,10 +207,6 @@ namespace App.Business.Services.Implementations
                 $"the parent or a legal representative {parentNameEn} (hereinafter referred to as “Parent”)");
 
             ReplaceAll(doc,
-                "________________________________________ məktəbəqədər təlim-tərbiyə xidmətləri göstərir, Valideyn isə göstərilən bu xidmətləri qəbul",
-                $"{childName} məktəbəqədər təlim-tərbiyə xidmətləri göstərir, Valideyn isə göstərilən bu xidmətləri qəbul");
-
-            ReplaceAll(doc,
                 "state standards of preschool education for a child of a PARENT (or a child who is sponsored)_____________________________________ and the PARENT accepting",
                 $"state standards of preschool education for a child of a PARENT (or a child who is sponsored){childNameEn} and the PARENT accepting");
 
@@ -170,9 +214,11 @@ namespace App.Business.Services.Implementations
                 "according to the state standards of preschool education for a child of a PARENT (or a child who is sponsored)_____________________________________ and the PARENT accepting these services, undertakes to pays to the KINDERGARTEN for",
                 $"according to the state standards of preschool education for a child of a PARENT (or a child who is sponsored){childNameEn} and the PARENT accepting these services, undertakes to pays to the KINDERGARTEN for");
 
+            // Köhnə helpers (idempotent, hər iki şablon üçün təhlükəsizdir)
             FillParentNameAz(doc, parentName);
             FillChildNameAz(doc, childName);
             FillLineBeforeAnchor(doc, "şəxsində valideyn və ya qanuni nümayəndə", parentName);
+            FillLineBeforeAnchor(doc, "acting as a parent or legal representative", parentNameEn);
             FillLineBeforeAnchor(doc, "represented by parent or legal representative", parentNameEn);
             FillLineBeforeAnchor(doc, "məktəbəqədər təlim-tərbiyə xidmətləri göstərir, Valideyn isə göstərilən bu xidmətləri qəbul", childName);
             FillLineBeforeAnchor(doc, "and the PARENT accepting", childNameEn);
@@ -197,6 +243,45 @@ namespace App.Business.Services.Implementations
 
             var fileName = $"Kontrakt_{child.FirstName}_{child.LastName}_{childId}.doc";
             return (output.ToArray(), fileName);
+        }
+
+        /// <summary>
+        /// Anchor abzasından ƏVVƏL yeni abzas kimi value əlavə edir.
+        /// İdempotentdir — əgər əvvəlki abzas artıq value-i ehtiva edirsə, atlayır.
+        /// Yeni şablon yapısı ilə "(Full name of the parent...)" kimi xətdən əvvəl
+        /// valideyn adını yazmaq üçün istifadə olunur.
+        /// </summary>
+        private static void FillNameBeforeAnchor(Document doc, string anchor, string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return;
+            var selections = doc.FindAllString(anchor, false, false);
+            if (selections == null || selections.Length == 0) return;
+
+            var range = selections[0].GetAsOneRange();
+            var anchorPara = range.Owner as Paragraph;
+            if (anchorPara == null) return;
+
+            var parent = anchorPara.Owner;
+            var idx = IndexInParent(parent, anchorPara);
+            if (idx < 0) return;
+
+            // İdempotentlik: əvvəlki abzas artıq value-i ehtiva edirsə skip
+            if (idx > 0)
+            {
+                var prevObj = GetChildAt(parent, idx - 1);
+                if (prevObj is Paragraph prevPara)
+                {
+                    var prevText = prevPara.Text?.Trim() ?? string.Empty;
+                    if (prevText.Equals(value, StringComparison.OrdinalIgnoreCase) ||
+                        prevText.IndexOf(value, StringComparison.OrdinalIgnoreCase) >= 0)
+                        return;
+                }
+            }
+
+            var newPara = new Paragraph(doc);
+            newPara.AppendText(value);
+            ApplyParagraphFont(newPara, "Times New Roman");
+            InsertAt(parent, idx, newPara);
         }
 
         // ── Valideyn adını (AZ) "(Valideyninvə...)" abzasından əvvəl əlavə et ──
