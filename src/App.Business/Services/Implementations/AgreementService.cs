@@ -53,7 +53,8 @@ namespace App.Business.Services.Implementations
             var year       = date.Year.ToString();
             var parentName  = child.ParentFullName;
             var childName   = $"{child.FirstName} {child.LastName}";
-            var ageGroup    = child.Group.AgeCategory.Trim();
+            // Şablon artıq "yaş" / "age group" əlavə etdiyi üçün sadəcə rəqəm diapazonunu götür
+            var ageGroup    = NormalizeAgeGroup(child.Group.AgeCategory);
             var fee         = child.MonthlyFee.ToString("0.##");
             var parentNameEn = ToAscii(parentName);
             var childNameEn  = ToAscii(childName);
@@ -671,6 +672,40 @@ namespace App.Business.Services.Implementations
                 paragraph.AppendText(updated);
                 ApplyParagraphFont(paragraph, "Times New Roman");
             }
+        }
+
+        /// <summary>
+        /// Group.AgeCategory dəyərini şablon üçün təmizləyir.
+        /// "5-6 yas" / "5-6 yaş" / "3-4 yaşlı" → "5-6" və ya "3-4"
+        /// Şablonda artıq "yaş" və "age group" statik mətni olduğu üçün
+        /// AgeCategory-ni rəqəm diapazonuna qədər kəsirik.
+        /// </summary>
+        private static string NormalizeAgeGroup(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+            var s = value.Trim();
+            // Tail-də olan "yaşlı / yaş / yas / years / year / lik / lı" suffix-lərini sil
+            string[] suffixes =
+            {
+                " yaşlı", " yaslı", " yaşlilar", " yaslilar",
+                " yaş", " yas",
+                " years old", " year old",
+                " years", " year"
+            };
+            bool removed;
+            do
+            {
+                removed = false;
+                foreach (var suf in suffixes)
+                {
+                    if (s.EndsWith(suf, StringComparison.OrdinalIgnoreCase))
+                    {
+                        s = s[..^suf.Length].TrimEnd();
+                        removed = true;
+                    }
+                }
+            } while (removed);
+            return s;
         }
 
         private static string ToAscii(string value)
