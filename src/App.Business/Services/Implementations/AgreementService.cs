@@ -58,6 +58,9 @@ namespace App.Business.Services.Implementations
             var fee         = child.MonthlyFee.ToString("0.##");
             var parentNameEn = ToAscii(parentName);
             var childNameEn  = ToAscii(childName);
+            // Unikal müqavilə nömrəsi: prefix + qeydiyyat ili + uşaq ID-si.
+            // Razılaşma əsas Müqavilənin "1 saylı Əlavə"sidir, ona görə ikisi eyni nömrəni paylaşır.
+            var contractNumber = $"KG-{year}/{child.Id}";
 
             using var input = new MemoryStream(templateBytes);
             using var doc   = new Document();
@@ -67,7 +70,12 @@ namespace App.Business.Services.Implementations
             // AZ — yeni şablon (2026 mayında yenilənib)
             // ═══════════════════════════════════════════════════════════════
             ReplaceAll(doc, "«    »_________ 2026 il",    $"«{day}» {monthAz} {year} il");
-            ReplaceAll(doc, "Tarixli _________N°",        "Tarixli _________N°");
+
+            // Razılaşma yuxarı hissədə "Tarixli _________N°- li Müqaviləyə 1 saylı Əlavə" — əsas müqavilə nömrəsi
+            ReplaceInAllParagraphs(doc,
+                @"Tarixli\s+_+\s*N°",
+                $"Tarixli {contractNumber} N°",
+                RegexOptions.IgnoreCase);
             // Yeni şablonda 19 boşluq (köhnə şablonda 11 idi — backward-compat üçün ikisini də saxlayırıq)
             ReplaceAll(doc, "«                   » 2026 - ci il", $"«{day}» {monthAz} {year} - ci il");
             ReplaceAll(doc, "«           » 2026 - ci il",          $"«{day}» {monthAz} {year} - ci il");
@@ -101,8 +109,11 @@ namespace App.Business.Services.Implementations
             // Tarix yer-tutucuları — smart quotes ("/")
             ReplaceAll(doc, "Dated: “” __________ 2026",
                 $"Dated: “{day}” {monthEn} {year}");
-            ReplaceAll(doc, "Appendix No. 1 to Agreement No. ______ dated “” __________ 2026",
-                $"Appendix No. 1 to Agreement No. ___ dated “{day}” {monthEn} {year}");
+            // Appendix sətrində həm müqavilə nömrəsini, həm də tarixi tək regex ilə doldur
+            ReplaceInAllParagraphs(doc,
+                @"Appendix\s+No\.\s+1\s+to\s+Agreement\s+No\.\s+_+\s+dated\s+[""“”]?[_\s]*[""“”]?\s*_+\s*2026",
+                $"Appendix No. 1 to Agreement No. {contractNumber} dated “{day}” {monthEn} {year}",
+                RegexOptions.IgnoreCase);
             ReplaceAll(doc, "“___” __________ 2026",
                 $"“{day}” {monthEn} {year}");
 
@@ -175,6 +186,8 @@ namespace App.Business.Services.Implementations
             var childName = $"{child.FirstName} {child.LastName}";
             var parentNameEn = ToAscii(parentName);
             var childNameEn = ToAscii(childName);
+            // Unikal müqavilə nömrəsi (Razılaşma ilə eyni format)
+            var contractNumber = $"KG-{year}/{child.Id}";
 
             var templateBytes = await File.ReadAllBytesAsync(templatePath);
             using var input = new MemoryStream(templateBytes);
@@ -185,6 +198,19 @@ namespace App.Business.Services.Implementations
             // AZ — yeni şablon (eyni qalıb, az dəyişiklik)
             // ═══════════════════════════════════════════════════════════════
             ReplaceAll(doc, "Bakı şəhəri                     “____”_ ___  2026-ci il", $"Bakı şəhəri                     “{day}” {monthAz}  {year}-ci il");
+
+            // Müqavilə nömrəsi (AZ) — "M Ü Q A V I L Ə  №  _______"
+            // Hərflər arasında aralıq ola bilər (M Ü Q A V I L Ə), N° / № variantlarını tutur
+            ReplaceInAllParagraphs(doc,
+                @"(M\s*Ü\s*Q\s*A\s*V\s*I\s*L\s*Ə|MÜQAVİLƏ)(\s*[№N]\s*°?\s*)_+",
+                $"$1$2{contractNumber}",
+                RegexOptions.IgnoreCase);
+
+            // Müqavilə nömrəsi (EN) — "PRESCHOOL EDUCATION SERVICES No. _______"
+            ReplaceInAllParagraphs(doc,
+                @"(PRESCHOOL\s+EDUCATION\s+SERVICES\s*\r?\n?\s*No\.\s+)_+",
+                $"$1{contractNumber}",
+                RegexOptions.IgnoreCase);
 
             // Valideyn adı (AZ) — eyni placeholder
             ReplaceAll(doc,
