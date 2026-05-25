@@ -7,8 +7,7 @@ using System.Security.Claims;
 
 namespace App.API.Controllers
 {
-    [Route("api/schedule")]
-    [Route("api/schedules")]   // alias — frontend hər iki yoldan çata bilir
+    [Route("api/[controller]")]   // deployed routing transformer "+s" əlavə edir → /api/schedules
     [ApiController]
     [Authorize(Policy = "AllStaff")]
     public class ScheduleController : ControllerBase
