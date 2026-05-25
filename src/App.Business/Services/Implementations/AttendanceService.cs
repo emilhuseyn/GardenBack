@@ -297,15 +297,16 @@ namespace App.Business.Services.Implementations
             var today = DateOnly.FromDateTime(_dt.Now);
             var attendances = await _unitOfWork.Attendances.GetDailyAttendanceAsync(today);
 
-            var fullDayConfig = await _unitOfWork.ScheduleConfigs.GetByScheduleTypeAsync(ScheduleType.FullDay);
-            var halfDayConfig = await _unitOfWork.ScheduleConfigs.GetByScheduleTypeAsync(ScheduleType.HalfDay);
+            // Bütün qrafikləri Code üzrə bir dəfə yüklə — dinamik (yalnız FullDay/HalfDay deyil)
+            var allConfigs = (await _unitOfWork.ScheduleConfigs.GetAllAsync())
+                .ToDictionary(c => c.Code, c => c, StringComparer.OrdinalIgnoreCase);
 
             foreach (var attendance in attendances.Where(a => a.Status == AttendanceStatus.Present))
             {
                 var child = attendance.Child;
-                var config = child.ScheduleType == ScheduleType.FullDay ? fullDayConfig : halfDayConfig;
-
-                if (config == null) continue;
+                if (child == null) continue;
+                if (!allConfigs.TryGetValue(child.ScheduleType ?? string.Empty, out var config) || config == null)
+                    continue;
 
                 if (attendance.ArrivalTime.HasValue && attendance.ArrivalTime.Value > config.StartTime)
                     attendance.IsLate = true;

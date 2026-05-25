@@ -346,7 +346,7 @@ namespace App.DAL.Presistence
                 var groupId = groupIds[row.G];
                 var (firstName, lastName) = SplitName(row.C);
                 var phone    = NormalizePhone(row.Ph);
-                var schedule = row.Full ? ScheduleType.FullDay : ScheduleType.HalfDay;
+                var schedule = row.Full ? "FullDay" : "HalfDay";
                 var payDay   = Math.Min(row.PDay, 28);
                 var personId = ResolvePersonId(firstName, lastName);
 

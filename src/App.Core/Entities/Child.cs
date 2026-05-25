@@ -9,7 +9,11 @@ namespace App.Core.Entities
         public string LastName { get; set; } = string.Empty;
         public DateTime DateOfBirth { get; set; }
         public int GroupId { get; set; }
-        public ScheduleType ScheduleType { get; set; }
+        /// <summary>
+        /// ScheduleConfig.Code dəyəri (məs. "FullDay", "HalfDay", "Evening").
+        /// Free-form string olduğu üçün admin yeni qrafiklər əlavə edə bilir.
+        /// </summary>
+        public string ScheduleType { get; set; } = "FullDay";
         public decimal MonthlyFee { get; set; }
         public decimal? DiscountPercentage { get; set; }
         public int PaymentDay { get; set; } = 1;

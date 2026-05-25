@@ -12,6 +12,7 @@ namespace App.DAL.Presistence.Configurations
             builder.HasKey(c => c.Id);
             builder.Property(c => c.FirstName).IsRequired().HasMaxLength(100);
             builder.Property(c => c.LastName).IsRequired().HasMaxLength(100);
+            builder.Property(c => c.ScheduleType).IsRequired().HasMaxLength(50).HasDefaultValue("FullDay");
             builder.Property(c => c.MonthlyFee).HasColumnType("decimal(18,2)");
             builder.Property(c => c.DiscountPercentage).HasColumnType("decimal(5,2)").IsRequired(false);
             builder.Property(c => c.PaymentDay).IsRequired().HasDefaultValue(1);

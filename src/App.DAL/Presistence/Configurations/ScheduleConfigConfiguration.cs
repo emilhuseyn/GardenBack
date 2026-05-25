@@ -11,12 +11,16 @@ namespace App.DAL.Presistence.Configurations
             builder.ToTable("schedule_configs");
             builder.HasKey(s => s.Id);
 
+            builder.Property(s => s.Code).IsRequired().HasMaxLength(50);
+            builder.Property(s => s.Name).IsRequired().HasMaxLength(100);
+            builder.Property(s => s.IsActive).HasDefaultValue(true);
+
             builder.HasOne(s => s.UpdatedBy)
                 .WithMany()
                 .HasForeignKey(s => s.UpdatedById)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasIndex(s => s.ScheduleType).IsUnique();
+            builder.HasIndex(s => s.Code).IsUnique();
 
             builder.HasQueryFilter(s => !s.IsDeleted);
         }

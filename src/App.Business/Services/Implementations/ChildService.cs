@@ -122,7 +122,7 @@ namespace App.Business.Services.Implementations
             if (dto.LastName != null) child.LastName = dto.LastName;
             if (dto.DateOfBirth.HasValue) child.DateOfBirth = dto.DateOfBirth.Value;
             if (dto.GroupId.HasValue) child.GroupId = dto.GroupId.Value;
-            if (dto.ScheduleType.HasValue) child.ScheduleType = dto.ScheduleType.Value;
+            if (!string.IsNullOrWhiteSpace(dto.ScheduleType)) child.ScheduleType = dto.ScheduleType.Trim();
             if (dto.MonthlyFee.HasValue) child.MonthlyFee = dto.MonthlyFee.Value;
             if (dto.DiscountPercentage.HasValue) child.DiscountPercentage = dto.DiscountPercentage.Value;
             if (dto.PaymentDay.HasValue) child.PaymentDay = dto.PaymentDay.Value;
@@ -310,8 +310,8 @@ namespace App.Business.Services.Implementations
                 query = query.Where(c => c.Group.DivisionId == filter.DivisionId.Value);
             if (!string.IsNullOrEmpty(filter.Status) && Enum.TryParse<ChildStatus>(filter.Status, true, out var status))
                 query = query.Where(c => c.Status == status);
-            if (!string.IsNullOrEmpty(filter.ScheduleType) && Enum.TryParse<ScheduleType>(filter.ScheduleType, true, out var schedType))
-                query = query.Where(c => c.ScheduleType == schedType);
+            if (!string.IsNullOrEmpty(filter.ScheduleType))
+                query = query.Where(c => c.ScheduleType == filter.ScheduleType);
 
             var totalCount = query.Count();
 

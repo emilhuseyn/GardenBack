@@ -48,8 +48,9 @@ namespace App.Business.Services.Implementations
             return new StatisticsSummaryResponse
             {
                 TotalActiveChildren = childList.Count,
-                FullDayCount = childList.Count(c => c.ScheduleType == ScheduleType.FullDay),
-                HalfDayCount = childList.Count(c => c.ScheduleType == ScheduleType.HalfDay),
+                // Default kodlar; custom qrafiklər ayrıca StatisticsSummary-də ümumi rəqəmlərə daxildir
+                FullDayCount = childList.Count(c => string.Equals(c.ScheduleType, "FullDay", StringComparison.OrdinalIgnoreCase)),
+                HalfDayCount = childList.Count(c => string.Equals(c.ScheduleType, "HalfDay", StringComparison.OrdinalIgnoreCase)),
                 TotalGroups = groups.Count(),
                 TotalDivisions = divisions.Count,
                 ByDivision = byDivision

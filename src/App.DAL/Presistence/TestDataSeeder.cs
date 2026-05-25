@@ -125,8 +125,8 @@ namespace App.DAL.Presistence
                     var  basL  = lasts[i % lasts.Length];
                     var  last  = (isRus && !isBoy) ? basL + "a" : basL;
 
-                    var sched  = i % 3 == 0 ? ScheduleType.HalfDay : ScheduleType.FullDay;
-                    var fee    = sched == ScheduleType.FullDay ? rnd.Next(25,36)*10m : rnd.Next(15,21)*10m;
+                    var sched  = i % 3 == 0 ? "HalfDay" : "FullDay";
+                    var fee    = sched == "FullDay" ? rnd.Next(25,36)*10m : rnd.Next(15,21)*10m;
 
                     children.Add(new Child
                     {
@@ -199,8 +199,8 @@ namespace App.DAL.Presistence
         {
             var active  = await context.Children.Where(c => c.Status == ChildStatus.Active).ToListAsync();
             var configs = await context.ScheduleConfigs.ToListAsync();
-            var fdCfg   = configs.FirstOrDefault(c => c.ScheduleType == ScheduleType.FullDay);
-            var hdCfg   = configs.FirstOrDefault(c => c.ScheduleType == ScheduleType.HalfDay);
+            var fdCfg   = configs.FirstOrDefault(c => c.Code == "FullDay");
+            var hdCfg   = configs.FirstOrDefault(c => c.Code == "HalfDay");
 
             var days   = new List<DateOnly>();
             var cursor = DateOnly.FromDateTime(DateTime.UtcNow);
@@ -216,7 +216,7 @@ namespace App.DAL.Presistence
 
             foreach (var child in active)
             {
-                var cfg = child.ScheduleType == ScheduleType.FullDay ? fdCfg : hdCfg;
+                var cfg = child.ScheduleType == "FullDay" ? fdCfg : hdCfg;
                 if (cfg == null) continue;
 
                 foreach (var day in days)

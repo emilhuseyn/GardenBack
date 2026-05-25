@@ -57,16 +57,20 @@ namespace App.DAL.Presistence
                 var adminUser = await userManager.FindByEmailAsync("admin@kindergarden.az");
                 var fullDay = new ScheduleConfig
                 {
-                    ScheduleType = ScheduleType.FullDay,
+                    Code = "FullDay",
+                    Name = "Tam gün",
                     StartTime = new TimeOnly(9, 0),
                     EndTime = new TimeOnly(18, 0),
+                    IsActive = true,
                     UpdatedById = adminUser!.Id
                 };
                 var halfDay = new ScheduleConfig
                 {
-                    ScheduleType = ScheduleType.HalfDay,
+                    Code = "HalfDay",
+                    Name = "Yarım gün",
                     StartTime = new TimeOnly(9, 0),
                     EndTime = new TimeOnly(13, 0),
+                    IsActive = true,
                     UpdatedById = adminUser.Id
                 };
                 context.ScheduleConfigs.AddRange(fullDay, halfDay);

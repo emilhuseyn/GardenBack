@@ -55,7 +55,8 @@ namespace App.Business.Validators
                 .WithMessage("E-poçt formatı yanlışdır.");
 
             RuleFor(x => x.ScheduleType)
-                .IsInEnum().WithMessage("Yanlış qrafik növü.");
+                .NotEmpty().WithMessage("Qrafik kodu boş ola bilməz.")
+                .MaximumLength(50);
         }
     }
 

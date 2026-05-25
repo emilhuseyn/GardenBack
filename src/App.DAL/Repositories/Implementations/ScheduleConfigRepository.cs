@@ -1,5 +1,4 @@
 using App.Core.Entities;
-using App.Core.Enums;
 using App.DAL.Presistence;
 using App.DAL.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -10,9 +9,10 @@ namespace App.DAL.Repositories.Abstractions
     {
         public ScheduleConfigRepository(AppDbContext context) : base(context) { }
 
-        public async Task<ScheduleConfig?> GetByScheduleTypeAsync(ScheduleType type)
+        public async Task<ScheduleConfig?> GetByCodeAsync(string code)
         {
-            return await DbSet.FirstOrDefaultAsync(s => s.ScheduleType == type);
+            if (string.IsNullOrWhiteSpace(code)) return null;
+            return await DbSet.FirstOrDefaultAsync(s => s.Code == code);
         }
     }
 }

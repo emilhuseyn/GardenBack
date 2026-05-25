@@ -1,10 +1,12 @@
 using App.Core.Entities;
-using App.Core.Enums;
 
 namespace App.DAL.Repositories.Interfaces
 {
     public interface IScheduleConfigRepository : IRepository<ScheduleConfig>
     {
-        Task<ScheduleConfig?> GetByScheduleTypeAsync(ScheduleType type);
+        /// <summary>
+        /// Code (məs. "FullDay", "HalfDay", "Evening") üzrə yalnız aktiv qrafiki tap.
+        /// </summary>
+        Task<ScheduleConfig?> GetByCodeAsync(string code);
     }
 }

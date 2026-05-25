@@ -1,5 +1,3 @@
-using App.Core.Enums;
-
 namespace App.Business.DTOs.Children
 {
     public class CreateChildRequest
@@ -8,7 +6,8 @@ namespace App.Business.DTOs.Children
         public string LastName { get; set; } = string.Empty;
         public DateTime DateOfBirth { get; set; }
         public int GroupId { get; set; }
-        public ScheduleType ScheduleType { get; set; }
+        /// <summary>ScheduleConfig.Code dəyəri (məs. "FullDay", "HalfDay")</summary>
+        public string ScheduleType { get; set; } = "FullDay";
         public decimal MonthlyFee { get; set; }
         public decimal? DiscountPercentage { get; set; }
         public int PaymentDay { get; set; } = 1;
@@ -27,7 +26,7 @@ namespace App.Business.DTOs.Children
         public string? LastName { get; set; }
         public DateTime? DateOfBirth { get; set; }
         public int? GroupId { get; set; }
-        public ScheduleType? ScheduleType { get; set; }
+        public string? ScheduleType { get; set; }
         public decimal? MonthlyFee { get; set; }
         public decimal? DiscountPercentage { get; set; }
         public int? PaymentDay { get; set; }

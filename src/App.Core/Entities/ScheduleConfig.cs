@@ -1,16 +1,29 @@
 using App.Core.Entities.Commons;
 using App.Core.Entities.Identity;
-using App.Core.Enums;
 
 namespace App.Core.Entities
 {
     public class ScheduleConfig : BaseEntity
     {
-        public ScheduleType ScheduleType { get; set; }
+        /// <summary>
+        /// Stabilliyi olan unikal kod (məs. "FullDay", "HalfDay", "Evening").
+        /// Bu Child.ScheduleType sütununda saxlanır və filtrlərdə açar kimi istifadə olunur.
+        /// </summary>
+        public string Code { get; set; } = string.Empty;
+
+        /// <summary>UI-da göstəriləcək ad (məs. "Tam gün", "Yarım gün", "Axşam qrupu").</summary>
+        public string Name { get; set; } = string.Empty;
+
         public TimeOnly StartTime { get; set; }
         public TimeOnly EndTime { get; set; }
-        public string UpdatedById { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Soft-deactivation — keçmiş uşaqlar bu kodla qalır,
+        /// amma yeni uşaq seçimi/filter siyahısında görsənmir.
+        /// </summary>
+        public bool IsActive { get; set; } = true;
+
+        public string UpdatedById { get; set; } = string.Empty;
         public User UpdatedBy { get; set; } = null!;
     }
 }

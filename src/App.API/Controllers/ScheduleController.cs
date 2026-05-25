@@ -20,10 +20,19 @@ namespace App.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllConfigs()
+        public async Task<IActionResult> GetAllConfigs([FromQuery] bool includeInactive = false)
         {
-            var result = await _scheduleService.GetAllConfigsAsync();
+            var result = await _scheduleService.GetAllConfigsAsync(includeInactive);
             return Ok(ApiResponse<IEnumerable<ScheduleConfigResponse>>.SuccessResponse(result));
+        }
+
+        [HttpPost]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> CreateSchedule([FromBody] CreateScheduleRequest dto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var result = await _scheduleService.CreateScheduleAsync(dto, userId);
+            return Ok(ApiResponse<ScheduleConfigResponse>.SuccessResponse(result, "Qrafik əlavə edildi."));
         }
 
         [HttpPut("{id}")]
@@ -33,6 +42,14 @@ namespace App.API.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
             var result = await _scheduleService.UpdateScheduleAsync(id, dto, userId);
             return Ok(ApiResponse<ScheduleConfigResponse>.SuccessResponse(result, "Qrafik yeniləndi."));
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> DeleteSchedule(int id)
+        {
+            await _scheduleService.DeleteScheduleAsync(id);
+            return Ok(ApiResponse<string>.SuccessResponse("Qrafik silindi (və ya istifadədə olduğu üçün deaktiv edildi)."));
         }
     }
 }

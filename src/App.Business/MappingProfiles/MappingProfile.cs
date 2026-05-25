@@ -25,12 +25,12 @@ namespace App.Business.MappingProfiles
             CreateMap<Child, ChildResponse>()
                 .ForMember(d => d.GroupName, opt => opt.MapFrom(s => s.Group != null ? s.Group.Name : string.Empty))
                 .ForMember(d => d.DivisionName, opt => opt.MapFrom(s => s.Group != null && s.Group.Division != null ? s.Group.Division.Name : string.Empty))
-                .ForMember(d => d.ScheduleType, opt => opt.MapFrom(s => s.ScheduleType.ToString()))
+                .ForMember(d => d.ScheduleType, opt => opt.MapFrom(s => s.ScheduleType))
                 .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()));
             CreateMap<Child, ChildDetailResponse>()
                 .ForMember(d => d.GroupName, opt => opt.MapFrom(s => s.Group != null ? s.Group.Name : string.Empty))
                 .ForMember(d => d.DivisionName, opt => opt.MapFrom(s => s.Group != null && s.Group.Division != null ? s.Group.Division.Name : string.Empty))
-                .ForMember(d => d.ScheduleType, opt => opt.MapFrom(s => s.ScheduleType.ToString()))
+                .ForMember(d => d.ScheduleType, opt => opt.MapFrom(s => s.ScheduleType))
                 .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()))
                 .ForMember(d => d.TeacherName, opt => opt.MapFrom(s => s.Group != null && s.Group.Teacher != null ? $"{s.Group.Teacher.FirstName} {s.Group.Teacher.LastName}" : string.Empty));
 
@@ -48,7 +48,7 @@ namespace App.Business.MappingProfiles
             CreateMap<Child, GroupChildItem>()
                 .ForMember(d => d.FullName, opt => opt.MapFrom(s => $"{s.FirstName} {s.LastName}"))
                 .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()))
-                .ForMember(d => d.ScheduleType, opt => opt.MapFrom(s => s.ScheduleType.ToString()));
+                .ForMember(d => d.ScheduleType, opt => opt.MapFrom(s => s.ScheduleType));
 
             // Division
             CreateMap<CreateDivisionRequest, Division>();
@@ -79,9 +79,8 @@ namespace App.Business.MappingProfiles
             CreateMap<Cashbox, CashboxResponse>()
                 .ForMember(d => d.Type, opt => opt.MapFrom(s => s.Type.ToString()));
 
-            // Schedule
-            CreateMap<ScheduleConfig, ScheduleConfigResponse>()
-                .ForMember(d => d.ScheduleType, opt => opt.MapFrom(s => s.ScheduleType.ToString()));
+            // Schedule (artıq enum yox — string Code/Name, AutoMapper avtomatik tapır)
+            CreateMap<ScheduleConfig, ScheduleConfigResponse>();
         }
     }
 }
