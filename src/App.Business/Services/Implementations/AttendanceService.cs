@@ -176,13 +176,20 @@ namespace App.Business.Services.Implementations
                     entries[i].RecordedByName = name;
             }
 
+            // Sayğacları yalnız HAZIRDA AKTİV uşaqlar üçün hesabla — beləliklə Home dashboard
+            // ilə /attendance səhifəsi üst-üstə düşür. Bu gün deaktiv edilmiş və ya Hikvision-ın
+            // səhvən qeydə aldığı köhnə uşaqların qeydləri statistikaya təsir etməsin.
+            var activeAttendance = attendanceList
+                .Where(a => a.Child != null && a.Child.Status == ChildStatus.Active)
+                .ToList();
+
             return new DailyAttendanceReport
             {
                 Date = date,
-                TotalChildren = entries.Count,
-                PresentCount = entries.Count(e => e.Status == AttendanceStatus.Present),
-                AbsentCount = entries.Count(e => e.Status == AttendanceStatus.Absent),
-                LateCount = entries.Count(e => e.IsLate),
+                TotalChildren = activeAttendance.Count,
+                PresentCount = activeAttendance.Count(a => a.Status == AttendanceStatus.Present),
+                AbsentCount = activeAttendance.Count(a => a.Status == AttendanceStatus.Absent),
+                LateCount = activeAttendance.Count(a => a.IsLate),
                 Entries = entries
             };
         }
