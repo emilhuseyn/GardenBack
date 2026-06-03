@@ -136,7 +136,8 @@ namespace App.Business.Services.Implementations
         }
 
         // ────────────────────────────────────────────────────────────────
-        // 3. Ödəniş günündən 3 gün sonra saat 10:00 — gecikme_wp
+        // 3. Ödəniş günü keçmiş VƏ ödənilməmiş bütün uşaqlara — HƏR GÜN gecikme_wp
+        //    Ödəniş edilənə qədər (və ya ay bitənə qədər) hər gün təkrarlanır.
         // ────────────────────────────────────────────────────────────────
         public async Task<SendResult> SendPaymentOverdueRemindersAsync()
         {
@@ -144,16 +145,19 @@ namespace App.Business.Services.Implementations
                 return DisabledResult();
 
             var today = _dt.Now.Date;
-            var overdueDay = today.AddDays(-3); // 3 gün əvvəl ödəniş günü olmalıydı
 
             var activeChildren = await _unitOfWork.Children.GetActiveChildrenAsync();
+
+            // Bu ayda ödəniş günü artıq KEÇMİŞ bütün uşaqlar
+            // (məs: today=10, PaymentDay=4 → gecikib; PaymentDay=15 → hələ vaxtı çatmayıb)
             var overdueChildren = activeChildren
-                .Where(c => c.PaymentDay == overdueDay.Day)
+                .Where(c => c.PaymentDay < today.Day)
                 .ToList();
 
-            _logger.LogInformation("WABA gecikme: {Count} uşaq yoxlanılır", overdueChildren.Count);
+            _logger.LogInformation("WABA gecikme: {Count} potensial gecikmiş uşaq yoxlanılır (Bu gün: {Day})",
+                overdueChildren.Count, today.Day);
 
-            int sent = 0, failed = 0;
+            int sent = 0, skipped = 0, failed = 0;
             var errors = new List<string>();
 
             foreach (var child in overdueChildren)
@@ -164,10 +168,10 @@ namespace App.Business.Services.Implementations
                         .FindAsync(p => p.ChildId == child.Id && p.Month == today.Month && p.Year == today.Year))
                         .FirstOrDefault();
 
-                    // Ödəniş edilibsə keç
-                    if (payment?.Status == PaymentStatus.Paid) continue;
+                    // Ödəniş edilibsə keç (ödənilənə qədər hər gün, ödənildikdə dayan)
+                    if (payment?.Status == PaymentStatus.Paid) { skipped++; continue; }
 
-                    // gecikme_wp — parametrsiz template
+                    // gecikme_wp — parametrsiz template, hər gün təkrar
                     var error = await SendWabaAsync(child.ParentPhone, TplOverdue, [], child.Id);
 
                     if (error == null) sent++; else { failed++; errors.Add(error); }
@@ -179,7 +183,7 @@ namespace App.Business.Services.Implementations
                 }
             }
 
-            _logger.LogInformation("WABA gecikme tamamlandı. Sent={S} Failed={F}", sent, failed);
+            _logger.LogInformation("WABA gecikme tamamlandı. Sent={S} Skipped={K} Failed={F}", sent, skipped, failed);
             return new SendResult(sent, failed, errors);
         }
 

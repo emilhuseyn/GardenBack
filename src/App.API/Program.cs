@@ -126,7 +126,8 @@ RecurringJob.AddOrUpdate<INotificationService>(
     Cron.Daily(12, 30),
     new RecurringJobOptions { TimeZone = bakuZone });
 
-// Hər gün saat 12:30-da — ödəniş günündən 3 gün keçmiş, hələ ödəməyənlərə WABA gecikme xəbərdarlığı (gecikme_wp)
+// Hər gün saat 12:30-da — ödəniş günü keçmiş VƏ ödənilməmiş bütün valideynlərə WABA gecikme xəbərdarlığı (gecikme_wp).
+// Ödəniş edilənə qədər və ya ay bitənə qədər hər gün təkrar göndərilir.
 RecurringJob.AddOrUpdate<INotificationService>(
     "send-payment-overdue-reminders",
     s => s.SendPaymentOverdueRemindersAsync(),
