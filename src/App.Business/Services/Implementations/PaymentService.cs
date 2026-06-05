@@ -445,6 +445,20 @@ namespace App.Business.Services.Implementations
                     responses.Add(_mapper.Map<PaymentResponse>(full));
             }
 
+            // WABA "odenish_wp" — hər ödənilən ay üçün ayrıca təsdiq SMS-i göndər.
+            // SMS göndərilərkən xəta olarsa, bulk əməliyyatı pozulmasın.
+            foreach (var p in processedPayments)
+            {
+                try
+                {
+                    await _notificationService.SendPaymentConfirmationAsync(p.Id);
+                }
+                catch
+                {
+                    // Sessiz — SMS xətası bulk əməliyyatı pozmasın
+                }
+            }
+
             return new RecordBulkPaymentResponse
             {
                 PaidCount = processedPayments.Count,
