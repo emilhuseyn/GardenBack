@@ -216,6 +216,15 @@ namespace App.Business.Services.Implementations
             RegexReplace(doc, @"\(or a child who is sponsored\)_{5,}",
                 $"(or a child who is sponsored){childNameEn}", RegexOptions.IgnoreCase);
 
+            // ── Rekvizit/imza bloku (üzən mətn qutuları) — «Valideyn»/Parent tərəfi ──
+            // Bu sahələr əsas mətn gövdəsində deyil, text box shape-lərdədir; ona görə
+            // ayrıca doldurulur. Yalnız ad-soyad və mobil nömrə yazılır.
+            var parentPhone = child.ParentPhone ?? string.Empty;
+            FillTextBoxField(doc, "A.S.A", parentName);     // AZ — ad soyad ata adı
+            FillTextBoxField(doc, "Mob:", parentPhone);     // AZ — mobil
+            FillTextBoxField(doc, "N.S.P.", parentNameEn);  // EN — ad soyad ata adı
+            FillTextBoxField(doc, "Mob.:", parentPhone);    // EN — mobil
+
             using var output = new MemoryStream();
             doc.SaveToStream(output, FileFormat.Doc);
 
@@ -346,6 +355,30 @@ namespace App.Business.Services.Implementations
             p.Format.Borders.Bottom.BorderType = Spire.Doc.Documents.BorderStyle.Single;
             p.Format.Borders.Bottom.LineWidth = 1.0f;
             p.Format.Borders.Bottom.Space = 1.0f;
+        }
+
+        /// <summary>
+        /// Üzən mətn qutularındakı (Word "text box" shape) "Label ____" sahəsini doldurur:
+        /// label-dan sonrakı alt xətti value ilə əvəz edir. Əsas mətn gövdəsi (doc.Replace /
+        /// FindAllString) text box-lara çatmadığı üçün rekvizit blokları ayrıca emal olunur.
+        /// </summary>
+        private static void FillTextBoxField(Document doc, string label, string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return;
+            var rx = new Regex(Regex.Escape(label) + @"\s*_{2,}");
+            for (int i = 0; i < doc.TextBoxes.Count; i++)
+            {
+                foreach (DocumentObject o in doc.TextBoxes[i].Body.ChildObjects)
+                {
+                    if (o is not Paragraph p) continue;
+                    var text = p.Text ?? string.Empty;
+                    if (!rx.IsMatch(text)) continue;
+                    var updated = rx.Replace(text, label + "  " + value, 1);
+                    p.ChildObjects.Clear();
+                    p.AppendText(updated);
+                    ApplyParagraphFont(p, "Times New Roman");
+                }
+            }
         }
 
         // ── Valideyn adını (AZ) "(Valideyninvə...)" abzasından əvvəl əlavə et ──
