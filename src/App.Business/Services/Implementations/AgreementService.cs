@@ -194,100 +194,53 @@ namespace App.Business.Services.Implementations
             using var doc = new Document();
             doc.LoadFromStream(input, FileFormat.Doc);
 
-            // ═══════════════════════════════════════════════════════════════
-            // AZ — yeni şablon (eyni qalıb, az dəyişiklik)
-            // ═══════════════════════════════════════════════════════════════
-            ReplaceAll(doc, "Bakı şəhəri                     “____”_ ___  2026-ci il", $"Bakı şəhəri                     “{day}” {monthAz}  {year}-ci il");
+            // ─────────────────────────────────────────────────────────────────────
+            // 2026 şablonu — bütün müqavilə mətni 2 sütunlu cədvəlin içindədir
+            // (sol xana = AZ, sağ xana = EN). Yer-tutucular regex ilə YERİNDƏ
+            // (doc.Replace) əvəz olunur ki, paraqraf daxilindəki sətir keçidləri
+            // (manual line break) və formatlaşma pozulmasın.
+            // Qeyd: FreeSpire Replace(Regex,string) $-qrup referansını dəstəkləmir,
+            // ona görə əvəzləmələr sabit mətndir (anchor sözü təkrar yazılır).
+            // ─────────────────────────────────────────────────────────────────────
 
-            // Müqavilə nömrəsi (AZ) — "M Ü Q A V I L Ə  №  _______"
-            // Hərflər arasında aralıq ola bilər (M Ü Q A V I L Ə), N° / № variantlarını tutur
-            ReplaceInAllParagraphs(doc,
-                @"(M\s*Ü\s*Q\s*A\s*V\s*I\s*L\s*Ə|MÜQAVİLƏ)(\s*[№N]\s*°?\s*)_+",
-                $"$1$2{contractNumber}",
-                RegexOptions.IgnoreCase);
+            // ── EN tarix ƏVVƏL doldurulur (AZ tarix regexi onu səhvən tutmasın deyə) ──
+            // "Baku city  «____» ______ 2026"
+            RegexReplace(doc, "Baku city\\s+[“\"]_{2,}[”\"][_\\s]+202\\d",
+                $"Baku city “{day}” {monthEn} {year}", RegexOptions.IgnoreCase);
 
-            // Müqavilə nömrəsi (EN) — "PRESCHOOL EDUCATION SERVICES No. _______"
-            ReplaceInAllParagraphs(doc,
-                @"(PRESCHOOL\s+EDUCATION\s+SERVICES\s*\r?\n?\s*No\.\s+)_+",
-                $"$1{contractNumber}",
-                RegexOptions.IgnoreCase);
+            // ── AZ ──────────────────────────────────────────────────────────────
+            // Müqavilə №  →  "M Ü Q A V I L Ə  №  _______"
+            RegexReplace(doc, @"№\s*_{3,}", $"№  {contractNumber}");
+            // Tarix  →  "Bakı şəhəri  «____»_ ___  2026-ci il"
+            // "-ci il" şərtdir ki, EN tarixini ("...2026" sonu fərqli) səhvən tutmasın.
+            RegexReplace(doc, "[“\"]_{2,}[”\"][_\\s]+202\\d\\s*-\\s*ci\\s+il", $"“{day}” {monthAz} {year}-ci il");
+            // Valideyn adı  →  "____ şəxsində valideyn və ya qanuni nümayəndə"
+            RegexReplace(doc, @"_{5,}\s*şəxsində valideyn və ya qanuni nümayəndə",
+                $"{parentName} şəxsində valideyn və ya qanuni nümayəndə");
+            // Uşaq adı  →  "____ məktəbəqədər təlim-tərbiyə xidmətləri göstərir"
+            RegexReplace(doc, @"_{5,}\s*məktəbəqədər təlim-tərbiyə xidmətləri göstərir",
+                $"{childName} məktəbəqədər təlim-tərbiyə xidmətləri göstərir");
 
-            // Valideyn adı (AZ) — eyni placeholder
-            ReplaceAll(doc,
-                "__________________________________________________________ şəxsində valideyn və ya qanuni nümayəndə (bundan sonra “Valideyn”",
-                $"{parentName} şəxsində valideyn və ya qanuni nümayəndə (bundan sonra “Valideyn”");
+            // ── EN ──────────────────────────────────────────────────────────────
+            // Agreement No.  →  "...SERVICES No. _______"  (köhnə "AGREEMENT NO. ___" da daxil)
+            RegexReplace(doc, @"No\.\s+_{3,}", $"No. {contractNumber}", RegexOptions.IgnoreCase);
+            // Valideyn adı  →  "____ acting as a parent or legal representative"
+            RegexReplace(doc, @"_{5,}\s*acting as a parent or legal representative",
+                $"{parentNameEn} acting as a parent or legal representative", RegexOptions.IgnoreCase);
+            // Uşaq adı (EN) — "...child of the Parent (or a child under their guardianship):"
+            // abzasından sonrakı boş abzasa yazılır.
+            FillNameAfterAnchor(doc, "a child under their guardianship", childNameEn);
 
-            // Uşaq adı (AZ) — eyni placeholder
-            ReplaceAll(doc,
-                "________________________________________ məktəbəqədər təlim-tərbiyə xidmətləri göstərir, Valideyn isə göstərilən bu xidmətləri qəbul",
-                $"{childName} məktəbəqədər təlim-tərbiyə xidmətləri göstərir, Valideyn isə göstərilən bu xidmətləri qəbul");
-
-            // ═══════════════════════════════════════════════════════════════
-            // EN — yeni şablon (struktur dəyişib)
-            // ═══════════════════════════════════════════════════════════════
-            // Tarix: "Baku city "____" ______ 2026"
-            ReplaceAll(doc, "Baku city “____” ______ 2026",
-                $"Baku city “{day}” {monthEn} {year}");
-
-            // Valideyn adı (EN) — yenilənmiş ifadə "acting as a parent..."
-            ReplaceAll(doc,
-                "__________________________________________________________ acting as a parent or legal representative",
-                $"{parentNameEn} acting as a parent or legal representative");
-
-            // Uşaq adı (EN) — yeni şablonda ayrı abzasdadır;
-            // "The Parent agrees to accept" əvvəlinə yerləşdir
-            FillNameBeforeAnchor(doc, "The Parent agrees to accept these services", childNameEn);
-
-            // ═══════════════════════════════════════════════════════════════
-            // EN — köhnə şablon (backward-compat)
-            // ═══════════════════════════════════════════════════════════════
-            ReplaceAll(doc, "Baku city           ___/____/  2026", $"Baku city           {day}/{monthEn}/{year}");
-            ReplaceAll(doc, "Baku city							/2026", $"Baku city							{day}/{monthEn}/{year}");
-            FillDateBeforeYearInLine(doc, "Baku city", "/2026", $"{day}/{monthEn}");
-
-            ReplaceAll(doc, "<Valideynin soyad ad Ata adini yaz>", parentName);
-            ReplaceAll(doc, "<Uşağın soyad adı>", childName);
-            ReplaceAll(doc, "<Child full name>", childNameEn);
-
-            ReplaceAll(doc,
-                "__________________________________________________________ represented by parent or legal representative (hereinafter referred to as “Parent”",
-                $"{parentNameEn} represented by parent or legal representative (hereinafter referred to as “Parent”");
-
-            ReplaceAll(doc,
-                "the parent or a legal representative ____________________________________ (hereinafter referred to as “Parent”)",
-                $"the parent or a legal representative {parentNameEn} (hereinafter referred to as “Parent”)");
-
-            ReplaceAll(doc,
-                "state standards of preschool education for a child of a PARENT (or a child who is sponsored)_____________________________________ and the PARENT accepting",
-                $"state standards of preschool education for a child of a PARENT (or a child who is sponsored){childNameEn} and the PARENT accepting");
-
-            ReplaceAll(doc,
-                "according to the state standards of preschool education for a child of a PARENT (or a child who is sponsored)_____________________________________ and the PARENT accepting these services, undertakes to pays to the KINDERGARTEN for",
-                $"according to the state standards of preschool education for a child of a PARENT (or a child who is sponsored){childNameEn} and the PARENT accepting these services, undertakes to pays to the KINDERGARTEN for");
-
-            // Köhnə helpers (idempotent, hər iki şablon üçün təhlükəsizdir)
-            FillParentNameAz(doc, parentName);
-            FillChildNameAz(doc, childName);
-            FillLineBeforeAnchor(doc, "şəxsində valideyn və ya qanuni nümayəndə", parentName);
-            FillLineBeforeAnchor(doc, "acting as a parent or legal representative", parentNameEn);
-            FillLineBeforeAnchor(doc, "represented by parent or legal representative", parentNameEn);
-            FillLineBeforeAnchor(doc, "məktəbəqədər təlim-tərbiyə xidmətləri göstərir, Valideyn isə göstərilən bu xidmətləri qəbul", childName);
-            FillLineBeforeAnchor(doc, "and the PARENT accepting", childNameEn);
-            FillLineBeforeAnchor(doc, "and the PARENT accepting these services, undertakes to pays to the KINDERGARTEN for", childNameEn);
-            FillPreviousUnderscoreLine(doc, "and the PARENT accepting these services, undertakes to pays to the KINDERGARTEN for", childNameEn);
-
-            // ── Rekvizitlər hissəsi (yalnız ad-soyad + mobil) ────────────
-            var parentPhone = child.ParentPhone ?? string.Empty;
-            var parentPhoneEn = parentPhone;
-
-            // AZ
-            ReplaceFieldValue(doc, "A.S.A", parentName, withColon: true);
-            ReplaceFieldValue(doc, "Mob:", parentPhone);
-
-            // EN
-            ReplaceFieldValue(doc, "N.S.P.", parentNameEn);
-            ReplaceFieldValue(doc, "Mob.:", parentPhoneEn);
-            ReplaceFieldValue(doc, "Mob.", parentPhoneEn);
+            // ── EN — köhnə şablondan qalan təkrar (gizli) paraqraflar varsa təhlükəsiz doldurulur ──
+            // Köhnə tarix:  "Baku city  ___/____/  2026"
+            RegexReplace(doc, @"Baku city\s+_{2,}\s*/\s*_{2,}\s*/\s*202\d",
+                $"Baku city           {day}/{monthEn}/{year}", RegexOptions.IgnoreCase);
+            // Köhnə valideyn:  "... ____ (hereinafter referred to as “Parent”)"
+            RegexReplace(doc, "_{5,}\\s*\\(hereinafter referred to as [“\"]?Parent",
+                $"{parentNameEn} (hereinafter referred to as “Parent", RegexOptions.IgnoreCase);
+            // Köhnə uşaq:  "(or a child who is sponsored)____"
+            RegexReplace(doc, @"\(or a child who is sponsored\)_{5,}",
+                $"(or a child who is sponsored){childNameEn}", RegexOptions.IgnoreCase);
 
             using var output = new MemoryStream();
             doc.SaveToStream(output, FileFormat.Doc);
@@ -524,6 +477,54 @@ namespace App.Business.Services.Implementations
                 r.Text = newValue;
                 r.CharacterFormat.FontName = "Times New Roman";
             }
+        }
+
+        /// <summary>
+        /// Bütün sənəd boyu (body + cədvəl xanaları) regex uyğunluğunu YERİNDƏ əvəz edir.
+        /// Yalnız uyğun gələn alt mətn dəyişir — ətrafdakı run-lar və paraqraf daxili sətir
+        /// keçidləri (manual line break) qorunur. FreeSpire `Replace(Regex,string)` $-qrup
+        /// referansını dəstəkləmədiyi üçün <paramref name="replacement"/> sabit mətn olmalıdır.
+        /// </summary>
+        private static void RegexReplace(Document doc, string pattern, string replacement, RegexOptions options = RegexOptions.None)
+        {
+            doc.Replace(new Regex(pattern, options), replacement);
+        }
+
+        /// <summary>
+        /// Anchor abzasından SONRAKI abzası value ilə doldurur:
+        /// boşdursa onu yazır, deyilsə yeni abzas əlavə edir. İdempotentdir.
+        /// </summary>
+        private static void FillNameAfterAnchor(Document doc, string anchor, string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return;
+            var selections = doc.FindAllString(anchor, false, false);
+            if (selections == null || selections.Length == 0) return;
+
+            var range = selections[0].GetAsOneRange();
+            if (range.Owner is not Paragraph anchorPara) return;
+
+            var parent = anchorPara.Owner;
+            var idx = IndexInParent(parent, anchorPara);
+            if (idx < 0) return;
+
+            var nextObj = GetChildAt(parent, idx + 1);
+            if (nextObj is Paragraph nextPara)
+            {
+                var nextText = nextPara.Text?.Trim() ?? string.Empty;
+                if (nextText.Equals(value, StringComparison.OrdinalIgnoreCase)) return; // artıq yazılıb
+                if (string.IsNullOrWhiteSpace(nextText))
+                {
+                    nextPara.ChildObjects.Clear();
+                    nextPara.AppendText(value);
+                    ApplyParagraphFont(nextPara, "Times New Roman");
+                    return;
+                }
+            }
+
+            var newPara = new Paragraph(doc);
+            newPara.AppendText(value);
+            ApplyParagraphFont(newPara, "Times New Roman");
+            InsertAt(parent, idx + 1, newPara);
         }
 
         /// <summary>Parent container-da (TableCell, Body, vs.) DocumentObject-in index-ini qaytarır.</summary>
