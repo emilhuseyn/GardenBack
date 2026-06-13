@@ -355,8 +355,12 @@ namespace App.Business.Services.Implementations
                 // Əvvəlki abzas «Valideyn» ilə bitir → valideyn adı hələ əlavə olunmayıb
                 if (prevText.EndsWith("«Valideyn»"))
                 {
+                    // Adı izahat sətrinin (caption) girintisi ilə eyni mövqedə yerləşdir ki,
+                    // adın altındakı "(Valideyninvə...)" sətri ilə üst-üstə düşsün.
+                    var lead = Regex.Match(anchorPara.Text ?? string.Empty, @"^[ \t]*").Value;
                     var newPara = new Paragraph(doc);
-                    newPara.AppendText(parentName);
+                    newPara.AppendText(lead + parentName);
+                    ApplyParagraphFont(newPara, "Times New Roman");
                     InsertAt(parent, idx, newPara);
                 }
                 // Əvvəlki abzas artıq valideyn adıdır → skip
