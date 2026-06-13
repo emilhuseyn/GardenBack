@@ -113,9 +113,9 @@ namespace App.Business.Services.Implementations
             RegexReplace(doc, "must be paid in full by [“\"]_{1,}[”\"][_\\s]+202_{1,4}",
                 $"must be paid in full by “{day}” {monthEn} {year}", RegexOptions.IgnoreCase);
             // Valideyn adı (EN): "(Full name of the parent...)" əvvəlinə
-            FillNameBeforeAnchor(doc, "(Full name of the parent or legal representative)", parentNameEn);
+            FillNameBeforeAnchor(doc, "(Full name of the parent or legal representative)", parentNameEn, underline: true);
             // Uşaq adı (EN): "...to their child:" sonrakı boş abzasa
-            FillNameAfterAnchor(doc, "preschool educational services to their child", childNameEn);
+            FillNameAfterAnchor(doc, "preschool educational services to their child", childNameEn, underline: true);
 
             // ── İmza/rekvizit hissəsi: valideynin ad-soyadı ─────────────────────
             // İmza blokunda «Bağça» tərəfində direktorun adı (A.M.Mahmudova) var;
@@ -306,7 +306,7 @@ namespace App.Business.Services.Implementations
         /// Yeni şablon yapısı ilə "(Full name of the parent...)" kimi xətdən əvvəl
         /// valideyn adını yazmaq üçün istifadə olunur.
         /// </summary>
-        private static void FillNameBeforeAnchor(Document doc, string anchor, string value)
+        private static void FillNameBeforeAnchor(Document doc, string anchor, string value, bool underline = false)
         {
             if (string.IsNullOrWhiteSpace(value)) return;
             var selections = doc.FindAllString(anchor, false, false);
@@ -336,7 +336,16 @@ namespace App.Business.Services.Implementations
             var newPara = new Paragraph(doc);
             newPara.AppendText(value);
             ApplyParagraphFont(newPara, "Times New Roman");
+            if (underline) AddUnderline(newPara);
             InsertAt(parent, idx, newPara);
+        }
+
+        /// <summary>Abzasın altına nazik üfüqi xətt (forma kimi "doldurulmuş blank") əlavə edir.</summary>
+        private static void AddUnderline(Paragraph p)
+        {
+            p.Format.Borders.Bottom.BorderType = Spire.Doc.Documents.BorderStyle.Single;
+            p.Format.Borders.Bottom.LineWidth = 1.0f;
+            p.Format.Borders.Bottom.Space = 1.0f;
         }
 
         // ── Valideyn adını (AZ) "(Valideyninvə...)" abzasından əvvəl əlavə et ──
@@ -364,12 +373,11 @@ namespace App.Business.Services.Implementations
                 // Əvvəlki abzas «Valideyn» ilə bitir → valideyn adı hələ əlavə olunmayıb
                 if (prevText.EndsWith("«Valideyn»"))
                 {
-                    // Adı izahat sətrinin (caption) girintisi ilə eyni mövqedə yerləşdir ki,
-                    // adın altındakı "(Valideyninvə...)" sətri ilə üst-üstə düşsün.
-                    var lead = Regex.Match(anchorPara.Text ?? string.Empty, @"^[ \t]*").Value;
+                    // Ad forma kimi öz xəttinin üzərində otursun (altında üfüqi xətt).
                     var newPara = new Paragraph(doc);
-                    newPara.AppendText(lead + parentName);
+                    newPara.AppendText(parentName);
                     ApplyParagraphFont(newPara, "Times New Roman");
+                    AddUnderline(newPara);
                     InsertAt(parent, idx, newPara);
                 }
                 // Əvvəlki abzas artıq valideyn adıdır → skip
@@ -421,15 +429,19 @@ namespace App.Business.Services.Implementations
             {
                 if (string.IsNullOrWhiteSpace(nextPara.Text))
                 {
-                    // Boş abzas — uşaq adını yaz
+                    // Boş abzas — uşaq adını yaz (forma kimi altında xətt)
                     nextPara.ChildObjects.Clear();
                     nextPara.AppendText(childName);
+                    ApplyParagraphFont(nextPara, "Times New Roman");
+                    AddUnderline(nextPara);
                 }
                 else if (!nextPara.Text.TrimStart().StartsWith("ogluna(", StringComparison.OrdinalIgnoreCase))
                 {
                     // Hələ doldurulmayıb, boş abzas yox → yeni abzas əlavə et
                     var newPara = new Paragraph(doc);
                     newPara.AppendText(childName);
+                    ApplyParagraphFont(newPara, "Times New Roman");
+                    AddUnderline(newPara);
                     InsertAt(parent, idx + 1, newPara);
                 }
             }
@@ -438,6 +450,8 @@ namespace App.Business.Services.Implementations
                 // Sonrakı element paragraph deyil → insert et
                 var newPara = new Paragraph(doc);
                 newPara.AppendText(childName);
+                ApplyParagraphFont(newPara, "Times New Roman");
+                AddUnderline(newPara);
                 InsertAt(parent, idx + 1, newPara);
             }
         }
@@ -472,7 +486,7 @@ namespace App.Business.Services.Implementations
         /// Anchor abzasından SONRAKI abzası value ilə doldurur:
         /// boşdursa onu yazır, deyilsə yeni abzas əlavə edir. İdempotentdir.
         /// </summary>
-        private static void FillNameAfterAnchor(Document doc, string anchor, string value)
+        private static void FillNameAfterAnchor(Document doc, string anchor, string value, bool underline = false)
         {
             if (string.IsNullOrWhiteSpace(value)) return;
             var selections = doc.FindAllString(anchor, false, false);
@@ -495,6 +509,7 @@ namespace App.Business.Services.Implementations
                     nextPara.ChildObjects.Clear();
                     nextPara.AppendText(value);
                     ApplyParagraphFont(nextPara, "Times New Roman");
+                    if (underline) AddUnderline(nextPara);
                     return;
                 }
             }
@@ -502,6 +517,7 @@ namespace App.Business.Services.Implementations
             var newPara = new Paragraph(doc);
             newPara.AppendText(value);
             ApplyParagraphFont(newPara, "Times New Roman");
+            if (underline) AddUnderline(newPara);
             InsertAt(parent, idx + 1, newPara);
         }
 
