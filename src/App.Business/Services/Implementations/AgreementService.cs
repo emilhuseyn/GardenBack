@@ -66,98 +66,63 @@ namespace App.Business.Services.Implementations
             using var doc   = new Document();
             doc.LoadFromStream(input, FileFormat.Doc);
 
-            // ═══════════════════════════════════════════════════════════════
-            // AZ — yeni şablon (2026 mayında yenilənib)
-            // ═══════════════════════════════════════════════════════════════
-            ReplaceAll(doc, "«    »_________ 2026 il",    $"«{day}» {monthAz} {year} il");
+            // ─────────────────────────────────────────────────────────────────────
+            // 2026 şablonu — bütün Razılaşma mətni 2 sütunlu cədvəlin içindədir
+            // (sol xana = AZ, sağ xana = EN). Yer-tutucular regex ilə YERİNDƏ
+            // (doc.Replace) əvəz olunur ki, abzas daxili sətir keçidləri (manual line
+            // break) və formatlaşma pozulmasın. FreeSpire Replace(Regex,string) $-qrup
+            // referansını dəstəkləmir → əvəzləmələr sabit mətndir (anchor təkrar yazılır).
+            // ─────────────────────────────────────────────────────────────────────
 
-            // Razılaşma yuxarı hissədə "Tarixli _________N°- li Müqaviləyə 1 saylı Əlavə" — əsas müqavilə nömrəsi
-            ReplaceInAllParagraphs(doc,
-                @"Tarixli\s+_+\s*N°",
-                $"Tarixli {contractNumber} N°",
-                RegexOptions.IgnoreCase);
-            // Yeni şablonda 19 boşluq (köhnə şablonda 11 idi — backward-compat üçün ikisini də saxlayırıq)
-            ReplaceAll(doc, "«                   » 2026 - ci il", $"«{day}» {monthAz} {year} - ci il");
-            ReplaceAll(doc, "«           » 2026 - ci il",          $"«{day}» {monthAz} {year} - ci il");
-            // Köhnə: "(_______) manatı"
-            ReplaceAll(doc, "(_______) manatı",           $"({fee}) manatı");
-            // Yeni: "(_______) manat təşkil edir" — bütün paragraph-ları gəzərək brute-force.
-            // "təşkil" / "təşkilı" — şablonda typo varsa da uyğunlaşırıq.
-            // Underscore run-ları rəngli ola bilər, FindAllString anchor-u tapa bilməyə bilər.
-            ReplaceInAllParagraphs(doc,
-                @"\(\s*[_\s]+\s*\)\s*manat\s+təşkilı?\s*edir",
-                $"({fee}) manat təşkil edir",
-                RegexOptions.IgnoreCase);
-
-            // AZ ödəniş tarixi: "____"________202___ tarixinə qədər → "{day}" {monthAz} {year} tarixinə qədər
-            // Smart quote (“ / ”) və düz quote (") hər ikisini əhatə edən regex.
-            ReplaceInAllParagraphs(doc,
-                @"[""“”][_\s]*[""“”][_\s]+202[_\s]*(?=\s*tarixinə\s*qədər)",
-                $"“{day}” {monthAz} {year} ",
-                RegexOptions.IgnoreCase);
-
-            ReplaceAll(doc, "ogluna( qızına)          yaş", $"ogluna( qızına) {ageGroup} yaş");
-
-            // Valideyn adı (AZ): «Valideyn»-dən sonra "(Valideyninvə...)" əvvəlinə
+            // ── AZ ──────────────────────────────────────────────────────────────
+            // Yuxarı tarix:  «  »_______ 2026 il
+            RegexReplace(doc, @"«\s*»_{3,}\s*202\d\s*il", $"«{day}» {monthAz} {year} il");
+            // Müqavilə №:  "Tarixli _______ N°- li Müqaviləyə 1 saylı Əlavə"
+            RegexReplace(doc, @"Tarixli\s+_{3,}\s*N°", $"Tarixli {contractNumber} N°", RegexOptions.IgnoreCase);
+            // Şəhər tarixi:  «          » 2026 - ci il
+            RegexReplace(doc, @"«\s+»\s*202\d\s*-\s*ci\s+il", $"«{day}» {monthAz} {year} - ci il");
+            // Aylıq haqq:  (_______) manat təşkil edir
+            RegexReplace(doc, @"\(\s*_{3,}\s*\)\s*manat\s+təşkilı?\s*edir", $"({fee}) manat təşkil edir", RegexOptions.IgnoreCase);
+            // Ödəniş tarixi:  "____"________202___ tarixinə qədər
+            RegexReplace(doc, "[“\"]_{2,}[”\"][_\\s]*202_{1,4}\\s*tarixinə\\s+qədər",
+                $"“{day}” {monthAz} {year} tarixinə qədər", RegexOptions.IgnoreCase);
+            // Yaş qrupu:  ogluna( qızına)      yaş
+            RegexReplace(doc, @"ogluna\(\s*qızına\)\s+yaş", $"ogluna( qızına) {ageGroup} yaş", RegexOptions.IgnoreCase);
+            // Direktor (AZ): köhnə → yeni (imza hissəsi artıq A.M.Mahmudova-dır)
+            RegexReplace(doc, @"Əliyeva Aytən Hafiz qızının", "Mahmudova Aysel Mehman qızının", RegexOptions.IgnoreCase);
+            // Valideyn adı (AZ): «Valideyn»-dən sonrakı abzasa
             FillParentNameAz(doc, parentName);
-            // Uşaq adı (AZ): "Arasında övladı"-dan sonrakı abzasa
+            // Uşaq adı (AZ): "Arasında övladı"-dan sonrakı boş abzasa
             FillChildNameAz(doc, childName);
 
-            // ═══════════════════════════════════════════════════════════════
-            // EN — Yeni şablon (struktur tamamilə yenilənib)
-            // ═══════════════════════════════════════════════════════════════
-            // Tarix yer-tutucuları — smart quotes ("/")
-            ReplaceAll(doc, "Dated: “” __________ 2026",
-                $"Dated: “{day}” {monthEn} {year}");
-            // Appendix sətrində həm müqavilə nömrəsini, həm də tarixi tək regex ilə doldur
-            ReplaceInAllParagraphs(doc,
-                @"Appendix\s+No\.\s+1\s+to\s+Agreement\s+No\.\s+_+\s+dated\s+[""“”]?[_\s]*[""“”]?\s*_+\s*2026",
-                $"Appendix No. 1 to Agreement No. {contractNumber} dated “{day}” {monthEn} {year}",
-                RegexOptions.IgnoreCase);
-            ReplaceAll(doc, "“___” __________ 2026",
-                $"“{day}” {monthEn} {year}");
-
-            // Yaş qrupu (EN) — brute-force (run boundary güvənli)
-            ReplaceInAllParagraphs(doc,
-                @"\(son/daughter\)\s+in\s+the\s+[_\s]+age\s+group",
-                $"(son/daughter) in the {ageGroup} age group");
-
-            // Aylıq qiymət (EN)
-            ReplaceAll(doc, "is (___) AZN", $"is ({fee}) AZN");
-            ReplaceInAllParagraphs(doc,
-                @"is\s+\([_\s]+\)\s+AZN",
-                $"is ({fee}) AZN");
-
-            // EN ödəniş tarixi: must be paid in full by "_" __________ 202.
-            ReplaceInAllParagraphs(doc,
-                @"must\s+be\s+paid\s+in\s+full\s+by\s+[""“”][_\s]*[""“”]\s+_+\s+202\.?",
-                $"must be paid in full by “{day}” {monthEn} {year}.",
-                RegexOptions.IgnoreCase);
-
-            // Valideyn adı (EN): "(Full name of the parent or legal representative)" əvvəlinə yerləşdir
+            // ── EN ──────────────────────────────────────────────────────────────
+            // Direktor (EN): köhnə → yeni
+            RegexReplace(doc, "its Director Aytan Hafiz Aliyeva", "its Director Aysel Mehman Mahmudova", RegexOptions.IgnoreCase);
+            // "Dated: “” __________ 2026"
+            RegexReplace(doc, "Dated:\\s*[“\"][”\"]\\s*_{3,}\\s*202\\d", $"Dated: “{day}” {monthEn} {year}", RegexOptions.IgnoreCase);
+            // Appendix №+tarix:  "Agreement No. ______ dated “” __________ 2026"
+            RegexReplace(doc, "Agreement No\\.\\s+_{3,}\\s+dated\\s+[“\"][”\"]\\s*_{3,}\\s*202\\d",
+                $"Agreement No. {contractNumber} dated “{day}” {monthEn} {year}", RegexOptions.IgnoreCase);
+            // Şəhər tarixi:  "___" __________ 2026
+            RegexReplace(doc, "[“\"]_{2,}[”\"]\\s*_{3,}\\s*202\\d", $"“{day}” {monthEn} {year}", RegexOptions.IgnoreCase);
+            // Yaş qrupu (EN):  (son/daughter) in the ______ age group
+            RegexReplace(doc, @"\(son/daughter\)\s+in\s+the\s+_{2,}\s+age\s+group", $"(son/daughter) in the {ageGroup} age group", RegexOptions.IgnoreCase);
+            // Aylıq haqq (EN):  is (___) AZN
+            RegexReplace(doc, @"is\s+\(\s*_{3,}\s*\)\s+AZN", $"is ({fee}) AZN", RegexOptions.IgnoreCase);
+            // Ödəniş tarixi (EN):  must be paid in full by “_” __________ 202__
+            RegexReplace(doc, "must be paid in full by [“\"]_{1,}[”\"][_\\s]+202_{1,4}",
+                $"must be paid in full by “{day}” {monthEn} {year}", RegexOptions.IgnoreCase);
+            // Valideyn adı (EN): "(Full name of the parent...)" əvvəlinə
             FillNameBeforeAnchor(doc, "(Full name of the parent or legal representative)", parentNameEn);
-            // Uşaq adı (EN): "(son/daughter) in the" əvvəlinə yerləşdir
-            FillNameBeforeAnchor(doc, "(son/daughter) in the", childNameEn);
+            // Uşaq adı (EN): "...to their child:" sonrakı boş abzasa
+            FillNameAfterAnchor(doc, "preschool educational services to their child", childNameEn);
 
-            // ═══════════════════════════════════════════════════════════════
-            // EN — köhnə şablon (backward-compat — köhnə deploy üçün)
-            // ═══════════════════════════════════════════════════════════════
-            ReplaceAll(doc, "AGREEMENT No. _________",      "AGREEMENT No. _________");
-            ReplaceAll(doc, "dated «      » _________",     $"dated «{day}» {monthEn}");
-            ReplaceAll(doc, "APPENDIX No. 1 to the AGREEMENT No. dated ", $"APPENDIX No. 1 to the AGREEMENT No. dated {day}/{monthEn}/{year} ");
-            FillDateBeforeYearInLine(doc, "Baku city", "/2026", $"{day}/{monthEn}");
-
-            ReplaceAll(doc, "___________________________________ in order to render",
-                $"{parentNameEn} in order to render");
-            ReplaceAll(doc, "_______________________", parentNameEn);
-            FillLineBeforeAnchor(doc, "in order to render", parentNameEn);
-            FillPreviousUnderscoreLine(doc, "in order to render", parentNameEn);
-            TrimTextBeforeAnchor(doc, "in order to render", parentNameEn);
-
-            ReplaceAll(doc, "______________  in  the age group of",
-                $"{childNameEn}  in  the age group of");
-            ReplaceAll(doc, "____ and based", $"{ageGroup} and based");
-            ReplaceAll(doc, "(_______) AZN", $"({fee}) AZN");
+            // ── EN — köhnə "COVENANT" remnant (Word render etmir) təhlükəsiz doldurulur ──
+            RegexReplace(doc, "Aytan Aliyeva Hafiz", "Aysel Mehman Mahmudova", RegexOptions.IgnoreCase);
+            RegexReplace(doc, @"_{5,}\s+in order to render", $"{parentNameEn} in order to render", RegexOptions.IgnoreCase);
+            RegexReplace(doc, @"child,\s+_{5,}\s+in\s+the\s+age\s+group\s+of", $"child, {childNameEn}  in  the age group of", RegexOptions.IgnoreCase);
+            RegexReplace(doc, @"age group of\s+_{2,}\s+and based", $"age group of {ageGroup} and based", RegexOptions.IgnoreCase);
+            RegexReplace(doc, @"\(\s*_{3,}\s*\)\s+AZN\s+for\s+each\s+month", $"({fee}) AZN for each month", RegexOptions.IgnoreCase);
 
             using var output = new MemoryStream();
             doc.SaveToStream(output, FileFormat.Doc);
