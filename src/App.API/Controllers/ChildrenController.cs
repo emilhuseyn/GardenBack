@@ -1,6 +1,7 @@
 using App.Business.DTOs.Children;
 using App.Business.Services.Interfaces;
 using App.Core.Common;
+using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -48,8 +49,26 @@ namespace App.API.Controllers
         public async Task<IActionResult> CreateChild([FromBody] CreateChildRequest dto)
         {
             var result = await _childService.CreateChildAsync(dto);
+
+            // Uşaq yaradılanda valideynə Kontrakt + Razılaşma sənədlərini WhatsApp-a göndər
+            // (fon işi — cavabı gözlətmir, xəta uşağın yaradılmasını pozmur).
+            BackgroundJob.Enqueue<INotificationService>(s => s.SendChildAgreementsAsync(result.Id));
+
             return CreatedAtAction(nameof(GetChildById), new { id = result.Id },
                 ApiResponse<ChildResponse>.SuccessResponse(result, "Uşaq uğurla yaradıldı.", 201));
+        }
+
+        // Test / əl ilə: bir uşağın sənədlərini istənilən nömrəyə göndər
+        // POST /api/childrens/{id}/send-agreements?phone=994503954614
+        [HttpPost("{id}/send-agreements")]
+        [Authorize(Policy = "AdminOrAdmission")]
+        public async Task<IActionResult> SendAgreements(int id, [FromQuery] string? phone,
+            [FromServices] INotificationService notificationService)
+        {
+            var r = await notificationService.SendChildAgreementsToAsync(id, phone);
+            return Ok(ApiResponse<object>.SuccessResponse(
+                new { r.Sent, r.Failed, r.Errors },
+                r.Failed == 0 ? "Sənədlər göndərildi." : "Bəzi sənədlər göndərilmədi."));
         }
 
         [HttpPut("{id}")]

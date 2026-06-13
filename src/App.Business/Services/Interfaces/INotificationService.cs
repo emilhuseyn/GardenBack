@@ -18,5 +18,11 @@ namespace App.Business.Services.Interfaces
 
         /// <summary>Ödəniş günündən 3 gün keçmiş, hələ ödəməyən valideynlərə xəbərdarlıq göndərir.</summary>
         Task<SendResult> SendPaymentOverdueRemindersAsync();
+
+        /// <summary>Uşaq yaradılanda valideynə Kontrakt + Razılaşma sənədlərini WhatsApp-a göndərir.</summary>
+        Task<SendResult> SendChildAgreementsAsync(int childId);
+
+        /// <summary>Kontrakt + Razılaşma sənədlərini verilən nömrəyə göndərir (test / əl ilə).</summary>
+        Task<SendResult> SendChildAgreementsToAsync(int childId, string? phoneOverride);
     }
 }

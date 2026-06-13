@@ -1,3 +1,4 @@
+using App.Business.Helpers;
 using App.Business.Services.Interfaces;
 using App.Core.Entities;
 using App.Core.Enums;
@@ -18,6 +19,8 @@ namespace App.Business.Services.Implementations
         private readonly IDateTimeService _dt;
         private readonly string _wabaApiUrl;
         private readonly string _wabaToken;
+        private readonly string _docTemplate;
+        private readonly string _publicBaseUrl;
 
         // WABA template names
         private const string TplReminder  = "xatirlatma_wp"; // {{1}} = ödəniş tarixi
@@ -37,6 +40,8 @@ namespace App.Business.Services.Implementations
             _dt          = dt;
             _wabaApiUrl  = configuration["Waba:ApiUrl"]  ?? "https://api.soft10.io/v1/waba/message/send";
             _wabaToken   = configuration["Waba:Token"]   ?? string.Empty;
+            _docTemplate = configuration["Waba:DocumentTemplate"] ?? string.Empty;
+            _publicBaseUrl = (configuration["App:PublicBaseUrl"] ?? "https://bagca.site").TrimEnd('/');
         }
 
         private async Task<bool> IsMessagingEnabledAsync()
@@ -226,6 +231,108 @@ namespace App.Business.Services.Implementations
                 sent += r.Sent; failed += r.Failed; errors.AddRange(r.Errors);
             }
             return new SendResult(sent, failed, errors);
+        }
+
+        // ────────────────────────────────────────────────────────────────
+        // 4. Uşaq yaradılanda — Kontrakt + Razılaşma sənədlərini göndər
+        // ────────────────────────────────────────────────────────────────
+        public Task<SendResult> SendChildAgreementsAsync(int childId)
+            => SendChildAgreementsToAsync(childId, null);
+
+        public async Task<SendResult> SendChildAgreementsToAsync(int childId, string? phoneOverride)
+        {
+            if (!await IsMessagingEnabledAsync())
+                return DisabledResult();
+
+            if (string.IsNullOrWhiteSpace(_docTemplate))
+            {
+                _logger.LogWarning("WABA sənəd template-i təyin olunmayıb (Waba:DocumentTemplate).");
+                return new SendResult(0, 1, ["Sənəd template-i konfiqurasiyada təyin olunmayıb (Waba:DocumentTemplate)."]);
+            }
+
+            var child = await _unitOfWork.Children.GetByIdAsync(childId);
+            if (child == null)
+                return new SendResult(0, 1, [$"{childId} ID-li uşaq tapılmadı."]);
+
+            var phone = string.IsNullOrWhiteSpace(phoneOverride) ? child.ParentPhone : phoneOverride;
+            if (string.IsNullOrWhiteSpace(phone))
+                return new SendResult(0, 1, ["Valideyn telefon nömrəsi yoxdur."]);
+
+            // Public, auth-suz link — yalnız WABA üçün işləyən token ilə qorunur.
+            var token        = DocumentTokens.Create(childId, _wabaToken);
+            var baseName     = $"{child.FirstName}_{child.LastName}";
+            var contractUrl  = $"{_publicBaseUrl}/api/documents/{childId}/{token}/contract.doc";
+            var agreementUrl = $"{_publicBaseUrl}/api/documents/{childId}/{token}/agreement.doc";
+
+            int sent = 0, failed = 0;
+            var errors = new List<string>();
+
+            var e1 = await SendDocumentAsync(phone, _docTemplate, contractUrl,  $"Kontrakt_{baseName}.doc",   childId);
+            if (e1 == null) sent++; else { failed++; errors.Add(e1); }
+
+            var e2 = await SendDocumentAsync(phone, _docTemplate, agreementUrl, $"Razilashma_{baseName}.doc", childId);
+            if (e2 == null) sent++; else { failed++; errors.Add(e2); }
+
+            _logger.LogInformation("WABA sənədlər → childId={Id} Sent={S} Failed={F}", childId, sent, failed);
+            return new SendResult(sent, failed, errors);
+        }
+
+        // Sənəd başlıqlı template mesajı: header = document(link + filename), body yoxdur.
+        private async Task<string?> SendDocumentAsync(string toPhone, string template, string link, string filename, int childId)
+        {
+            var phone = new string(toPhone.Where(char.IsDigit).ToArray());
+
+            object payload = new
+            {
+                to = phone,
+                type = "template",
+                template = new
+                {
+                    name = template,
+                    language = "az",
+                    components = new object[]
+                    {
+                        new
+                        {
+                            type = "header",
+                            parameters = new object[]
+                            {
+                                new { type = "document", document = new { link, filename } }
+                            }
+                        }
+                    }
+                }
+            };
+
+            var logMsg = $"[WABA] to={phone} type=template template={template} document={filename} link={link}";
+
+            try
+            {
+                var body    = JsonSerializer.Serialize(payload);
+                var request = new HttpRequestMessage(HttpMethod.Post, _wabaApiUrl);
+                request.Headers.Add("Authorization", $"Bearer {_wabaToken}");
+                request.Content = new StringContent(body, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.SendAsync(request);
+                var resBody  = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("WABA sənəd göndərildi → {Phone} [{File}]", phone, filename);
+                    await LogNotificationAsync(toPhone, logMsg, childId, isSuccessful: true);
+                    return null;
+                }
+
+                _logger.LogError("WABA sənəd xəta: {Status} → {Body}", (int)response.StatusCode, resBody);
+                await LogNotificationAsync(toPhone, logMsg, childId, isSuccessful: false, error: resBody);
+                return $"{phone}: HTTP {(int)response.StatusCode} — {resBody}";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "WABA sənəd servisinə qoşulmaq olmadı → {Phone}", phone);
+                await LogNotificationAsync(toPhone, logMsg, childId, isSuccessful: false, error: ex.Message);
+                return $"{phone}: {ex.Message}";
+            }
         }
 
         // ────────────────────────────────────────────────────────────────
