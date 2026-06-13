@@ -117,6 +117,15 @@ namespace App.Business.Services.Implementations
             // Uşaq adı (EN): "...to their child:" sonrakı boş abzasa
             FillNameAfterAnchor(doc, "preschool educational services to their child", childNameEn);
 
+            // ── İmza/rekvizit hissəsi: valideynin ad-soyadı ─────────────────────
+            // İmza blokunda «Bağça» tərəfində direktorun adı (A.M.Mahmudova) var;
+            // «Valideyn» tərəfində isə yalnız yer-tutucu vardı — faktiki adı yazırıq.
+            // AZ: «Valideyn» altındakı "A.S.A." (Ad Soyad Ata adı) → faktiki ad
+            RegexReplace(doc, @"A\.S\.A\.", parentName);
+            // EN: "Parent" altındakı "Full Name" → faktiki ad. Case-sensitive ki,
+            // mətndəki "(Full name of the parent...)" başlığına toxunmasın.
+            RegexReplace(doc, "Full Name", parentNameEn);
+
             // ── EN — köhnə "COVENANT" remnant (Word render etmir) təhlükəsiz doldurulur ──
             RegexReplace(doc, "Aytan Aliyeva Hafiz", "Aysel Mehman Mahmudova", RegexOptions.IgnoreCase);
             RegexReplace(doc, @"_{5,}\s+in order to render", $"{parentNameEn} in order to render", RegexOptions.IgnoreCase);
