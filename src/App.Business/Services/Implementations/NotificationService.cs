@@ -6,6 +6,7 @@ using App.Core.Services;
 using App.DAL.UnitOfWork;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.IO;
 using System.Text;
 using System.Text.Json;
 
@@ -17,10 +18,12 @@ namespace App.Business.Services.Implementations
         private readonly ILogger<NotificationService> _logger;
         private readonly HttpClient _httpClient;
         private readonly IDateTimeService _dt;
+        private readonly IAgreementService _agreementService;
         private readonly string _wabaApiUrl;
         private readonly string _wabaToken;
         private readonly string _docTemplate;
         private readonly string _publicBaseUrl;
+        private readonly string _sofficePath;
 
         // WABA template names
         private const string TplReminder  = "xatirlatma_wp"; // {{1}} = ödəniş tarixi
@@ -32,16 +35,19 @@ namespace App.Business.Services.Implementations
             ILogger<NotificationService> logger,
             IHttpClientFactory httpClientFactory,
             IConfiguration configuration,
-            IDateTimeService dt)
+            IDateTimeService dt,
+            IAgreementService agreementService)
         {
             _unitOfWork  = unitOfWork;
             _logger      = logger;
             _httpClient  = httpClientFactory.CreateClient();
             _dt          = dt;
+            _agreementService = agreementService;
             _wabaApiUrl  = configuration["Waba:ApiUrl"]  ?? "https://api.soft10.io/v1/waba/message/send";
             _wabaToken   = configuration["Waba:Token"]   ?? string.Empty;
             _docTemplate = configuration["Waba:DocumentTemplate"] ?? string.Empty;
             _publicBaseUrl = (configuration["App:PublicBaseUrl"] ?? "https://bagca.site").TrimEnd('/');
+            _sofficePath = configuration["App:SofficePath"] ?? @"C:\Program Files\LibreOffice\program\soffice.exe";
         }
 
         private async Task<bool> IsMessagingEnabledAsync()
@@ -258,22 +264,44 @@ namespace App.Business.Services.Implementations
             if (string.IsNullOrWhiteSpace(phone))
                 return new SendResult(0, 1, ["Valideyn telefon nömrəsi yoxdur."]);
 
-            // Public, auth-suz link — yalnız WABA üçün işləyən token ilə qorunur.
-            var token        = DocumentTokens.Create(childId, _wabaToken);
-            var baseName     = $"{child.FirstName}_{child.LastName}";
-            var contractUrl  = $"{_publicBaseUrl}/api/documents/{childId}/{token}/contract.doc";
-            var agreementUrl = $"{_publicBaseUrl}/api/documents/{childId}/{token}/agreement.doc";
+            var token    = DocumentTokens.Create(childId, _wabaToken);
+            var baseName = $"{child.FirstName}_{child.LastName}";
+
+            // WhatsApp Word faylını çatdırmır → Word-də hazırlanan sənədləri əvvəlcədən
+            // PDF-ə çevirib diskə yazırıq; WhatsApp çəkəndə DocumentController birbaşa
+            // PDF-i verir (fetch anında çevrilmə yoxdur → timeout riski yoxdur).
+            try
+            {
+                Directory.CreateDirectory(AgreementStorage.Dir);
+
+                var contractDoc  = await _agreementService.GenerateContractAsync(childId);
+                var agreementDoc = await _agreementService.GenerateAgreementAsync(childId);
+
+                var contractPdf  = DocToPdfConverter.Convert(contractDoc.FileBytes,  _sofficePath);
+                var agreementPdf = DocToPdfConverter.Convert(agreementDoc.FileBytes, _sofficePath);
+
+                await File.WriteAllBytesAsync(AgreementStorage.FilePath(childId, token, "contract"),  contractPdf);
+                await File.WriteAllBytesAsync(AgreementStorage.FilePath(childId, token, "agreement"), agreementPdf);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Sənəd PDF hazırlanmadı (childId={Id})", childId);
+                return new SendResult(0, 1, [$"PDF hazırlanmadı: {ex.Message}"]);
+            }
+
+            var contractUrl  = $"{_publicBaseUrl}/api/documents/{childId}/{token}/contract.pdf";
+            var agreementUrl = $"{_publicBaseUrl}/api/documents/{childId}/{token}/agreement.pdf";
 
             int sent = 0, failed = 0;
             var errors = new List<string>();
 
-            var e1 = await SendDocumentAsync(phone, _docTemplate, contractUrl,  $"Kontrakt_{baseName}.doc",   childId);
+            var e1 = await SendDocumentAsync(phone, _docTemplate, contractUrl,  $"Kontrakt_{baseName}.pdf",   childId);
             if (e1 == null) sent++; else { failed++; errors.Add(e1); }
 
-            var e2 = await SendDocumentAsync(phone, _docTemplate, agreementUrl, $"Razilashma_{baseName}.doc", childId);
+            var e2 = await SendDocumentAsync(phone, _docTemplate, agreementUrl, $"Razilashma_{baseName}.pdf", childId);
             if (e2 == null) sent++; else { failed++; errors.Add(e2); }
 
-            _logger.LogInformation("WABA sənədlər → childId={Id} Sent={S} Failed={F}", childId, sent, failed);
+            _logger.LogInformation("WABA sənədlər (PDF) → childId={Id} Sent={S} Failed={F}", childId, sent, failed);
             return new SendResult(sent, failed, errors);
         }
 
