@@ -147,6 +147,40 @@ namespace App.Business.Services.Implementations
         }
 
         // ────────────────────────────────────────────────────────────────
+        // 2b. Verilən tarixdə qeydə alınmış ödənişlərin təsdiqini TƏKRAR göndər.
+        //     (məs: WABA token sıradan çıxdığı gün uğursuz qalan təsdiqləri əl ilə bərpa etmək üçün)
+        // ────────────────────────────────────────────────────────────────
+        public async Task<SendResult> ResendConfirmationsForDateAsync(DateTime date)
+        {
+            if (!await IsMessagingEnabledAsync())
+                return DisabledResult();
+
+            var dayStart = date.Date;
+            var dayEnd   = dayStart.AddDays(1);
+
+            // O gün faktiki ödəniş alınmış (PaidAmount>0) bütün ödənişlər
+            var payments = (await _unitOfWork.Payments
+                .FindAsync(p => p.PaymentDate.HasValue
+                                && p.PaymentDate.Value >= dayStart
+                                && p.PaymentDate.Value < dayEnd
+                                && p.PaidAmount > 0))
+                .ToList();
+
+            _logger.LogInformation("WABA təkrar təsdiq: {Count} ödəniş ({Date:dd.MM.yyyy})", payments.Count, dayStart);
+
+            int sent = 0, failed = 0;
+            var errors = new List<string>();
+            foreach (var p in payments)
+            {
+                var r = await SendPaymentConfirmationAsync(p.Id);
+                sent += r.Sent; failed += r.Failed; errors.AddRange(r.Errors);
+            }
+
+            _logger.LogInformation("WABA təkrar təsdiq tamamlandı. Sent={S} Failed={F}", sent, failed);
+            return new SendResult(sent, failed, errors);
+        }
+
+        // ────────────────────────────────────────────────────────────────
         // 3. Ödəniş günü keçmiş VƏ ödənilməmiş bütün uşaqlara — HƏR GÜN gecikme_wp
         //    Ödəniş edilənə qədər (və ya ay bitənə qədər) hər gün təkrarlanır.
         // ────────────────────────────────────────────────────────────────

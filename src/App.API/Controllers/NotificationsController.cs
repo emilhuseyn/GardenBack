@@ -82,5 +82,50 @@ namespace App.API.Controllers
 
             return Ok(ApiResponse<string>.SuccessResponse("Xatırlatma göndərildi."));
         }
+
+        /// <summary>Konkret ödəniş üçün təsdiq mesajını təkrar göndərir (uğursuz qalan ödənişlər üçün).</summary>
+        [HttpPost("resend-confirmation/{paymentId:int}")]
+        public async Task<IActionResult> ResendConfirmation(int paymentId)
+        {
+            var result = await _notificationService.SendPaymentConfirmationAsync(paymentId);
+            if (result.Failed > 0)
+                return StatusCode(502, ApiResponse<object>.ErrorResponse(
+                    $"Göndərilə bilmədi: {string.Join("; ", result.Errors)}"));
+
+            return Ok(ApiResponse<string>.SuccessResponse("Təsdiq mesajı göndərildi."));
+        }
+
+        /// <summary>
+        /// Verilən tarixdə (default: bu gün) qeydə alınmış BÜTÜN ödənişlərin təsdiq mesajını təkrar göndərir.
+        /// Məs: WABA sıradan çıxan gün uğursuz qalan təsdiqləri bir əmrlə bərpa etmək üçün.
+        /// İstifadə: POST /api/notifications/resend-confirmations?date=2026-06-30
+        /// </summary>
+        [HttpPost("resend-confirmations")]
+        public async Task<IActionResult> ResendConfirmations([FromQuery] DateTime? date)
+        {
+            var target = date ?? DateTime.Now;
+            var result = await _notificationService.ResendConfirmationsForDateAsync(target);
+            return Ok(ApiResponse<object>.SuccessResponse(new
+            {
+                sent   = result.Sent,
+                failed = result.Failed,
+                errors = result.Errors,
+                message = $"{target:dd.MM.yyyy}: {result.Sent} təsdiq göndərildi, {result.Failed} uğursuz."
+            }));
+        }
+
+        /// <summary>Ödəniş günü keçmiş, hələ ödəməyən valideynlərə gecikmə xəbərdarlığını əl ilə göndərir.</summary>
+        [HttpPost("send-overdue-alerts")]
+        public async Task<IActionResult> SendOverdueAlerts()
+        {
+            var result = await _notificationService.SendPaymentOverdueRemindersAsync();
+            return Ok(ApiResponse<object>.SuccessResponse(new
+            {
+                sent   = result.Sent,
+                failed = result.Failed,
+                errors = result.Errors,
+                message = $"{result.Sent} mesaj göndərildi, {result.Failed} uğursuz."
+            }));
+        }
     }
 }

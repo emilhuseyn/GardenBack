@@ -16,6 +16,9 @@ namespace App.Business.Services.Interfaces
         /// <summary>Ödəniş edilərkən valideynə təsdiqləmə mesajı göndərir.</summary>
         Task<SendResult> SendPaymentConfirmationAsync(int paymentId);
 
+        /// <summary>Verilən tarixdə qeydə alınmış bütün ödənişlər üçün təsdiq mesajını təkrar göndərir (uğursuz qalanları əl ilə bərpa etmək üçün).</summary>
+        Task<SendResult> ResendConfirmationsForDateAsync(DateTime date);
+
         /// <summary>Ödəniş günündən 3 gün keçmiş, hələ ödəməyən valideynlərə xəbərdarlıq göndərir.</summary>
         Task<SendResult> SendPaymentOverdueRemindersAsync();
 
