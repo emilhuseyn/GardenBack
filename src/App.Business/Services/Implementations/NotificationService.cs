@@ -26,7 +26,7 @@ namespace App.Business.Services.Implementations
         private readonly string _sofficePath;
 
         // WABA template names
-        private const string TplReminder  = "odenis_xatirlatma_1"; // {{1}} = ödəniş tarixi
+        private const string TplReminder  = "odenis_xatirlatma_2"; // {{1}} = ödəniş tarixi
         private const string TplPayment   = "odenis_olduqda_1";    // {{1}} = tarix, {{2}} = məbləğ, {{3}} = qalıq borc
         private const string TplOverdue   = "odenis_gecikdikde";   // parametr yoxdur
 
