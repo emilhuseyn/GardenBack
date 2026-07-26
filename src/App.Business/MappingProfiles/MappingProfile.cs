@@ -26,13 +26,16 @@ namespace App.Business.MappingProfiles
                 .ForMember(d => d.GroupName, opt => opt.MapFrom(s => s.Group != null ? s.Group.Name : string.Empty))
                 .ForMember(d => d.DivisionName, opt => opt.MapFrom(s => s.Group != null && s.Group.Division != null ? s.Group.Division.Name : string.Empty))
                 .ForMember(d => d.ScheduleType, opt => opt.MapFrom(s => s.ScheduleType))
-                .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()));
+                .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()))
+                // Yalnız servis səviyyəsində doldurulur (çıxış tarixi redaktəsi) — mənbə sahəsi yoxdur.
+                .ForMember(d => d.Recalculation, opt => opt.Ignore());
             CreateMap<Child, ChildDetailResponse>()
                 .ForMember(d => d.GroupName, opt => opt.MapFrom(s => s.Group != null ? s.Group.Name : string.Empty))
                 .ForMember(d => d.DivisionName, opt => opt.MapFrom(s => s.Group != null && s.Group.Division != null ? s.Group.Division.Name : string.Empty))
                 .ForMember(d => d.ScheduleType, opt => opt.MapFrom(s => s.ScheduleType))
                 .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()))
-                .ForMember(d => d.TeacherName, opt => opt.MapFrom(s => s.Group != null && s.Group.Teacher != null ? $"{s.Group.Teacher.FirstName} {s.Group.Teacher.LastName}" : string.Empty));
+                .ForMember(d => d.TeacherName, opt => opt.MapFrom(s => s.Group != null && s.Group.Teacher != null ? $"{s.Group.Teacher.FirstName} {s.Group.Teacher.LastName}" : string.Empty))
+                .ForMember(d => d.Recalculation, opt => opt.Ignore());
 
             // Group
             CreateMap<CreateGroupRequest, Group>();
@@ -73,7 +76,10 @@ namespace App.Business.MappingProfiles
                 .ForMember(d => d.DiscountType, opt => opt.MapFrom(s => s.DiscountType.ToString()))
                 .ForMember(d => d.CashboxName, opt => opt.MapFrom(s => s.Cashbox != null ? s.Cashbox.Name : null))
                 .ForMember(d => d.CashboxType, opt => opt.MapFrom(s => s.Cashbox != null ? s.Cashbox.Type.ToString() : null))
-                .ForMember(d => d.RemainingDebt, opt => opt.MapFrom(s => s.FinalAmount - s.PaidAmount));
+                .ForMember(d => d.RemainingDebt, opt => opt.MapFrom(s => s.FinalAmount - s.PaidAmount))
+                // Dövr SÜTUNLARI UI-a açıq verilir — kassa forması "Dövr:" qeydini artıq parse etmir (D7).
+                .ForMember(d => d.PeriodStartDay, opt => opt.MapFrom(s => s.PeriodStartDay))
+                .ForMember(d => d.PeriodEndDay, opt => opt.MapFrom(s => s.PeriodEndDay));
 
             // Cashbox
             CreateMap<Cashbox, CashboxResponse>()

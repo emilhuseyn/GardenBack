@@ -34,9 +34,10 @@ namespace App.Business.Services.Interfaces
         Task ActivateChildAsync(int id);
 
         /// <summary>
-        /// Deactivates a child.
+        /// Deactivates a child. <paramref name="effectiveDate"/> is the last day the child actually
+        /// attended (inclusive); null means "as of now".
         /// </summary>
-        Task DeactivateChildAsync(int id);
+        Task<DeactivationRecalcResult> DeactivateChildAsync(int id, DateTime? effectiveDate = null);
 
         /// <summary>
         /// Soft-deletes a child.
@@ -54,9 +55,10 @@ namespace App.Business.Services.Interfaces
         Task ActivateChildrenAsync(List<int> ids);
 
         /// <summary>
-        /// Deactivates multiple children at once.
+        /// Deactivates multiple children at once. <paramref name="effectiveDate"/> is applied to every
+        /// child in the list; null means "as of now".
         /// </summary>
-        Task DeactivateChildrenAsync(List<int> ids);
+        Task<List<DeactivationRecalcResult>> DeactivateChildrenAsync(List<int> ids, DateTime? effectiveDate = null);
 
         /// <summary>
         /// Soft-deletes multiple children at once.

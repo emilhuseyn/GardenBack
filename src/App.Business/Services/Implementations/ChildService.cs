@@ -10,7 +10,7 @@ using App.DAL.UnitOfWork;
 using App.Shared.Interfaces;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using System.Text.RegularExpressions;
+using System.Globalization;
 
 namespace App.Business.Services.Implementations
 {
@@ -117,6 +117,8 @@ namespace App.Business.Services.Implementations
             // Capture pre-change fee/discount so we can resync existing unpaid bills if either of them moves.
             var oldMonthlyFee  = child.MonthlyFee;
             var oldDiscountPct = child.DiscountPercentage ?? 0;
+            // Çıxış tarixi dəyişərsə hesabları yenidən qurmaq üçün köhnə dəyəri saxlayırıq (D2/D3)
+            var oldDeactivationDate = child.DeactivationDate;
 
             if (dto.FirstName != null) child.FirstName = dto.FirstName;
             if (dto.LastName != null) child.LastName = dto.LastName;
@@ -168,20 +170,77 @@ namespace App.Business.Services.Implementations
                 await ResyncUnpaidPaymentsAfterFeeChangeAsync(child);
             }
 
-            await _unitOfWork.SaveChangesAsync();
+            // Çıxış tarixi FAKTİKİ olaraq dəyişibsə hesabları yenidən qur: çıxış ayı yenidən bölünür,
+            // sonrakı aylar sıfırlanır. Eyni tarix təkrar göndərildikdə heç nə etmirik ki,
+            // adi profil redaktəsi hesabları yenidən yazmasın.
+            var deactivationMoved = dto.DeactivationDate.HasValue
+                && child.DeactivationDate.HasValue
+                && (!oldDeactivationDate.HasValue || oldDeactivationDate.Value.Date != child.DeactivationDate.Value.Date);
+
+            DeactivationRecalcResult? recalcResult = null;
+
+            if (deactivationMoved)
+            {
+                var exitDate = child.DeactivationDate!.Value;
+                ValidateEffectiveDate(child, exitDate);
+
+                await _unitOfWork.BeginTransactionAsync();
+                try
+                {
+                    // D8: çıxış tarixi verilib, amma uşaq HƏLƏ AKTİVDİRSƏ — onu həqiqətən çıxarırıq.
+                    // Əks halda hesablar çıxışa görə yenidən qurulur, uşaq isə aktiv qalır: aylıq
+                    // generasiya ona tam sətir yazmağa davam edir, aktiv borclu siyahısında güzəştlə
+                    // görünür və gecə işi onu qayıb kimi işarələməkdə davam edir.
+                    // Rədd etmək əvəzinə statusu QURURUQ, çünki profil redaktəsi çıxış tarixini
+                    // düzəltməyin əsas yoludur (aşağıda nəticə də qaytarılır) və DeactivateChildAsync
+                    // eyni əməliyyatı artıq belə edir — iki yol arasında fərq qalmamalıdır.
+                    if (child.Status != ChildStatus.Inactive)
+                    {
+                        child.Status = ChildStatus.Inactive;
+                        await _unitOfWork.Children.UpdateAsync(child);
+
+                        await _unitOfWork.GroupLogs.AddAsync(new GroupLog
+                        {
+                            GroupId = child.GroupId,
+                            ChildId = child.Id,
+                            ActionType = GroupLogActionType.ChildRemoved,
+                            Message = $"Uşaq çıxarıldı: {child.FirstName} {child.LastName} ({exitDate:dd.MM.yyyy})",
+                            ActionDate = _dt.Now
+                        });
+                    }
+
+                    // Köhnə çıxış tarixi bərpa pəncərəsini determinləşdirir (D1).
+                    recalcResult = await RecalculateAfterDeactivationAsync(child, exitDate, oldDeactivationDate);
+                    await _unitOfWork.SaveChangesAsync();
+                    await _unitOfWork.CommitTransactionAsync();
+                }
+                catch
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
+                    throw;
+                }
+            }
+            else
+            {
+                await _unitOfWork.SaveChangesAsync();
+            }
 
             var updated = await _unitOfWork.Children.GetByIdAsync(
                 c => c.Id == id,
                 c => c.Group,
                 c => c.Group.Division);
 
-            return _mapper.Map<ChildResponse>(updated);
+            var response = _mapper.Map<ChildResponse>(updated);
+            // Nəticəni ATMIRIQ — profil redaktəsi çıxış tarixini düzəltməyin ƏSAS yoludur,
+            // ödənişi olan aylar və artıq ödəniş burada da ştaba göstərilməlidir (D4).
+            response.Recalculation = recalcResult;
+            return response;
         }
 
         /// <summary>
         /// Re-bills every still-open payment for this child after their MonthlyFee or DiscountPercentage
-        /// changed. Skips already-Paid rows, preserves pro-rated entry/exit periods (parsed from the Notes),
-        /// reapplies the discount, and re-evaluates Status against PaidAmount.
+        /// changed. Skips already-Paid rows, preserves pro-rated entry/exit periods (read from the
+        /// PeriodStartDay/PeriodEndDay COLUMNS), reapplies the discount, and re-evaluates Status.
         /// </summary>
         private async Task ResyncUnpaidPaymentsAfterFeeChangeAsync(Child child)
         {
@@ -193,21 +252,12 @@ namespace App.Business.Services.Implementations
 
             var discountPercent = child.DiscountPercentage ?? 0;
             var hasDiscount = discountPercent > 0;
-            var periodRegex = new Regex(@"Dövr:\s*\d+\s*-\s*\d+\s*\(\s*(\d+)\s*gün\s*\)", RegexOptions.IgnoreCase);
 
             foreach (var payment in openPayments)
             {
-                // Preserve any partial-month period stored in Notes ("Dövr: 5-25 (21 gün)")
+                // Yarımçıq ay SÜTUNLARDAN oxunur — qeyd mətni artıq parse olunmur.
                 var daysInMonth = DateTime.DaysInMonth(payment.Year, payment.Month);
-                var daysActive = daysInMonth;
-                if (!string.IsNullOrEmpty(payment.Notes))
-                {
-                    var match = periodRegex.Match(payment.Notes);
-                    if (match.Success && int.TryParse(match.Groups[1].Value, out var parsedDays))
-                    {
-                        daysActive = parsedDays;
-                    }
-                }
+                var daysActive = PeriodDays(payment, daysInMonth);
 
                 var newOriginal = daysActive == daysInMonth
                     ? child.MonthlyFee
@@ -227,11 +277,8 @@ namespace App.Business.Services.Implementations
                 payment.DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None;
                 payment.DiscountValue = hasDiscount ? discountPercent : 0;
 
-                // Audit trail in the Notes column
-                var resyncNote = $"Aylıq qiymət yeniləndi: {oldFinal:F0} → {newFinal:F0} ₼";
-                payment.Notes = string.IsNullOrWhiteSpace(payment.Notes)
-                    ? resyncNote
-                    : $"{payment.Notes} | {resyncNote}";
+                // Audit trail in the Notes column (kosmetik)
+                AppendNote(payment, $"Aylıq qiymət yeniləndi: {oldFinal:F0} → {newFinal:F0} ₼");
 
                 // Recompute Status against the new FinalAmount
                 if (payment.PaidAmount >= payment.FinalAmount)
@@ -243,6 +290,83 @@ namespace App.Business.Services.Implementations
 
                 await _unitOfWork.Payments.UpdateAsync(payment);
             }
+        }
+
+        /// <summary>Notes sütununun DB limiti (PaymentConfiguration).</summary>
+        private const int NotesMaxLength = 500;
+
+        /// <summary>
+        /// Qeydi DB limitinə sığdıran YEGANƏ yer (F4) — həm əlavə, həm əvəzləmə buradan keçir.
+        /// </summary>
+        private static string TrimNote(string value) =>
+            value.Length <= NotesMaxLength ? value : value[^NotesMaxLength..];
+
+        /// <summary>Qeydi "|" ilə hissələrə ayırır. Yalnız GÖRÜNTÜ üçün — hesab məntiqi buradan oxumur.</summary>
+        private static List<string> SplitNoteSegments(string? notes) =>
+            string.IsNullOrWhiteSpace(notes)
+                ? new List<string>()
+                : notes.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+
+        /// <summary>
+        /// Qeydə yeni hissə ƏLAVƏ edir (köhnəni silmir). Eyni qeyd təkrarlanmır,
+        /// limit aşılarsa ən köhnə hissə kəsilir.
+        /// </summary>
+        private static void AppendNote(Payment payment, string note)
+        {
+            if (string.IsNullOrWhiteSpace(note)) return;
+
+            if (string.IsNullOrWhiteSpace(payment.Notes))
+            {
+                payment.Notes = TrimNote(note);
+                return;
+            }
+
+            if (payment.Notes.Contains(note, StringComparison.OrdinalIgnoreCase)) return;
+
+            payment.Notes = TrimNote($"{payment.Notes} | {note}");
+        }
+
+        /// <summary>
+        /// Eyni prefiksli KÖHNƏ hissələri atıb yenisini sona yazır (F2 — qeydlər yığılmasın).
+        /// Tamamilə kosmetikdir: hesab vəziyyəti PeriodStartDay/PeriodEndDay/ZeroedByExitDate
+        /// sütunlarındadır, bu funksiya yalnız ştabın oxuduğu mətni səliqəli saxlayır.
+        /// </summary>
+        private static void UpsertNoteSegment(Payment payment, string marker, string? note)
+        {
+            var segments = SplitNoteSegments(payment.Notes)
+                .Where(s => !s.Contains(marker, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (!string.IsNullOrWhiteSpace(note)) segments.Add(note);
+
+            payment.Notes = segments.Count == 0 ? null : TrimNote(string.Join(" | ", segments));
+        }
+
+        /// <summary>Dövr qeydini (kosmetik) yeniləyir — köhnə "Dövr:" hissəsi atılır.</summary>
+        private static void UpsertPeriodNote(Payment payment, string periodNote) =>
+            UpsertNoteSegment(payment, PeriodNoteMarker, periodNote);
+
+        /// <summary>Sıfırlama qeydini (kosmetik) yeniləyir — köhnə sıfırlama hissəsi atılır.</summary>
+        private static void UpsertZeroedNote(Payment payment, string zeroedNote) =>
+            UpsertNoteSegment(payment, ZeroedByExitMarker, zeroedNote);
+
+        /// <summary>Sətir bərpa olunanda köhnə sıfırlama qeydi tamamilə silinir (kosmetik).</summary>
+        private static void RemoveZeroedNote(Payment payment) =>
+            UpsertNoteSegment(payment, ZeroedByExitMarker, null);
+
+        /// <summary>Qeyddəki dövr hissəsinin prefiksi (yalnız mətn təmizliyi üçün).</summary>
+        private const string PeriodNoteMarker = "Dövr:";
+
+        /// <summary>
+        /// Sətrin hesablanan gün sayı — YALNIZ sütunlardan. Sütunlar boşdursa tam ay.
+        /// endDay - startDay + 1 arifmetikası DƏYİŞMİR.
+        /// </summary>
+        private static int PeriodDays(Payment payment, int daysInMonth)
+        {
+            var startDay = Math.Clamp(payment.PeriodStartDay ?? 1, 1, daysInMonth);
+            var endDay = Math.Clamp(payment.PeriodEndDay ?? daysInMonth, 1, daysInMonth);
+            if (endDay < startDay) endDay = startDay;
+            return endDay - startDay + 1;
         }
 
         /// <summary>
@@ -268,8 +392,15 @@ namespace App.Business.Services.Implementations
             response.AbsentDays = attendances.Count(a => a.Status == AttendanceStatus.Absent);
 
             var payments = await _unitOfWork.Payments.GetPaymentsByChildAsync(id);
+            // Borclu siyahısı ilə eyni güzəşt qaydası (D1) — əks halda UI özü-özünü təkzib edir.
+            // Güzəşt yalnız AKTİV uşağa aiddir ("ödəniş günü hələ gəlməyib"); deaktiv uşağın
+            // çıxış hesabı yekundur, ona görə Deaktivlər siyahısı (GetInactiveDebtorsAsync)
+            // güzəşt tətbiq etmir və burada da tətbiq olunmur (D5).
+            var asOf = _dt.Now;
+            var applyGrace = child.Status != ChildStatus.Inactive;
             response.TotalDebt = payments
-                .Where(p => p.Status != PaymentStatus.Paid)
+                .Where(p => p.Status != PaymentStatus.Paid
+                         && !(applyGrace && DebtGrace.IsWithinGrace(asOf, child.PaymentDay, p.Month, p.Year)))
                 .Sum(p => p.FinalAmount - p.PaidAmount);
 
             return response;
@@ -348,14 +479,24 @@ namespace App.Business.Services.Implementations
 
         /// <summary>
         /// Activates a child.
+        /// Qeyd: çıxışdan sonrakı aylar sıfırlanmış (0 / Paid) olduğu üçün geri qaytarmada köhnə borc dirilmir;
+        /// buraxılmış aylar da qəsdən yenidən yaradılmır — növbəti aylıq generasiya işi öz sətrini yazacaq.
+        /// Sıfırlanmış aylar burada TƏSDİQLƏNİR (A2): uşaq həmin aylarda həqiqətən gəlməyib,
+        /// ona görə heç bir gələcək çıxış düzəlişi onları borca çevirə bilməz.
+        /// Bağlanan epizodun ÇIXIŞ ayı da yekunlaşdırılır (G1) — gün-gün bölünmüş məbləği son məbləğdir.
         /// </summary>
         public async Task ActivateChildAsync(int id)
         {
             var child = await _unitOfWork.Children.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException($"{id} ID-li uşaq tapılmadı.");
 
+            // Bağlanan epizodun çıxış tarixi — sahə TƏMİZLƏNMƏDƏN ƏVVƏL saxlanılır (G1).
+            var closingExitDate = child.DeactivationDate;
+
             child.Status = ChildStatus.Active;
             child.DeactivationDate = null;
+
+            await ConfirmZeroedMonthsAsFinalAsync(child, closingExitDate);
 
             await _unitOfWork.GroupLogs.AddAsync(new GroupLog
             {
@@ -371,11 +512,61 @@ namespace App.Business.Services.Implementations
         }
 
         /// <summary>
+        /// Uşaq geri qayıdanda BAĞLANAN epizodun sətirlərini YEKUNLAŞDIRIR (A2/G1).
+        /// Məbləğlərə və dövr sütunlarına toxunulmur — yalnız ZeroedByExitDate TƏMİZLƏNİR və
+        /// AbsenceConfirmed qoyulur. İki qrup sətir yekunlaşdırılır:
+        ///  (a) çıxışla sıfırlanmış aylar (0/0/Paid) — uşaq həmin aylarda həqiqətən gəlməyib,
+        ///  (b) <paramref name="closingExitDate"/> ayının sətri — epizodun gün-gün bölünmüş ÇIXIŞ ayı.
+        /// (b) olmadan çıxış ayı bağlanan epizodun YEGANƏ qorunmasız sətri qalırdı: sonrakı bir
+        /// deaktivasiya onu sıfırlaya, ondan sonrakı düzəliş isə TAM aya qaytara bilirdi (G1).
+        /// SaveChanges çağıran metodun üzərindədir.
+        /// </summary>
+        private async Task ConfirmZeroedMonthsAsFinalAsync(Child child, DateTime? closingExitDate)
+        {
+            // Yalnız BİZİM sıfırladığımız sətirlər — 100% endirimli qanuni 0/0/Paid sətri kənarda qalır.
+            var zeroedPayments = (await _unitOfWork.Payments
+                .FindAsync(p => p.ChildId == child.Id && p.ZeroedByExitDate != null))
+                .ToList();
+
+            foreach (var payment in zeroedPayments)
+            {
+                payment.ZeroedByExitDate = null;
+                // D2: boş ZeroedByExitDate tək başına "yekunlaşdırılmış" demək DEYİL — heç vaxt
+                // sıfırlanmamış sətirdə də boşdur. Yekun AYRICA sütunda saxlanılır ki, sonrakı
+                // sıfırlama dövrü bu sətrə toxunmasın və səhv yazılmış çıxış tarixi onu dirildə bilməsin.
+                payment.AbsenceConfirmed = true;
+                UpsertZeroedNote(payment, FinalAbsenceNote);
+
+                await _unitOfWork.Payments.UpdateAsync(payment);
+            }
+
+            // G1: bağlanan epizodun ÇIXIŞ ayı. Sıfırlanmır (uşaq həmin ayın bir hissəsində gəlib),
+            // ona görə yuxarıdakı dövrə düşmür — amma məbləği və dövrü də YEKUNDUR.
+            if (!closingExitDate.HasValue) return;
+
+            var exitMonthPayment = (await _unitOfWork.Payments
+                .FindAsync(p => p.ChildId == child.Id
+                             && p.Month == closingExitDate.Value.Month
+                             && p.Year == closingExitDate.Value.Year))
+                .FirstOrDefault();
+
+            if (exitMonthPayment == null || exitMonthPayment.AbsenceConfirmed) return;
+
+            // Məbləğ, PaidAmount və PeriodStartDay/PeriodEndDay OLDUĞU KİMİ qalır — yalnız bayraq.
+            exitMonthPayment.AbsenceConfirmed = true;
+            AppendNote(exitMonthPayment, FinalExitMonthNote);
+
+            await _unitOfWork.Payments.UpdateAsync(exitMonthPayment);
+        }
+
+        /// <summary>
         /// Creates or adjusts the pro-rated payment for a child leaving mid-month.
         /// Accounts for both the registration day (if same month) and the exit day,
         /// so a child who arrives on the 5th and leaves on the 25th is billed for 21 days, not 25.
+        /// F3: çıxış ayının nəticəsi HƏMİŞƏ <paramref name="result"/>.ExitMonth-a yazılır — əməliyyatın
+        /// toxunduğu heç bir ay hesabatdan kənarda qalmır (yeni yaradılan sətir də daxil).
         /// </summary>
-        private async Task ApplyExitMonthPaymentAsync(Child child, DateTime exitDate)
+        private async Task ApplyExitMonthPaymentAsync(Child child, DateTime exitDate, DeactivationRecalcResult result)
         {
             var month = exitDate.Month;
             var year = exitDate.Year;
@@ -405,11 +596,103 @@ namespace App.Business.Services.Implementations
 
             if (existing != null)
             {
-                if (existing.Status == PaymentStatus.Paid) return; // already fully paid – leave as is
+                // F3(b): BAĞLANMIŞ epizodun yekun sətri (uşaq geri qayıdanda yekunlaşdırılmış
+                // 0/0/Paid "gəlmədiyi ay" və ya həmin epizodun gün-gün bölünmüş çıxış ayı — G1)
+                // SONRAKI bir çıxışın ayına düşə bilər. Belə sətri yenidən yazmaq yekunu səssizcə
+                // ləğv edərdi — sıfırlama dövrü də məhz buna görə AbsenceConfirmed sətirlərinə
+                // toxunmur. Sətir olduğu kimi qalır, ştaba isə ƏL İLƏ yoxlama üçün bildirilir.
+                if (existing.AbsenceConfirmed)
+                {
+                    result.ExitMonth = new ExitMonthOutcome
+                    {
+                        PaymentId = existing.Id,
+                        Month = month,
+                        Year = year,
+                        FinalAmount = existing.FinalAmount,
+                        PaidAmount = existing.PaidAmount,
+                        // Sətrə TOXUNULMADIĞI üçün diskdəki dövr bildirilir — hesablanan (yazılmayan)
+                        // startDay/exitDay bildirilsəydi məbləğlə dövr bir-birini təkzib edərdi.
+                        PeriodStartDay = existing.PeriodStartDay ?? startDay,
+                        PeriodEndDay = existing.PeriodEndDay ?? daysInMonth,
+                        Created = false,
+                        NeedsManualReview = true,
+                        Reason = "Ay bağlanmış qeydiyyat dövründə yekunlaşdırılıb — avtomatik yenidən hesablanmadı"
+                    };
+                    return;
+                }
+
+                // Ay yenidən bölünəndə ödənilən məbləğ yeni məbləği keçə bilər (D2).
+                // Bu blok REAL-PUL mühafizəsindən ƏVVƏL gəlir: ən çox rast gəlinən hal tam ödənilmiş
+                // aydır (300/300 Paid → 10 günlük 97), mühafizə əvvəl işləsəydi artıq ödəniş
+                // heç bir ekranda görünməzdi (D-B). Burada YALNIZ hesabat və qeyd yazılır.
+                if (existing.PaidAmount > finalAmount)
+                {
+                    result.ExitMonthOverpayment = new ExitMonthOverpayment
+                    {
+                        PaymentId = existing.Id,
+                        Month = month,
+                        Year = year,
+                        PaidAmount = existing.PaidAmount,
+                        NewFinalAmount = finalAmount,
+                        Difference = existing.PaidAmount - finalAmount
+                    };
+                    AppendNote(existing, $"Artıq ödəniş: {existing.PaidAmount - finalAmount:F0} ₼ geri qaytarılmalıdır");
+                    await _unitOfWork.Payments.UpdateAsync(existing);
+                }
+
+                // Yalnız REAL pul ödənilmiş sətrin MƏBLƏĞİNƏ toxunmuruq (D1). Sırf Status == Paid kifayət deyil:
+                // öz sıfırlama əməliyyatımız da (0/0/Paid, PaidAmount=0) eyni görünür və çıxış tarixi
+                // irəli düzəldiləndə hesabı əbədi olaraq silərdi.
+                if (existing.Status == PaymentStatus.Paid && existing.PaidAmount > 0)
+                {
+                    // F5: çıxış tarixi İRƏLİ sürüşəndə yeni hesab ödənilmişdən ÇOX ola bilər
+                    // (məs. 10-a görə 97 ödənilib, 25-ə görə 242 olmalıdır). Sətri yenidən yazmırıq,
+                    // AMMA fərq səssizcə silinməməlidir — hesabata və qeydə düşür.
+                    if (existing.PaidAmount < finalAmount)
+                    {
+                        result.ExitMonthUnderpayment = new ExitMonthUnderpayment
+                        {
+                            PaymentId = existing.Id,
+                            Month = month,
+                            Year = year,
+                            PaidAmount = existing.PaidAmount,
+                            NewFinalAmount = finalAmount,
+                            Difference = finalAmount - existing.PaidAmount
+                        };
+                        AppendNote(existing, $"Az hesablanıb: {finalAmount - existing.PaidAmount:F0} ₼ əlavə ödənilməlidir");
+                        await _unitOfWork.Payments.UpdateAsync(existing);
+                    }
+
+                    // F3(a): məbləğə toxunulmadı, amma ay hesabatda GÖRÜNMƏLİDİR.
+                    result.ExitMonth = new ExitMonthOutcome
+                    {
+                        PaymentId = existing.Id,
+                        Month = month,
+                        Year = year,
+                        FinalAmount = existing.FinalAmount,
+                        PaidAmount = existing.PaidAmount,
+                        PeriodStartDay = existing.PeriodStartDay ?? startDay,
+                        PeriodEndDay = existing.PeriodEndDay ?? daysInMonth,
+                        Created = false,
+                        NeedsManualReview = true,
+                        Reason = "Ay real pul ilə ödənilib — məbləğ avtomatik dəyişdirilmədi"
+                    };
+                    return;
+                }
 
                 existing.OriginalAmount = proratedBase;
                 existing.FinalAmount = finalAmount;
-                existing.Notes = periodNote;
+                // Dövr SÜTUNLARA yazılır — hesab məntiqinin oxuduğu yeganə yer.
+                existing.PeriodStartDay = startDay;
+                existing.PeriodEndDay = exitDay;
+                // Sətir yenidən hesablandı — artıq "çıxışa görə sıfırlanmış" deyil.
+                existing.ZeroedByExitDate = null;
+                // Aktiv şəkildə yenidən hesablanan çıxış ayı "təsdiqlənmiş yoxluq" ola bilməz (D2).
+                existing.AbsenceConfirmed = false;
+                // Qeydi üstündən yazmırıq — yuvarlaqlaşdırma/resync izi qalmalıdır,
+                // yalnız köhnə "Dövr:" və sıfırlama hissələri yenilənir/atılır.
+                RemoveZeroedNote(existing);
+                UpsertPeriodNote(existing, periodNote);
 
                 if (existing.PaidAmount >= finalAmount)
                     existing.Status = PaymentStatus.Paid;
@@ -419,6 +702,20 @@ namespace App.Business.Services.Implementations
                     existing.Status = PaymentStatus.Debt;
 
                 await _unitOfWork.Payments.UpdateAsync(existing);
+
+                // F3(a): yenidən hesablanan çıxış ayı da hesabata düşür.
+                result.ExitMonth = new ExitMonthOutcome
+                {
+                    PaymentId = existing.Id,
+                    Month = month,
+                    Year = year,
+                    FinalAmount = finalAmount,
+                    PaidAmount = existing.PaidAmount,
+                    PeriodStartDay = startDay,
+                    PeriodEndDay = exitDay,
+                    Created = false,
+                    NeedsManualReview = false
+                };
             }
             else
             {
@@ -431,43 +728,455 @@ namespace App.Business.Services.Implementations
                     FinalAmount = finalAmount,
                     PaidAmount = 0,
                     LastPaymentAmount = null,
-                    Status = PaymentStatus.Debt,
+                    // Məbləğ 0-dırsa (100% endirim və ya sıfıra yuvarlaqlaşan bölgü) ödəniş gözlənilmir —
+                    // PaymentService.GenerateMonthlyDebtsAsync ilə EYNİ qayda, əks halda fantom borc görünür.
+                    Status = finalAmount <= 0 ? PaymentStatus.Paid : PaymentStatus.Debt,
                     DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
                     DiscountValue = hasDiscount ? discountPercent : 0,
+                    // Dövr SÜTUNLARDA saxlanılır; qeyd kosmetikdir.
+                    PeriodStartDay = startDay,
+                    PeriodEndDay = exitDay,
                     Notes = periodNote,
                     RecordedById = "system"
                 };
                 await _unitOfWork.Payments.AddAsync(payment);
+
+                // Açıq transaksiyanın İÇİNDƏ saxlayırıq ki, hesabatdakı PaymentId real ID olsun
+                // (xəta baş verərsə hər şey birlikdə geri qaytarılır).
+                await _unitOfWork.SaveChangesAsync();
+
+                // F3(a): YENİ yaradılan çıxış ayı əvvəllər hesabatda ümumiyyətlə görünmürdü —
+                // "3 ay yenidən hesablandı" deyilir, yeni yaranan borc isə susdurulurdu.
+                result.ExitMonth = new ExitMonthOutcome
+                {
+                    PaymentId = payment.Id,
+                    Month = month,
+                    Year = year,
+                    FinalAmount = finalAmount,
+                    PaidAmount = payment.PaidAmount,
+                    PeriodStartDay = startDay,
+                    PeriodEndDay = exitDay,
+                    Created = true,
+                    NeedsManualReview = false
+                };
             }
         }
 
         /// <summary>
-        /// Deactivates a child.
+        /// Çıxış tarixini yoxlayır: qəbul tarixindən əvvəl və ya gələcək tarix ola bilməz.
         /// </summary>
-        public async Task DeactivateChildAsync(int id)
+        private void ValidateEffectiveDate(Child child, DateTime effectiveDate)
+        {
+            var today = _dt.Now.Date;
+
+            if (effectiveDate.Date > today)
+                throw new Core.Exceptions.ValidationException("Çıxış tarixi gələcək tarix ola bilməz.");
+
+            if (effectiveDate.Date < child.RegistrationDate.Date)
+                throw new Core.Exceptions.ValidationException(
+                    $"Çıxış tarixi qəbul tarixindən ({child.RegistrationDate:dd.MM.yyyy}) əvvəl ola bilməz.");
+        }
+
+        /// <summary>
+        /// Sıfırlama qeydinin dəyişməyən hissəsi. YALNIZ mətn təmizliyi üçündür (köhnə hissəni tapıb
+        /// atmaq) — hesab vəziyyəti ZeroedByExitDate sütunundadır.
+        /// </summary>
+        private const string ZeroedByExitMarker = "tarixindən çıxdığı üçün sıfırlandı";
+
+        private static string BuildZeroedNote(DateTime effectiveDate) =>
+            $"Uşaq {effectiveDate.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture)} {ZeroedByExitMarker}";
+
+        /// <summary>
+        /// Uşaq HƏQİQƏTƏN geri qayıtdıqda sıfırlanmış aylara yazılan qeyd (A2) — kosmetikdir.
+        /// Həmin anda ZeroedByExitDate təmizlənir və sətir bir daha bərpa oluna bilmir.
+        /// </summary>
+        private const string FinalAbsenceNote =
+            "Uşaq bu ay həqiqətən gəlmədiyi üçün hesab yekunlaşdırıldı (bərpa olunmur)";
+
+        /// <summary>
+        /// Uşaq geri qayıtdıqda BAĞLANAN epizodun çıxış ayına yazılan qeyd (G1) — kosmetikdir.
+        /// Sətir sıfırlanmayıb: gün-gün bölünmüş məbləği doğrudur və artıq yekundur.
+        /// </summary>
+        private const string FinalExitMonthNote =
+            "Bağlanmış qeydiyyat dövrünün çıxış ayıdır — məbləğ yekundur (avtomatik yenidən yazılmır)";
+
+        /// <summary>
+        /// Sətir İNDİ düzəldilən KONKRET çıxışın sıfırlamasıdırmı?
+        /// Yeganə meyar SÜTUNDUR: ZeroedByExitDate doludur və düzəldilən köhnə çıxış tarixinə bərabərdir.
+        /// Reaktivasiyada ZeroedByExitDate təmizləndiyi üçün "həqiqətən gəlmədiyi ay" (A2) avtomatik kənarda qalır;
+        /// 100% endirimli qanuni 0/0/Paid sətrində bu sahə heç vaxt dolmur.
+        /// </summary>
+        private static bool IsZeroedByExit(Payment payment, DateTime? previousExitDate) =>
+            payment.ZeroedByExitDate.HasValue
+            && previousExitDate.HasValue
+            && payment.ZeroedByExitDate.Value.Date == previousExitDate.Value.Date;
+
+        /// <summary>
+        /// Sətir ƏVVƏLKİ çıxış tarixi ilə gün-gün bölünmüş çıxış ayıdırmı? Çıxış tarixi irəli sürüşəndə
+        /// həmin ay artıq tam ay olur və tam məbləğə qaytarılmalıdır — əks halda ay yarımçıq qiymətdə donub qalır.
+        /// Dəqiq əlamət SÜTUNDADIR: PeriodEndDay köhnə çıxış gününə bərabərdir və ay tam deyil.
+        /// </summary>
+        private static bool IsProratedByPreviousExit(Payment payment, DateTime? previousExitDate)
+        {
+            // A1 ilə eyni sərhəd: köhnə çıxış tarixi bilinmirsə heç nə bərpa olunmur.
+            if (!previousExitDate.HasValue) return false;
+            if (!payment.PeriodEndDay.HasValue) return false;
+
+            var prev = previousExitDate.Value;
+            if (payment.Year != prev.Year || payment.Month != prev.Month) return false;
+
+            var daysInMonth = DateTime.DaysInMonth(payment.Year, payment.Month);
+            // Ay tam bölünübsə (bitiş = ayın sonu) bölünmə baş verməyib.
+            return payment.PeriodEndDay.Value == prev.Day && payment.PeriodEndDay.Value < daysInMonth;
+        }
+
+        /// <summary>
+        /// Sıfırlanmış və ya köhnə çıxışla bölünmüş sətri PaymentService.GenerateMonthlyDebtsAsync ilə
+        /// EYNİ qayda üzrə yenidən hesablayır: yalnız qeydiyyat ayında gün-gün bölünür, digər aylarda
+        /// tam MonthlyFee, sonra endirim və eyni yuvarlaqlaşdırma.
+        /// </summary>
+        private async Task RestorePaymentAsync(Child child, Payment payment, DateTime effectiveDate, DeactivationRecalcResult result)
+        {
+            var daysInMonth = DateTime.DaysInMonth(payment.Year, payment.Month);
+            var startDay = (child.RegistrationDate.Year == payment.Year && child.RegistrationDate.Month == payment.Month)
+                ? child.RegistrationDate.Day
+                : 1;
+            var daysActive = daysInMonth - startDay + 1;
+            var baseAmount = startDay == 1
+                ? child.MonthlyFee
+                : Math.Round(child.MonthlyFee * daysActive / daysInMonth, 0, MidpointRounding.AwayFromZero);
+
+            var discountPercent = child.DiscountPercentage ?? 0;
+            var hasDiscount = discountPercent > 0;
+            var rawFinal = hasDiscount
+                ? baseAmount - (baseAmount * discountPercent / 100m)
+                : baseAmount;
+            var finalAmount = Math.Round(rawFinal, 0, MidpointRounding.AwayFromZero);
+
+            payment.OriginalAmount = baseAmount;
+            payment.FinalAmount = finalAmount;
+            payment.DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None;
+            payment.DiscountValue = hasDiscount ? discountPercent : 0;
+            // Bərpa = TAM ay (qeydiyyat ayında qeydiyyat günündən ayın sonuna kimi).
+            payment.PeriodStartDay = startDay;
+            payment.PeriodEndDay = daysInMonth;
+            // Sətir artıq sıfırlanmış deyil — bərpanın açarı təmizlənir.
+            payment.ZeroedByExitDate = null;
+            // Yenidən hesablanan ay bağlanmış epizodun yekun sətri ola bilməz — bayraq da təmizlənir (D2),
+            // əks halda sətir gələcək sıfırlama dövründə əbədi atlanardı.
+            payment.AbsenceConfirmed = false;
+
+            // Məbləğ 0-dırsa (100% endirim) ödəniş gözlənilmir — generasiya ilə eyni qayda.
+            // Real ödəniş varsa (köhnə çıxış ayı qismən ödənilmiş ola bilər) status ona görə qurulur.
+            if (finalAmount <= 0 || payment.PaidAmount >= finalAmount)
+                payment.Status = PaymentStatus.Paid;
+            else if (payment.PaidAmount > 0)
+                payment.Status = PaymentStatus.PartiallyPaid;
+            else
+                payment.Status = PaymentStatus.Debt;
+
+            // Qeydlər kosmetikdir, amma səliqəli qalmalıdır: köhnə "Dövr:" və sıfırlama hissələri atılır.
+            UpsertPeriodNote(payment, $"Dövr: {startDay}-{daysInMonth} ({daysActive} gün)");
+            RemoveZeroedNote(payment);
+            AppendNote(payment, $"Çıxış tarixi {effectiveDate:dd.MM.yyyy} olaraq dəyişdiyi üçün bərpa olundu");
+
+            await _unitOfWork.Payments.UpdateAsync(payment);
+
+            result.RestoredMonths.Add(new RestoredMonth
+            {
+                PaymentId = payment.Id,
+                Month = payment.Month,
+                Year = payment.Year,
+                FinalAmount = finalAmount,
+                // Bərpa ödənişi olan sətrin üstünə düşübsə (məs. köhnə çıxış ayı 100 ₼ ödənilmişdi,
+                // indi 300 ₼-a qayıdır → PartiallyPaid) pul itmir, amma ştab bunu GÖRMƏLİDİR.
+                PaidAmount = payment.PaidAmount
+            });
+        }
+
+        /// <summary>
+        /// Çıxış tarixi dəyişdikdə uşağın hesablarını yenidən qurur:
+        /// (0) əvvəlki (daha erkən) çıxış tarixi ilə sıfırlanmış, amma yeni çıxış ayına QƏDƏRKİ sətirlər bərpa olunur,
+        /// (1) çıxış ayının özü mövcud inclusive gün hesabı ilə yenidən bölünür,
+        /// (2) çıxış ayından SONRAKI sətirlər yerində sıfırlanır (silinmir — unikal indeks
+        ///     regenerasiyanı əbədi bloklayardı), Status = Paid olur.
+        /// Real pul ödənilmiş sətirlərə toxunulmur — onlar nəticədə qaytarılır ki, geri qaytarma əl ilə edilsin.
+        /// <paramref name="previousExitDate"/> bərpa pəncərəsini determinləşdirir: sətrin ZeroedByExitDate
+        /// sütunu MƏHZ bu tarixə bərabər olmalıdır. Null olduqda (uşaq geri qayıdıb) heç nə bərpa olunmur.
+        /// SaveChanges/transaksiya çağıran metodun üzərindədir.
+        /// </summary>
+        private async Task<DeactivationRecalcResult> RecalculateAfterDeactivationAsync(
+            Child child, DateTime effectiveDate, DateTime? previousExitDate = null)
+        {
+            var result = new DeactivationRecalcResult
+            {
+                ChildId = child.Id,
+                ChildFullName = $"{child.FirstName} {child.LastName}",
+                EffectiveDate = effectiveDate
+            };
+
+            var exitYear = effectiveDate.Year;
+            var exitMonth = effectiveDate.Month;
+
+            // 0) Əvvəlki səhv (daha erkən) çıxış tarixi ilə sıfırlanmış aylar — yeni çıxış ayına qədər bərpa olunur.
+            //    Bunsuz tarix İRƏLİ düzəldiləndə aradakı aylar əbədi 0 qalır (gecə işi mövcud sətri yenidən yazmır).
+            var earlierPayments = (await _unitOfWork.Payments
+                .FindAsync(p => p.ChildId == child.Id
+                             && (p.Year < exitYear || (p.Year == exitYear && p.Month <= exitMonth))))
+                .ToList();
+
+            foreach (var payment in earlierPayments)
+            {
+                var wasZeroed = IsZeroedByExit(payment, previousExitDate);
+
+                // Çıxış ayının özünü ApplyExitMonthPaymentAsync gün-gün yenidən bölür və nəticəni
+                // result.ExitMonth-a yazır (F3) — burada yalnız kosmetik qeyd yenilənir.
+                if (payment.Year == exitYear && payment.Month == exitMonth)
+                {
+                    if (wasZeroed)
+                    {
+                        RemoveZeroedNote(payment);
+                        AppendNote(payment, $"Çıxış tarixi {effectiveDate:dd.MM.yyyy} olaraq dəyişdiyi üçün bərpa olundu");
+                    }
+                    continue;
+                }
+
+                // G1: bağlanmış qeydiyyat dövrünün ayı toxunulmazdır — SIFIRLAMA dövründəki (aşağıda)
+                // eyni qorunma BƏRPA dövründə də olmalıdır. Əks halda: uşaq 10.04-də çıxır (aprel 100 ₼,
+                // 1-10 gün) → geri qayıdır (ay yekunlaşdırılır) → yenidən çıxır və ştab eyni səhv tarixi
+                // (10.04) yazır → sonra düzəldir. Bu zaman IsProratedByPreviousExit yalnız PeriodEndDay-ə
+                // baxdığı üçün "əvvəlki çıxış ayı" sanıb apreli TAM aya (300 ₼) çevirərdi — uşaq həmin ay
+                // cəmi 10 gün gəldiyi halda 200 ₼ uydurma borc.
+                if (payment.AbsenceConfirmed)
+                {
+                    result.SkippedConfirmedMonths.Add(new SkippedConfirmedMonth
+                    {
+                        PaymentId = payment.Id,
+                        Month = payment.Month,
+                        Year = payment.Year,
+                        FinalAmount = payment.FinalAmount,
+                        PaidAmount = payment.PaidAmount
+                    });
+                    continue;
+                }
+
+                // (a) əvvəlki çıxışla sıfırlanmış ay, (b) əvvəlki çıxış ayı — indi tam ay olub.
+                if (!wasZeroed && !IsProratedByPreviousExit(payment, previousExitDate)) continue;
+
+                await RestorePaymentAsync(child, payment, effectiveDate, result);
+            }
+
+            // 0b) ÇATIŞMAYAN aylar (F1). Bərpa dövrü yalnız MÖVCUD sətirləri gəzir, amma uşaq
+            //     deaktiv olduğu müddətdə aylıq generasiya işi (GetActiveChildrenAsync) ona heç bir
+            //     sətir yazmır. Belə aylar YARADILMIR — yalnız hesabata yazılır (səbəb metodun
+            //     sənədində). Beləliklə itki artıq SƏSSİZ deyil, amma uydurma borc da yaranmır.
+            await DetectMissingMonthsBeforeExitAsync(child, effectiveDate, previousExitDate, result);
+
+            // 1) Çıxış ayı — gün-gün yenidən bölünür (real pul ödənilmiş və ya təsdiqlənmiş yoxluq
+            //    sətrinə toxunmur). Nəticə HƏMİŞƏ result.ExitMonth-a yazılır (F3): əvvəllər çıxış ayı
+            //    hesabatda yalnız SIFIRLANMIŞ olduğu halda görünürdü, yeni yaradılan sətir isə heç vaxt.
+            await ApplyExitMonthPaymentAsync(child, effectiveDate, result);
+
+            // 2) Çıxış ayından SONRAKI bütün sətirlər
+            var laterPayments = (await _unitOfWork.Payments
+                .FindAsync(p => p.ChildId == child.Id
+                             && (p.Year > exitYear || (p.Year == exitYear && p.Month > exitMonth))))
+                .ToList();
+
+            foreach (var payment in laterPayments)
+            {
+                // D2: uşaq geri qayıdanda YEKUNLAŞDIRILMIŞ ay (0/0/Paid "gəlmədiyi ay", yaxud həmin
+                // epizodun gün-gün bölünmüş çıxış ayı — G1) toxunulmazdır. Ona yeni ZeroedByExitDate
+                // MÖHÜRLƏMİRİK — əks halda səhv yazılıb sonra düzəldilən çıxış tarixi həmin ayları
+                // "bərpa oluna bilən" hala qaytarar və tam aya çevirib fantom borc yazardı.
+                // G2: ay heç bir siyahıya düşmədiyi üçün ştab onun ATLANDIĞINI görmürdü — indi görür.
+                if (payment.AbsenceConfirmed)
+                {
+                    result.SkippedConfirmedMonths.Add(new SkippedConfirmedMonth
+                    {
+                        PaymentId = payment.Id,
+                        Month = payment.Month,
+                        Year = payment.Year,
+                        FinalAmount = payment.FinalAmount,
+                        PaidAmount = payment.PaidAmount
+                    });
+                    continue;
+                }
+
+                // Valideyn həqiqətən pul ödəyibsə sıfırlamaq saxta artıq-ödəniş yaradar — toxunmuruq
+                if (payment.PaidAmount > 0)
+                {
+                    result.SkippedPaidMonths.Add(new SkippedPaidMonth
+                    {
+                        PaymentId = payment.Id,
+                        Month = payment.Month,
+                        Year = payment.Year,
+                        PaidAmount = payment.PaidAmount
+                    });
+
+                    // D9: məbləğə toxunmuruq, AMMA bərpa açarını köhnə tarixdə donmuş qoymuruq.
+                    // Sıfırlanmış sətrin üstünə pul yazılıbsa (0/0/Paid + PaidAmount > 0) açar
+                    // YENİ çıxış tarixinə yenilənir ki, ay hələ də bərpa oluna bilsin; sətir artıq
+                    // sıfırlanmış formada deyilsə (real hesab + ödəniş) açar tamamilə təmizlənir.
+                    var stillZeroedShape = payment.OriginalAmount == 0
+                        && payment.FinalAmount == 0
+                        && payment.Status == PaymentStatus.Paid;
+
+                    payment.ZeroedByExitDate = stillZeroedShape ? effectiveDate.Date : null;
+                    await _unitOfWork.Payments.UpdateAsync(payment);
+                    continue;
+                }
+
+                // F1: artıq sıfırlanmış sətri ATLAMIRIQ. Əvvəllər burada 'continue' vardı və sətir
+                // KÖHNƏ çıxış tarixi ilə qalırdı; növbəti düzəlişdə həmin tarix uyğun gəlmədiyi üçün
+                // ay heç vaxt bərpa olunmurdu (bir aylıq borc səssizcə silinirdi).
+                var alreadyZeroed = payment.OriginalAmount == 0
+                    && payment.FinalAmount == 0
+                    && payment.Status == PaymentStatus.Paid;
+
+                payment.OriginalAmount = 0;
+                payment.FinalAmount = 0;
+                payment.Status = PaymentStatus.Paid;
+                // Sıfırlamanın SƏBƏBİ HƏMİŞƏ yenilənir — bərpanın yeganə açarı budur.
+                payment.ZeroedByExitDate = effectiveDate.Date;
+                UpsertZeroedNote(payment, BuildZeroedNote(effectiveDate));
+
+                await _unitOfWork.Payments.UpdateAsync(payment);
+
+                if (!alreadyZeroed) result.ZeroedMonths++;
+            }
+
+            // 3) Çıxışdan SONRAKI "avtomatik qayıb" davamiyyət sətirləri (D10).
+            //    Gecə işi uşaq hələ sistemdə aktiv görünərkən onları yazıb; retroaktiv çıxışdan
+            //    sonra bunlar uşağın getdiyi günlərə aid saxta qayıb sayılır.
+            await RemoveAutoAbsenceAfterExitAsync(child, effectiveDate);
+
+            return result;
+        }
+
+        /// <summary>Gecə işinin yazdığı avtomatik qayıb sətirlərinin audit imzası.</summary>
+        private const string AutoAbsentRecordedById = "auto-absent";
+
+        /// <summary>
+        /// Çıxış tarixindən SONRAKI AVTOMATİK qayıb sətirlərini yumşaq silir (D10).
+        /// Yalnız RecordedById == "auto-absent" olan sətirlər silinir — müəllimin/ştabın ƏL İLƏ
+        /// yazdığı davamiyyətə heç vaxt toxunulmur.
+        /// Çağıran metodun transaksiyası və SaveChanges-i üzərindədir.
+        /// </summary>
+        private async Task RemoveAutoAbsenceAfterExitAsync(Child child, DateTime effectiveDate)
+        {
+            var exitDay = DateOnly.FromDateTime(effectiveDate.Date);
+
+            // FindAsync IgnoreQueryFilters() işlədir — onsuz da silinmiş sətri təkrar işləməmək üçün
+            // IsDeleted şərti AÇIQ yazılır.
+            var ghostAbsences = (await _unitOfWork.Attendances
+                .FindAsync(a => a.ChildId == child.Id
+                             && a.Date > exitDay
+                             && a.RecordedById == AutoAbsentRecordedById
+                             && !a.IsDeleted))
+                .ToList();
+
+            foreach (var absence in ghostAbsences)
+            {
+                absence.IsDeleted = true;
+                await _unitOfWork.Attendances.UpdateAsync(absence);
+            }
+        }
+
+        /// <summary>
+        /// Çıxış ayından ƏVVƏLKİ, amma sətri ÜMUMİYYƏTLƏ OLMAYAN ayları AŞKARLAYIR və hesabata yazır (F1).
+        /// Sətir QƏSDƏN yaradılmır: sxemdə "uşaq həmin ay həqiqətən gəlməyib" (hesab olmamalıdır) ilə
+        /// "həmin ay üçün sətir sadəcə generasiya olunmayıb" (hesab olmalıdır) FƏRQLƏNMİR —
+        /// AbsenceConfirmed yalnız MÖVCUD sətri qoruyur, olmayan ay üçün heç bir əlamət yoxdur.
+        /// Avtomatik yaratmaq deməli real valideynə uydurma borc yazmaq riski daşıyır (məs. uşaq
+        /// geri qayıdıb, sonra çıxış tarixi səhv yazılıb düzəldilir → aradakı boş aylar tam qiymətlə
+        /// "dirilərdi" və gündəlik gecikmə mesajlarını sürərdi).
+        /// Bunun əvəzinə ştaba BİLDİRİLİR; lazım olsa ay əl ilə yaradılır (RecordPaymentAsync çatışmayan
+        /// sətri düzgün gün-gün bölgü ilə özü yaradır, yaxud aylıq generasiya endpoint-i işlədilir).
+        /// Pəncərə: max(əvvəlki çıxış ayı, qeydiyyat ayı) → çıxış ayından ƏVVƏLKİ ay (daxil).
+        /// Əvvəlki çıxış tarixi yoxdursa heç nə edilmir — o halda uşaq bu ana qədər aktiv olub və
+        /// gecə işi sətirləri onsuz da yazıb.
+        /// Yalnız OXUYUR — heç bir sətir yazmır/silmir.
+        /// </summary>
+        private async Task DetectMissingMonthsBeforeExitAsync(
+            Child child, DateTime effectiveDate, DateTime? previousExitDate, DeactivationRecalcResult result)
+        {
+            if (!previousExitDate.HasValue) return;
+
+            // Ay indeksi ilə işləyirik ki, il sərhədi (dekabr → yanvar) özü-özünə həll olsun.
+            var registrationIndex = child.RegistrationDate.Year * 12 + (child.RegistrationDate.Month - 1);
+            var previousExitIndex = previousExitDate.Value.Year * 12 + (previousExitDate.Value.Month - 1);
+            var exitIndex = effectiveDate.Year * 12 + (effectiveDate.Month - 1);
+
+            var startIndex = Math.Max(registrationIndex, previousExitIndex);
+            // Çıxış ayının ÖZÜ bura daxil deyil — onu ApplyExitMonthPaymentAsync gün-gün bölür
+            // və nəticəsi result.ExitMonth-da ayrıca göstərilir (F3).
+            var endIndex = exitIndex - 1;
+
+            for (var index = startIndex; index <= endIndex; index++)
+            {
+                var year = index / 12;
+                var month = index % 12 + 1;
+
+                // FindAsync IgnoreQueryFilters() işlədir — YUMŞAQ SİLİNMİŞ sətir də "mövcuddur"
+                // sayılır (unikal indeks onu da tutur), ona görə belə ay çatışmayan kimi bildirilmir.
+                var exists = (await _unitOfWork.Payments
+                    .FindAsync(p => p.ChildId == child.Id && p.Month == month && p.Year == year))
+                    .Any();
+
+                if (exists) continue;
+
+                result.MissingMonths.Add(new MissingMonth { Month = month, Year = year });
+            }
+        }
+
+        /// <summary>
+        /// Deactivates a child. <paramref name="effectiveDate"/> — uşağın faktiki son iştirak günü.
+        /// </summary>
+        public async Task<DeactivationRecalcResult> DeactivateChildAsync(int id, DateTime? effectiveDate = null)
         {
             var child = await _unitOfWork.Children.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException($"{id} ID-li uşaq tapılmadı.");
 
-            var now = _dt.Now;
-            child.Status = ChildStatus.Inactive;
-            child.DeactivationDate = now;
+            // Tarix verilməyibsə bugün — köhnə davranış olduğu kimi qalır
+            var exitDate = effectiveDate ?? _dt.Now;
+            ValidateEffectiveDate(child, exitDate);
 
-            await _unitOfWork.GroupLogs.AddAsync(new GroupLog
+            // Təkrar deaktivasiyada köhnə tarix bərpa pəncərəsini determinləşdirir (D1)
+            var previousExitDate = child.DeactivationDate;
+
+            DeactivationRecalcResult result;
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
             {
-                GroupId = child.GroupId,
-                ChildId = child.Id,
-                ActionType = GroupLogActionType.ChildRemoved,
-                Message = $"Uşaq çıxarıldı: {child.FirstName} {child.LastName}",
-                ActionDate = now
-            });
+                child.Status = ChildStatus.Inactive;
+                child.DeactivationDate = exitDate;
 
-            await _unitOfWork.Children.UpdateAsync(child);
+                await _unitOfWork.GroupLogs.AddAsync(new GroupLog
+                {
+                    GroupId = child.GroupId,
+                    ChildId = child.Id,
+                    ActionType = GroupLogActionType.ChildRemoved,
+                    Message = $"Uşaq çıxarıldı: {child.FirstName} {child.LastName} ({exitDate:dd.MM.yyyy})",
+                    ActionDate = _dt.Now
+                });
 
-            // Adjust this month's payment to cover only the days the child attended
-            await ApplyExitMonthPaymentAsync(child, now);
+                await _unitOfWork.Children.UpdateAsync(child);
 
-            await _unitOfWork.SaveChangesAsync();
+                // Çıxış ayı yenidən bölünür, sonrakı aylar sıfırlanır, əvvəlki sıfırlamalar bərpa olunur
+                result = await RecalculateAfterDeactivationAsync(child, exitDate, previousExitDate);
+
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
+            }
+            catch
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -501,33 +1210,53 @@ namespace App.Business.Services.Implementations
         }
 
         /// <summary>
-        /// Deactivates a list of children.
+        /// Deactivates a list of children. <paramref name="effectiveDate"/> bütün siyahıya tətbiq olunur.
         /// </summary>
-        public async Task DeactivateChildrenAsync(List<int> ids)
+        public async Task<List<DeactivationRecalcResult>> DeactivateChildrenAsync(List<int> ids, DateTime? effectiveDate = null)
         {
             var now = _dt.Now;
-            foreach (var id in ids)
+            var results = new List<DeactivationRecalcResult>();
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
             {
-                var child = await _unitOfWork.Children.GetByIdAsync(id);
-                if (child != null)
+                foreach (var id in ids)
                 {
+                    var child = await _unitOfWork.Children.GetByIdAsync(id);
+                    if (child == null) continue;
+
+                    var exitDate = effectiveDate ?? now;
+                    ValidateEffectiveDate(child, exitDate);
+
+                    // Təkrar deaktivasiyada köhnə tarix bərpa pəncərəsini determinləşdirir (D1)
+                    var previousExitDate = child.DeactivationDate;
+
                     child.Status = ChildStatus.Inactive;
-                    child.DeactivationDate = now;
+                    child.DeactivationDate = exitDate;
 
                     await _unitOfWork.GroupLogs.AddAsync(new GroupLog
                     {
                         GroupId = child.GroupId,
                         ChildId = child.Id,
                         ActionType = GroupLogActionType.ChildRemoved,
-                        Message = $"Uşaq çıxarıldı: {child.FirstName} {child.LastName}",
+                        Message = $"Uşaq çıxarıldı: {child.FirstName} {child.LastName} ({exitDate:dd.MM.yyyy})",
                         ActionDate = now
                     });
 
                     await _unitOfWork.Children.UpdateAsync(child);
-                    await ApplyExitMonthPaymentAsync(child, now);
+                    results.Add(await RecalculateAfterDeactivationAsync(child, exitDate, previousExitDate));
                 }
+
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
             }
-            await _unitOfWork.SaveChangesAsync();
+            catch
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
+            }
+
+            return results;
         }
 
         /// <summary>
@@ -540,8 +1269,14 @@ namespace App.Business.Services.Implementations
                 var child = await _unitOfWork.Children.GetByIdAsync(id);
                 if (child != null)
                 {
+                    // Bağlanan epizodun çıxış tarixi — sahə TƏMİZLƏNMƏDƏN ƏVVƏL saxlanılır (G1).
+                    var closingExitDate = child.DeactivationDate;
+
                     child.Status = ChildStatus.Active;
                     child.DeactivationDate = null;
+
+                    // Tək qaytarma ilə eyni qayda — sıfırlanmış aylar və çıxış ayı yekunlaşdırılır (A2/G1).
+                    await ConfirmZeroedMonthsAsFinalAsync(child, closingExitDate);
 
                     await _unitOfWork.GroupLogs.AddAsync(new GroupLog
                     {

@@ -114,4 +114,8 @@ namespace App.Business.Validators
                 .WithMessage("Deaktiv olma tarixi qəbul tarixindən əvvəl ola bilməz.");
         }
     }
+
+    // Qeyd: DeactivateChildRequest.EffectiveDate üçün FluentValidation qaydası yoxdur —
+    // yoxlama uşağın qəbul tarixini və Bakı vaxtını tələb etdiyi üçün
+    // ChildService.ValidateEffectiveDate-də (tək mənbədə) aparılır.
 }

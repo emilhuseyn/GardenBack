@@ -4,6 +4,7 @@ using App.Core.Common;
 using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace App.API.Controllers
 {
@@ -87,12 +88,14 @@ namespace App.API.Controllers
             return Ok(ApiResponse<string>.SuccessResponse("Uşaq aktivləşdirildi."));
         }
 
+        // Gövdə boş ola bilər — bu halda köhnə davranış: bu gün deaktiv edilir.
         [HttpPatch("{id}/deactivate")]
         [Authorize(Policy = "AdminOrAdmission")]
-        public async Task<IActionResult> DeactivateChild(int id)
+        public async Task<IActionResult> DeactivateChild(int id,
+            [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] DeactivateChildRequest? request = null)
         {
-            await _childService.DeactivateChildAsync(id);
-            return Ok(ApiResponse<string>.SuccessResponse("Uşaq deaktiv edildi."));
+            var result = await _childService.DeactivateChildAsync(id, request?.EffectiveDate);
+            return Ok(ApiResponse<DeactivationRecalcResult>.SuccessResponse(result, "Uşaq deaktiv edildi."));
         }
 
         // Yalnız Administrator — silmə
@@ -111,11 +114,14 @@ namespace App.API.Controllers
             return Ok(new { message = "Uşaqlar aktiv edildi." });
         }
 
+        // Gövdə köhnə kimi sadəcə ID massividir (JSON array obyektə bind oluna bilmir),
+        // ona görə çıxış tarixi opsional query parametridir: ?effectiveDate=2026-07-20
         [HttpPost("deactivate-bulk")]
-        public async Task<IActionResult> DeactivateChildren([FromBody] List<int> ids)
+        public async Task<IActionResult> DeactivateChildren([FromBody] List<int> ids,
+            [FromQuery] DateTime? effectiveDate = null)
         {
-            await _childService.DeactivateChildrenAsync(ids);
-            return Ok(new { message = "Uşaqlar deaktiv edildi." });
+            var results = await _childService.DeactivateChildrenAsync(ids, effectiveDate);
+            return Ok(new { message = "Uşaqlar deaktiv edildi.", results });
         }
 
         [HttpPost("delete-bulk")]

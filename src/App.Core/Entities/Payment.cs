@@ -19,6 +19,40 @@ namespace App.Core.Entities
         public PaymentStatus Status { get; set; } = PaymentStatus.Debt;
         public string? Notes { get; set; }
 
+        /// <summary>Çoxaylı vahid çek üçün paket ID-si — eyni kütləvi ödənişin bütün sətirlərində eynidir</summary>
+        public Guid? PaymentBatchId { get; set; }
+
+        /// <summary>
+        /// Hesablanan dövrün ay daxilindəki BAŞLANĞIC günü (həmin gün də daxildir).
+        /// Null — tam ay. Bu sütun "Dövr:" qeydini ƏVƏZ EDİR: hesab məntiqi yalnız buradan oxuyur.
+        /// </summary>
+        public int? PeriodStartDay { get; set; }
+
+        /// <summary>
+        /// Hesablanan dövrün ay daxilindəki BİTİŞ günü (həmin gün də daxildir).
+        /// Null — tam ay. Gün sayı həmişə PeriodEndDay - PeriodStartDay + 1-dir.
+        /// </summary>
+        public int? PeriodEndDay { get; set; }
+
+        /// <summary>
+        /// Sətir HAZIRDA hansı çıxış tarixinə görə sıfırlanıb. Yalnız sıfırlanmış sətirdə doludur;
+        /// bərpa olunanda və ya reaktivasiyada yekunlaşdırılanda null-a qayıdır.
+        /// Bərpanın YEGANƏ açarı budur — qeyd mətni artıq oxunmur.
+        /// </summary>
+        public DateTime? ZeroedByExitDate { get; set; }
+
+        /// <summary>
+        /// Sətir BAĞLANMIŞ qeydiyyat epizoduna aiddir və bir daha AVTOMATİK yenidən yazılmır (A2/G1).
+        /// Uşaq geri qayıdanda true olur və iki halı əhatə edir:
+        ///  (a) çıxışdan sonrakı sıfırlanmış aylar — uşaq həmin aylarda həqiqətən gəlməyib,
+        ///  (b) həmin epizodun ÇIXIŞ ayı — gün-gün bölünmüş məbləği YEKUNDUR.
+        /// ZeroedByExitDate boş olduğu üçün belə sətir "heç vaxt sıfırlanmamış sətir"dən seçilmirdi;
+        /// bu bayraq onları AYIRIR. True olan sətir nə sıfırlanır (ZeroedByExitDate üstündən
+        /// yazılmır), nə də sonrakı çıxış düzəlişi ilə tam aya qaytarılır.
+        /// Ad tarixidir — məna "təsdiqlənmiş yoxluq"dan "bağlanmış epizodun yekun sətri"nə genişlənib.
+        /// </summary>
+        public bool AbsenceConfirmed { get; set; }
+
         /// <summary>Audit sahəsi — FK deyil, yalnız user ID saxlanılır</summary>
         public string? RecordedById { get; set; }
 

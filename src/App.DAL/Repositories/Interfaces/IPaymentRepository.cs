@@ -6,7 +6,11 @@ namespace App.DAL.Repositories.Interfaces
     public interface IPaymentRepository : IRepository<Payment>
     {
         Task<IEnumerable<Payment>> GetPaymentsByChildAsync(int childId);
-        Task<IEnumerable<Payment>> GetDebtorsAsync();
+        /// <summary>
+        /// Aktiv uşaqların borcları. <paramref name="asOf"/> güzəşt qaydasının hesablandığı tarixdir
+        /// (repozitoridə DateTime.Now çağırılmır — tarix həmişə xaricdən verilir).
+        /// </summary>
+        Task<IEnumerable<Payment>> GetDebtorsAsync(DateTime asOf);
         Task<IEnumerable<Payment>> GetInactiveDebtorsAsync();
         Task<IEnumerable<Payment>> GetMonthlyPaymentsAsync(int month, int year);
         Task<IEnumerable<Payment>> GetDailyCollectionAsync(DateOnly date);

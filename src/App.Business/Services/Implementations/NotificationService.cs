@@ -1,5 +1,6 @@
 using App.Business.Helpers;
 using App.Business.Services.Interfaces;
+using App.Core.Common;
 using App.Core.Entities;
 using App.Core.Enums;
 using App.Core.Services;
@@ -191,32 +192,46 @@ namespace App.Business.Services.Implementations
 
             var today = _dt.Now.Date;
 
-            var activeChildren = await _unitOfWork.Children.GetActiveChildrenAsync();
+            // Bildiriş MƏHZ borclu siyahısının oxuduğu sətir dəstindən sürülür (D3/D4).
+            // GetDebtorsAsync ödənilməmiş HƏR ayı qaytarır və güzəşti SƏTİR-SƏTİR tətbiq edir
+            // (cari ay güzəşt bitənə qədər gizli, keçmiş aylar həmişə borc).
+            // Əvvəl iş yalnız CARİ ayın sətrinə baxırdı və bu iki səhvi doğururdu:
+            //   • sətir ÜMUMİYYƏTLƏ yoxdursa (məs. ayın ortasında qəbul olunmuş uşaq) `payment?.Status`
+            //     Paid olmadığı üçün mesaj hər gün gedirdi — halbuki borc sıfırdır;
+            //   • keçmiş ayın borcu varsa, amma cari ay ödənilibsə, heç nə göndərilmirdi.
+            // F4: GƏLƏCƏK ayın sətri gecikmiş sayılmır. Admin aylıq generasiyanı gələcək ay üçün
+            // işə sala bilər (endpoint tarixi yoxlamır) — məs. iyulda 2026-08 sətirləri yaranır.
+            // Güzəşt yalnız CARİ aya tətbiq olunduğu üçün belə sətirlər dərhal "borc" kimi qayıdır
+            // və hələ BAŞLAMAMIŞ ay üçün valideynə hər gün gecikme_wp gedərdi.
+            // GetDebtorsAsync-ə TOXUNMURUQ (borclu siyahısı öz davranışını saxlayır) — sərhəd
+            // yalnız bu bildiriş işindədir.
+            var currentMonthIndex = today.Year * 12 + today.Month;
 
-            // Bu ayda ödəniş günü artıq KEÇMİŞ bütün uşaqlar
-            // (məs: today=10, PaymentDay=4 → gecikib; PaymentDay=15 → hələ vaxtı çatmayıb)
-            var overdueChildren = activeChildren
-                .Where(c => c.PaymentDay < today.Day)
+            var debtRows = (await _unitOfWork.Payments.GetDebtorsAsync(_dt.Now))
+                // Müdafiə: qalıq həqiqətən müsbət olmalıdır (köhnə/uyğunsuz məlumat üçün).
+                .Where(p => p.FinalAmount > p.PaidAmount)
+                .Where(p => p.Year * 12 + p.Month <= currentMonthIndex)
                 .ToList();
 
-            _logger.LogInformation("WABA gecikme: {Count} potensial gecikmiş uşaq yoxlanılır (Bu gün: {Day})",
-                overdueChildren.Count, today.Day);
+            // Uşaq başına BİR mesaj — neçə ay gecikməsindən asılı olmayaraq.
+            var debtorsByChild = debtRows
+                .Where(p => p.Child != null)
+                .GroupBy(p => p.ChildId)
+                .ToList();
 
-            int sent = 0, skipped = 0, failed = 0;
+            _logger.LogInformation("WABA gecikme: {Count} gecikmiş uşaq ({Rows} ödənilməmiş ay, Bu gün: {Day})",
+                debtorsByChild.Count, debtRows.Count, today.Day);
+
+            int sent = 0, failed = 0;
             var errors = new List<string>();
 
-            foreach (var child in overdueChildren)
+            foreach (var group in debtorsByChild)
             {
+                var child = group.First().Child;
+
                 try
                 {
-                    var payment = (await _unitOfWork.Payments
-                        .FindAsync(p => p.ChildId == child.Id && p.Month == today.Month && p.Year == today.Year))
-                        .FirstOrDefault();
-
-                    // Ödəniş edilibsə keç (ödənilənə qədər hər gün, ödənildikdə dayan)
-                    if (payment?.Status == PaymentStatus.Paid) { skipped++; continue; }
-
-                    // gecikme_wp — parametrsiz template, hər gün təkrar
+                    // gecikme_wp — parametrsiz template, ödənilənə qədər hər gün təkrar
                     var error = await SendWabaAsync(child.ParentPhone, TplOverdue, [], child.Id);
 
                     if (error == null) sent++; else { failed++; errors.Add(error); }
@@ -228,7 +243,7 @@ namespace App.Business.Services.Implementations
                 }
             }
 
-            _logger.LogInformation("WABA gecikme tamamlandı. Sent={S} Skipped={K} Failed={F}", sent, skipped, failed);
+            _logger.LogInformation("WABA gecikme tamamlandı. Sent={S} Failed={F}", sent, failed);
             return new SendResult(sent, failed, errors);
         }
 
@@ -259,7 +274,7 @@ namespace App.Business.Services.Implementations
             if (!await IsMessagingEnabledAsync())
                 return DisabledResult();
 
-            var debts   = await _unitOfWork.Payments.GetDebtorsAsync();
+            var debts   = await _unitOfWork.Payments.GetDebtorsAsync(_dt.Now);
             var grouped = debts.GroupBy(p => p.ChildId).ToList();
             _logger.LogInformation("WABA toplu xatırlatma: {Count} borclu", grouped.Count);
 

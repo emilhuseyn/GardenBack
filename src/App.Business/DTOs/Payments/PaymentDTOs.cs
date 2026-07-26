@@ -67,7 +67,22 @@ namespace App.Business.DTOs.Payments
     {
         public int PaidCount { get; set; }
         public decimal TotalPaid { get; set; }
+
+        /// <summary>
+        /// Bu kütləvi ödənişin paket ID-si — vahid çeki sonradan tarixçədən çap etmək üçün.
+        /// Heç bir ay emal olunmayıbsa (hamısı artıq ödənilib) null qayıdır.
+        /// </summary>
+        public Guid? PaymentBatchId { get; set; }
+
         public List<PaymentResponse> Payments { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Bir uşağın seçilmiş ödəniş sətirləri üçün vahid (çoxaylı) çek sorğusu.
+    /// </summary>
+    public class BulkReceiptRequest
+    {
+        public List<int> PaymentIds { get; set; } = new();
     }
 
     public class DiscountRequest
@@ -96,6 +111,18 @@ namespace App.Business.DTOs.Payments
         public DateTime? PaymentDate { get; set; }
         public string Status { get; set; } = string.Empty;
         public string? Notes { get; set; }
+
+        /// <summary>Kütləvi ödəniş paketinin ID-si — vahid çekin yenidən çapı üçün</summary>
+        public Guid? PaymentBatchId { get; set; }
+
+        /// <summary>
+        /// Hesablanan dövrün BAŞLANĞIC günü (daxil). Null — tam ay.
+        /// Kassa formasının "niyə bu məbləğ?" izahı BURADAN oxunur; qeyd mətni artıq parse olunmur.
+        /// </summary>
+        public int? PeriodStartDay { get; set; }
+
+        /// <summary>Hesablanan dövrün BİTİŞ günü (daxil). Null — tam ay.</summary>
+        public int? PeriodEndDay { get; set; }
     }
 
     public class DebtorListItem

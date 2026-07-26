@@ -4,6 +4,7 @@ using App.DAL.Presistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace App.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260725135145_AddPaymentBatchId")]
+    partial class AddPaymentBatchId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -622,11 +625,6 @@ namespace App.DAL.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("AbsenceConfirmed")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint(1)")
-                        .HasDefaultValue(false);
-
                     b.Property<int?>("CashboxId")
                         .HasColumnType("int");
 
@@ -670,12 +668,6 @@ namespace App.DAL.Migrations
                     b.Property<DateTime?>("PaymentDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int?>("PeriodEndDay")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("PeriodStartDay")
-                        .HasColumnType("int");
-
                     b.Property<string>("RecordedById")
                         .HasMaxLength(128)
                         .HasColumnType("varchar(128)");
@@ -688,9 +680,6 @@ namespace App.DAL.Migrations
 
                     b.Property<int>("Year")
                         .HasColumnType("int");
-
-                    b.Property<DateTime?>("ZeroedByExitDate")
-                        .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 

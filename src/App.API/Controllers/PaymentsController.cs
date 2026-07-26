@@ -92,6 +92,25 @@ namespace App.API.Controllers
             return File(fileBytes, "application/pdf", fileName);
         }
 
+        // Vahid çek — bir uşağın bir neçə ayı üçün tək PDF.
+        // 12 ID sorğu sətrinə sığmadığı üçün POST istifadə olunur.
+        [HttpPost("receipt/bulk")]
+        [Authorize(Policy = "PaymentView")]
+        public async Task<IActionResult> DownloadBulkReceipt([FromBody] BulkReceiptRequest dto)
+        {
+            var (fileBytes, fileName) = await _paymentService.GenerateBulkPaymentReceiptPdfAsync(dto.PaymentIds);
+            return File(fileBytes, "application/pdf", fileName);
+        }
+
+        // Tarixçədən təkrar çap — kütləvi ödənişin paket ID-si ilə
+        [HttpGet("receipt/batch/{batchId:guid}")]
+        [Authorize(Policy = "PaymentView")]
+        public async Task<IActionResult> DownloadBatchReceipt(Guid batchId)
+        {
+            var (fileBytes, fileName) = await _paymentService.GenerateBulkPaymentReceiptPdfAsync(batchId);
+            return File(fileBytes, "application/pdf", fileName);
+        }
+
         // Administrator + Mühasib — yazma əməliyyatları
         [HttpPost("record")]
         public async Task<IActionResult> RecordPayment([FromBody] RecordPaymentRequest dto)

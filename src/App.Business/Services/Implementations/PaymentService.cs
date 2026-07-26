@@ -34,6 +34,33 @@ namespace App.Business.Services.Implementations
             _dt = dt;
         }
 
+        /// <summary>Notes sütununun DB limiti (PaymentConfiguration).</summary>
+        private const int NotesMaxLength = 500;
+
+        /// <summary>Qeydi DB limitinə sığdırır — ən köhnə hissə kəsilir.</summary>
+        private static string TrimNote(string value) =>
+            value.Length <= NotesMaxLength ? value : value[^NotesMaxLength..];
+
+        /// <summary>
+        /// Qeydə yeni hissə ƏLAVƏ edir (köhnəni SİLMİR — F3). Eyni hissə təkrarlanmır,
+        /// limit aşılarsa ən köhnə hissə kəsilir.
+        /// Qeydlər tamamilə kosmetikdir: heç bir hesab məntiqi buradan oxumur.
+        /// </summary>
+        private static void AppendNote(Payment payment, string? note)
+        {
+            if (string.IsNullOrWhiteSpace(note)) return;
+
+            if (string.IsNullOrWhiteSpace(payment.Notes))
+            {
+                payment.Notes = TrimNote(note);
+                return;
+            }
+
+            if (payment.Notes.Contains(note, StringComparison.OrdinalIgnoreCase)) return;
+
+            payment.Notes = TrimNote($"{payment.Notes} | {note}");
+        }
+
         /// <summary>
         /// Generates debt records for the current month. Used by Hangfire to avoid
         /// capturing DateTime.Now at job-registration time.
@@ -93,6 +120,9 @@ namespace App.Business.Services.Implementations
                         Status = finalAmount <= 0 ? PaymentStatus.Paid : PaymentStatus.Debt,
                         DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
                         DiscountValue = hasDiscount ? discountPercent : 0,
+                        // Dövr SÜTUNLARDA saxlanılır; qeyd yalnız ştabın oxuması üçündür (kosmetik).
+                        PeriodStartDay = startDay,
+                        PeriodEndDay = daysInMonth,
                         Notes = startDay > 1 ? $"Dövr: {startDay}-{daysInMonth} ({daysActive} gün)" : null,
                         RecordedById = "system"
                     };
@@ -134,9 +164,7 @@ namespace App.Business.Services.Implementations
                     payment.Status = PaymentStatus.Paid;
                     payment.PaymentDate = now;
                     payment.RecordedById = userId;
-                    payment.Notes = string.IsNullOrWhiteSpace(payment.Notes)
-                        ? "Kütləvi ödənilmiş (sistem köçürməsi)"
-                        : payment.Notes + " | Kütləvi ödənilmiş";
+                    AppendNote(payment, "Kütləvi ödənilmiş (sistem köçürməsi)");
 
                     await _unitOfWork.Payments.UpdateAsync(payment);
                 }
@@ -168,6 +196,14 @@ namespace App.Business.Services.Implementations
             var payment = (await _unitOfWork.Payments
                 .FindAsync(p => p.ChildId == dto.ChildId && p.Month == dto.Month && p.Year == dto.Year))
                 .FirstOrDefault();
+
+            // D9: uşağın çıxış tarixinə görə sıfırlanmış aya pul yazmaq olmaz. Yazılsaydı, sonrakı
+            // geriyə düzəlişdə sətir "ödənişi var" deyə atlanardı, bərpa açarı köhnə tarixdə donardı
+            // və həmin ay bir daha nə yenidən hesablana, nə də düzgün hesabata düşə bilərdi.
+            if (payment != null && payment.FinalAmount == 0 && payment.ZeroedByExitDate.HasValue)
+                throw new Core.Exceptions.ValidationException(
+                    "Bu ay uşağın çıxış tarixinə görə sıfırlanıb — ödəniş qeyd edilə bilməz. " +
+                    "Əvvəlcə çıxış tarixini düzəldin; ay bərpa olunandan sonra ödənişi yazın.");
 
             if (payment == null)
             {
@@ -210,6 +246,9 @@ namespace App.Business.Services.Implementations
                     Status = PaymentStatus.Debt,
                     DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
                     DiscountValue = hasDiscount ? discountPercent : 0,
+                    // Dövr SÜTUNLARDA saxlanılır; qeyd yalnız ştabın oxuması üçündür (kosmetik).
+                    PeriodStartDay = startDay,
+                    PeriodEndDay = endDay,
                     Notes = isPartialPeriod ? $"Dövr: {startDay}-{endDay} ({daysActive} gün)" : null,
                     RecordedById = recordedById
                 };
@@ -225,18 +264,15 @@ namespace App.Business.Services.Implementations
             payment.RecordedById = recordedById;
 
             // Apply admin courtesy rounding (e.g. bill 203 ₼ → customer pays 200 ₼ → forgive 3 ₼)
+            // F3: qeyd ÜSTÜNDƏN YAZILMIR — RecordBulkPaymentAsync ilə eyni "əlavə et + təkrarı ötür"
+            // qaydası işləyir. Əks halda ştabın qeydləri və "Dövr:" izi səssizcə silinirdi.
+            AppendNote(payment, dto.Notes);
+
             if (dto.RoundingDiscount.HasValue && dto.RoundingDiscount.Value > 0)
             {
                 var roundingAmt = Math.Min(dto.RoundingDiscount.Value, payment.FinalAmount);
                 payment.FinalAmount = Math.Max(0, payment.FinalAmount - roundingAmt);
-                var discountNote = $"Yuvarlaqlaşdırma endirimi: {roundingAmt:F2} ₼";
-                payment.Notes = string.IsNullOrWhiteSpace(dto.Notes)
-                    ? discountNote
-                    : $"{dto.Notes} | {discountNote}";
-            }
-            else
-            {
-                payment.Notes = dto.Notes;
+                AppendNote(payment, $"Yuvarlaqlaşdırma endirimi: {roundingAmt:F2} ₼");
             }
 
             if (payment.PaidAmount >= payment.FinalAmount)
@@ -289,6 +325,8 @@ namespace App.Business.Services.Implementations
             var discountPercent = child.DiscountPercentage ?? 0;
             var hasDiscount = discountPercent > 0;
             var now = _dt.Now;
+            // Bir kütləvi çağırış = bir paket ID-si; vahid çek bu ID ilə yenidən çap olunur
+            var batchId = Guid.NewGuid();
             var processedPayments = new List<Payment>();
             decimal totalPaid = 0;
             var overridesByMonth = (dto.MonthOverrides ?? new List<MonthPeriodOverride>())
@@ -316,14 +354,22 @@ namespace App.Business.Services.Implementations
                     overridesByMonth.TryGetValue(month, out var overrideForMonth);
                     var daysInMonth = DateTime.DaysInMonth(dto.Year, month);
 
-                    int defaultStart = (child.RegistrationDate.Year == dto.Year && child.RegistrationDate.Month == month)
-                        ? child.RegistrationDate.Day
-                        : 1;
-                    int defaultEnd = (child.DeactivationDate.HasValue
-                                       && child.DeactivationDate.Value.Year == dto.Year
-                                       && child.DeactivationDate.Value.Month == month)
-                        ? child.DeactivationDate.Value.Day
-                        : daysInMonth;
+                    // Sətir artıq varsa, ONUN dövr sütunları həqiqətdir — uşağın cari DeactivationDate-i
+                    // yox. Çıxış tarixi düzəldiləndən (və ya uşaq gedib-qayıdandan) sonra gün-gün bölünmüş
+                    // ay çox vaxt DeactivationDate-in ayından FƏRQLİ olur. Əks halda: aprel 100 ₼-lik
+                    // (1-10 gün) sətir, uşağın çıxışı isə oktyabrdadır → aprel "tam ay" sanılıb 300 ₼-ə
+                    // yenidən yazılardı; kassir ekranda 100 ₼ görüb o qədər pul alsa da, kassaya 300 ₼
+                    // düşərdi. Admin override yenə də üstündür (aşağıdakı ?? sırası).
+                    int defaultStart = existing?.PeriodStartDay
+                        ?? ((child.RegistrationDate.Year == dto.Year && child.RegistrationDate.Month == month)
+                            ? child.RegistrationDate.Day
+                            : 1);
+                    int defaultEnd = existing?.PeriodEndDay
+                        ?? ((child.DeactivationDate.HasValue
+                             && child.DeactivationDate.Value.Year == dto.Year
+                             && child.DeactivationDate.Value.Month == month)
+                            ? child.DeactivationDate.Value.Day
+                            : daysInMonth);
 
                     var startDay = Math.Clamp(overrideForMonth?.StartDay ?? defaultStart, 1, daysInMonth);
                     var endDay = Math.Clamp(overrideForMonth?.EndDay ?? defaultEnd, 1, daysInMonth);
@@ -363,6 +409,9 @@ namespace App.Business.Services.Implementations
                     if (existing != null)
                     {
                         payment = existing;
+                        // Dövr sütunları HƏMİŞƏ yazılır — hesabladığımız aralıq bu sətrin həqiqətidir.
+                        payment.PeriodStartDay = startDay;
+                        payment.PeriodEndDay = endDay;
                         // If admin supplied an override (or default partial period changed), rebill the row.
                         if (payment.OriginalAmount != baseAmount || payment.FinalAmount != finalAmount)
                         {
@@ -371,13 +420,7 @@ namespace App.Business.Services.Implementations
                             payment.DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None;
                             payment.DiscountValue = hasDiscount ? discountPercent : 0;
                             // Preserve any existing audit prefix, but make sure the new period note is present.
-                            if (periodNote != null)
-                            {
-                                if (string.IsNullOrWhiteSpace(payment.Notes))
-                                    payment.Notes = periodNote;
-                                else if (!payment.Notes.Contains(periodNote, StringComparison.OrdinalIgnoreCase))
-                                    payment.Notes = $"{payment.Notes} | {periodNote}";
-                            }
+                            AppendNote(payment, periodNote);
                         }
                     }
                     else
@@ -392,6 +435,9 @@ namespace App.Business.Services.Implementations
                             PaidAmount = 0,
                             DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
                             DiscountValue = hasDiscount ? discountPercent : 0,
+                            // Dövr SÜTUNLARDA saxlanılır; qeyd kosmetikdir.
+                            PeriodStartDay = startDay,
+                            PeriodEndDay = endDay,
                             Notes = periodNote,
                             RecordedById = recordedById,
                             Status = PaymentStatus.Debt
@@ -407,14 +453,10 @@ namespace App.Business.Services.Implementations
                     payment.PaymentDate = now;
                     payment.CashboxId = dto.CashboxId;
                     payment.RecordedById = recordedById;
+                    payment.PaymentBatchId = batchId;
 
                     if (!string.IsNullOrWhiteSpace(dto.Notes))
-                    {
-                        var bulkNote = $"Kütləvi ödəniş: {dto.Notes}";
-                        payment.Notes = string.IsNullOrWhiteSpace(payment.Notes)
-                            ? bulkNote
-                            : payment.Notes + " | " + bulkNote;
-                    }
+                        AppendNote(payment, $"Kütləvi ödəniş: {dto.Notes}");
 
                     if (existing != null)
                         await _unitOfWork.Payments.UpdateAsync(payment);
@@ -463,6 +505,7 @@ namespace App.Business.Services.Implementations
             {
                 PaidCount = processedPayments.Count,
                 TotalPaid = totalPaid,
+                PaymentBatchId = processedPayments.Count > 0 ? batchId : null,
                 Payments = responses
             };
         }
@@ -507,134 +550,265 @@ namespace App.Business.Services.Implementations
 
             QuestPDF.Settings.License = LicenseType.Community;
 
-            var childName = $"{payment.Child.FirstName} {payment.Child.LastName}";
             var fileName = $"PaymentReceipt_{payment.Id}_{_dt.Now:yyyyMMddHHmmss}.pdf";
-            var logoPath = Path.Combine(_env.ContentRootPath, "Templates", "KinderGardenLogo.png");
-            var hasLogo = File.Exists(logoPath);
-            var logoBytes = hasLogo ? File.ReadAllBytes(logoPath) : null;
             var paidDate = payment.PaymentDate ?? payment.UpdatedAt ?? _dt.Now;
             var bakuTimeZone = GetBakuTimeZone();
-            var paidDateBaku = TimeZoneInfo.ConvertTimeFromUtc(
-                paidDate.Kind == DateTimeKind.Utc ? paidDate : DateTime.SpecifyKind(paidDate, DateTimeKind.Utc),
-                bakuTimeZone);
             var nowBaku = TimeZoneInfo.ConvertTimeFromUtc(_dt.Now, bakuTimeZone);
-            var paidDateAz = $"{paidDateBaku.Day} {MonthNameAz(paidDateBaku.Month)} {paidDateBaku.Year}";
-            var paymentDay = Math.Max(payment.Child.PaymentDay, 1);
-            var thisMonthDays = DateTime.DaysInMonth(payment.Year, payment.Month);
-            var periodStart = new DateTime(payment.Year, payment.Month, Math.Min(paymentDay, thisMonthDays), 0, 0, 0, DateTimeKind.Utc);
-            DateTime periodEnd;
-            if (paymentDay == 1)
+            var period = ComputeBillingPeriod(payment.Child.PaymentDay, payment.Year, payment.Month);
+            var installmentAmount = (payment.LastPaymentAmount ?? 0) > 0
+                ? payment.LastPaymentAmount.Value
+                : payment.PaidAmount;
+
+            var model = new ReceiptModel
+            {
+                ReceiptNo = $"KG-{payment.Id:D6}",
+                PaidDateAz = FormatPaidDateAz(paidDate, bakuTimeZone),
+                PeriodRange = $"{period.Start:dd.MM.yyyy}-{period.End:dd.MM.yyyy}",
+                // Tək aylıq çekdə "Aylar" sətri və sətir cədvəli yoxdur — köhnə görünüş olduğu kimi qalır
+                MonthsLine = null,
+                ShowLineItems = false,
+                ParentFullName = payment.Child.ParentFullName,
+                ParentPhone = payment.Child.ParentPhone,
+                ChildName = $"{payment.Child.FirstName} {payment.Child.LastName}",
+                GroupName = payment.Child.Group?.Name ?? "-",
+                CashboxName = payment.Cashbox?.Name ?? "-",
+                CashboxType = payment.Cashbox?.Type.ToString() ?? "-",
+                StatusText = payment.Status switch
+                {
+                    PaymentStatus.Paid => "ÖDƏNİB",
+                    PaymentStatus.PartiallyPaid => "QİSMƏN ÖDƏNİB",
+                    _ => "BORC"
+                },
+                Lines = new List<ReceiptLine>
+                {
+                    new($"{MonthNameAzTitle(payment.Month)} {payment.Year}",
+                        BuildPeriodMarker(payment),
+                        payment.FinalAmount)
+                },
+                TotalOriginal = payment.OriginalAmount,
+                TotalFinal = payment.FinalAmount,
+                TotalPaid = installmentAmount,
+                TotalRemaining = Math.Max(0, payment.FinalAmount - payment.PaidAmount),
+                Notes = payment.Notes,
+                LogoBytes = LoadLogoBytes()
+            };
+
+            return (RenderReceiptDocument(model, nowBaku), fileName);
+        }
+
+        /// <summary>
+        /// Bir uşağın seçilmiş ödəniş sətirləri üçün vahid (çoxaylı) çek yaradır.
+        /// </summary>
+        public async Task<(byte[] FileBytes, string FileName)> GenerateBulkPaymentReceiptPdfAsync(IReadOnlyCollection<int> paymentIds)
+        {
+            if (paymentIds == null || paymentIds.Count == 0)
+                throw new Core.Exceptions.ValidationException("Vahid çek üçün ən azı bir ödəniş seçilməlidir.");
+
+            var ids = paymentIds.Distinct().ToList();
+
+            var rows = await _unitOfWork.Payments.GetAllAsync(
+                p => ids.Contains(p.Id),
+                p => p.Child,
+                p => p.Child.Group,
+                p => p.Cashbox);
+
+            var missing = ids.Except(rows.Select(r => r.Id)).ToList();
+            if (missing.Count > 0)
+                throw new EntityNotFoundException($"{string.Join(", ", missing)} ID-li ödəniş tapılmadı.");
+
+            return BuildUnifiedReceipt(rows);
+        }
+
+        /// <summary>
+        /// Kütləvi ödənişin paket ID-si ilə vahid çeki yenidən yaradır (tarixçədən təkrar çap).
+        /// </summary>
+        public async Task<(byte[] FileBytes, string FileName)> GenerateBulkPaymentReceiptPdfAsync(Guid batchId)
+        {
+            if (batchId == Guid.Empty)
+                throw new Core.Exceptions.ValidationException("Ödəniş paketinin ID-si boş ola bilməz.");
+
+            var rows = await _unitOfWork.Payments.GetAllAsync(
+                p => p.PaymentBatchId == batchId,
+                p => p.Child,
+                p => p.Child.Group,
+                p => p.Cashbox);
+
+            if (rows.Count == 0)
+                throw new EntityNotFoundException($"{batchId} ID-li ödəniş paketi tapılmadı.");
+
+            return BuildUnifiedReceipt(rows);
+        }
+
+        /// <summary>
+        /// Vahid çekin məzmununu qurur: sətirlər aya görə sıralanır, cəmlər HƏR SƏTİR üzrə toplanır.
+        /// </summary>
+        private (byte[] FileBytes, string FileName) BuildUnifiedReceipt(ICollection<Payment> rows)
+        {
+            // Çek bir şagirdə aiddir — qarışıq uşaqlar üçün vahid çek olmaz
+            if (rows.Select(p => p.ChildId).Distinct().Count() > 1)
+                throw new Core.Exceptions.ValidationException("Vahid çek yalnız bir uşağa aid ödənişlər üçün yaradıla bilər.");
+
+            QuestPDF.Settings.License = LicenseType.Community;
+
+            var ordered = rows.OrderBy(p => p.Year).ThenBy(p => p.Month).ToList();
+            var first = ordered[0];
+            var last = ordered[^1];
+            var child = first.Child;
+
+            var minId = ordered.Min(p => p.Id);
+            var maxId = ordered.Max(p => p.Id);
+            var periodStart = ComputeBillingPeriod(child.PaymentDay, first.Year, first.Month).Start;
+            var periodEnd = ComputeBillingPeriod(child.PaymentDay, last.Year, last.Month).End;
+
+            var paidDate = ordered.Where(p => p.PaymentDate.HasValue).Max(p => p.PaymentDate)
+                           ?? ordered.Where(p => p.UpdatedAt.HasValue).Max(p => p.UpdatedAt)
+                           ?? _dt.Now;
+            var bakuTimeZone = GetBakuTimeZone();
+            var nowBaku = TimeZoneInfo.ConvertTimeFromUtc(_dt.Now, bakuTimeZone);
+            var cashbox = ordered.Select(p => p.Cashbox).FirstOrDefault(c => c != null);
+
+            var statusText = ordered.All(p => p.Status == PaymentStatus.Paid)
+                ? "ÖDƏNİB"
+                : ordered.Any(p => p.Status == PaymentStatus.Paid || p.Status == PaymentStatus.PartiallyPaid)
+                    ? "QİSMƏN ÖDƏNİB"
+                    : "BORC";
+
+            // Qeydlərdən "Dövr:" markeri sətir cədvəlinə düşür — qalan hissələr ümumi qeyd blokunda birləşir
+            var noteSegments = ordered
+                .SelectMany(p => SplitNotes(p.Notes))
+                .Where(s => !s.StartsWith("Dövr:", StringComparison.OrdinalIgnoreCase))
+                .Distinct()
+                .ToList();
+
+            var model = new ReceiptModel
+            {
+                ReceiptNo = $"KG-{minId:D6}-{maxId:D6}",
+                PaidDateAz = FormatPaidDateAz(paidDate, bakuTimeZone),
+                PeriodRange = $"{periodStart:dd.MM.yyyy}-{periodEnd:dd.MM.yyyy}",
+                MonthsLine = BuildMonthsLine(ordered),
+                ShowLineItems = true,
+                ParentFullName = child.ParentFullName,
+                ParentPhone = child.ParentPhone,
+                ChildName = $"{child.FirstName} {child.LastName}",
+                GroupName = child.Group?.Name ?? "-",
+                CashboxName = cashbox?.Name ?? "-",
+                CashboxType = cashbox?.Type.ToString() ?? "-",
+                StatusText = statusText,
+                Lines = ordered
+                    .Select(p => new ReceiptLine(
+                        $"{MonthNameAzTitle(p.Month)} {p.Year}",
+                        BuildPeriodMarker(p),
+                        p.FinalAmount))
+                    .ToList(),
+                TotalOriginal = ordered.Sum(p => p.OriginalAmount),
+                TotalFinal = ordered.Sum(p => p.FinalAmount),
+                TotalPaid = ordered.Sum(p => (p.LastPaymentAmount ?? 0) > 0 ? p.LastPaymentAmount!.Value : p.PaidAmount),
+                // Qalıq hər sətir üzrə ayrıca sıfıra kəsilir ki, artıq ödənilmiş ay borclu ayı gizlətməsin
+                TotalRemaining = ordered.Sum(p => Math.Max(0, p.FinalAmount - p.PaidAmount)),
+                Notes = noteSegments.Count > 0 ? string.Join(" | ", noteSegments) : null,
+                LogoBytes = LoadLogoBytes()
+            };
+
+            var fileName = $"PaymentReceipt_Bulk_{first.ChildId}_{_dt.Now:yyyyMMddHHmmss}.pdf";
+            return (RenderReceiptDocument(model, nowBaku), fileName);
+        }
+
+        /// <summary>
+        /// Çekin dövr qaydası: başlanğıc — həmin ayın ödəniş günü (ayın uzunluğuna kəsilir);
+        /// ödəniş günü 1-dirsə son — həmin ayın sonu, əks halda gələn ayın (N-1) günü.
+        /// </summary>
+        private static (DateTime Start, DateTime End) ComputeBillingPeriod(int paymentDay, int year, int month)
+        {
+            var day = Math.Max(paymentDay, 1);
+            var thisMonthDays = DateTime.DaysInMonth(year, month);
+            var start = new DateTime(year, month, Math.Min(day, thisMonthDays), 0, 0, 0, DateTimeKind.Utc);
+
+            DateTime end;
+            if (day == 1)
             {
                 // Ödəniş günü 1-dirsə: ayın 1-dən sonuna kimi (məs. 01.04 – 30.04)
-                periodEnd = new DateTime(payment.Year, payment.Month, thisMonthDays, 0, 0, 0, DateTimeKind.Utc);
+                end = new DateTime(year, month, thisMonthDays, 0, 0, 0, DateTimeKind.Utc);
             }
             else
             {
                 // Digər günlər: bu ayın N-dən gələn ayın (N-1)-nə kimi (məs. 02.05 – 01.06)
-                var nextMonth = periodStart.AddMonths(1);
-                var endDay = Math.Max(paymentDay - 1, 1);
+                var nextMonth = start.AddMonths(1);
+                var endDay = Math.Max(day - 1, 1);
                 var nextMonthDays = DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month);
-                periodEnd = new DateTime(nextMonth.Year, nextMonth.Month, Math.Min(endDay, nextMonthDays), 0, 0, 0, DateTimeKind.Utc);
-            }
-            var periodRange = $"{periodStart:dd.MM.yyyy}-{periodEnd:dd.MM.yyyy}";
-            var remaining = Math.Max(0, payment.FinalAmount - payment.PaidAmount);
-            var installmentAmount = (payment.LastPaymentAmount ?? 0) > 0
-                ? payment.LastPaymentAmount.Value
-                : payment.PaidAmount;
-            var statusText = payment.Status switch
-            {
-                PaymentStatus.Paid => "ÖDƏNİB",
-                PaymentStatus.PartiallyPaid => "QİSMƏN ÖDƏNİB",
-                _ => "BORC"
-            };
-
-            void BuildReceiptCopy(IContainer container, string copyTitle)
-            {
-                container.Border(1).BorderColor(Colors.Grey.Lighten1).Padding(9).Column(column =>
-                {
-                    column.Spacing(5);
-
-                    column.Item().Row(row =>
-                    {
-                        row.RelativeItem().Column(left =>
-                        {
-                            left.Item().Text("KINDERGARTEN BAKI").Bold().FontSize(16).FontColor(Colors.Blue.Darken2);
-                            left.Item().Text("RƏSMİ ÖDƏNİŞ ÇEKİ").SemiBold().FontSize(12).FontColor(Colors.Grey.Darken2);
-                            left.Item().Text(copyTitle).SemiBold().FontSize(9).FontColor(Colors.Grey.Darken1);
-                        });
-
-                        if (logoBytes != null)
-                        {
-                            row.ConstantItem(126).AlignRight().Height(74).Image(logoBytes, ImageScaling.FitArea);
-                        }
-                    });
-
-                    column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-
-                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Row(row =>
-                    {
-                        row.RelativeItem().Column(c =>
-                        {
-                            c.Item().Text($"Çek №: KG-{payment.Id:D6}").Bold();
-                            c.Item().Text($"Tarix: {paidDateAz}");
-                            c.Item().Text($"Dövr: {periodRange}");
-                        });
-
-                        row.ConstantItem(140).AlignRight().Column(c =>
-                        {
-                            c.Item().Text("Status").FontSize(9).FontColor(Colors.Grey.Darken1);
-                            c.Item().Background(Colors.Blue.Lighten4).Padding(6)
-                                .AlignCenter().Text(statusText).Bold().FontColor(Colors.Blue.Darken3);
-                        });
-                    });
-
-                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Column(c =>
-                    {
-                        c.Spacing(4);
-                        c.Item().Text("Ödəyici məlumatı").SemiBold().FontColor(Colors.Grey.Darken2);
-                        c.Item().Text($"Valideyn: {payment.Child.ParentFullName}");
-                        c.Item().Text($"Əlaqə: {payment.Child.ParentPhone}");
-                        c.Item().Text($"Uşaq: {childName}");
-                        c.Item().Text($"Qrup: {payment.Child.Group?.Name ?? "-"}");
-                        c.Item().Text($"Kassa: {payment.Cashbox?.Name ?? "-"} ({payment.Cashbox?.Type.ToString() ?? "-"})");
-                    });
-
-                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Table(table =>
-                    {
-                        table.ColumnsDefinition(columns =>
-                        {
-                            columns.RelativeColumn(3);
-                            columns.RelativeColumn(2);
-                        });
-
-                        table.Cell().PaddingBottom(4).Text("Açıqlama").SemiBold();
-                        table.Cell().PaddingBottom(4).AlignRight().Text("Məbləğ").SemiBold();
-
-                        table.Cell().Text("Əsas ödəniş");
-                        table.Cell().AlignRight().Text($"{payment.OriginalAmount:F2} AZN");
-
-                        table.Cell().Text("Yekun məbləğ").SemiBold();
-                        table.Cell().AlignRight().Text($"{payment.FinalAmount:F2} AZN").SemiBold();
-
-                        table.Cell().Text("Ödənilmiş məbləğ").SemiBold();
-                        table.Cell().AlignRight().Text($"{installmentAmount:F2} AZN").SemiBold().FontColor(Colors.Green.Darken2);
-
-                        table.Cell().Text("Qalıq borc");
-                        table.Cell().AlignRight().Text($"{remaining:F2} AZN").FontColor(remaining > 0 ? Colors.Red.Darken1 : Colors.Green.Darken2);
-                    });
-
-                    if (!string.IsNullOrWhiteSpace(payment.Notes))
-                        column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Text($"Qeyd: {payment.Notes}");
-
-                    column.Item().PaddingTop(7).Row(row =>
-                    {
-                        row.RelativeItem().Text("Qəbul edən: __________________").FontSize(9);
-                        row.RelativeItem().AlignRight().Text("İmza: __________________").FontSize(9);
-                    });
-                });
+                end = new DateTime(nextMonth.Year, nextMonth.Month, Math.Min(endDay, nextMonthDays), 0, 0, 0, DateTimeKind.Utc);
             }
 
-            var pdfBytes = Document.Create(container =>
+            return (start, end);
+        }
+
+        private byte[]? LoadLogoBytes()
+        {
+            var logoPath = Path.Combine(_env.ContentRootPath, "Templates", "KinderGardenLogo.png");
+            return File.Exists(logoPath) ? File.ReadAllBytes(logoPath) : null;
+        }
+
+        private static string FormatPaidDateAz(DateTime paidDate, TimeZoneInfo bakuTimeZone)
+        {
+            var paidDateBaku = TimeZoneInfo.ConvertTimeFromUtc(
+                paidDate.Kind == DateTimeKind.Utc ? paidDate : DateTime.SpecifyKind(paidDate, DateTimeKind.Utc),
+                bakuTimeZone);
+            return $"{paidDateBaku.Day} {MonthNameAz(paidDateBaku.Month)} {paidDateBaku.Year}";
+        }
+
+        private static IEnumerable<string> SplitNotes(string? notes)
+        {
+            if (string.IsNullOrWhiteSpace(notes)) return Array.Empty<string>();
+            return notes.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        }
+
+        /// <summary>
+        /// Çek sətrindəki dövr markerini SÜTUNLARDAN qurur (qeyd mətnindən DEYİL).
+        /// Tam ay üçün marker göstərilmir.
+        /// </summary>
+        private static string? BuildPeriodMarker(Payment payment)
+        {
+            if (!payment.PeriodStartDay.HasValue || !payment.PeriodEndDay.HasValue) return null;
+
+            var daysInMonth = DateTime.DaysInMonth(payment.Year, payment.Month);
+            var startDay = payment.PeriodStartDay.Value;
+            var endDay = payment.PeriodEndDay.Value;
+            if (startDay <= 1 && endDay >= daysInMonth) return null;
+
+            var daysActive = Math.Max(0, endDay - startDay + 1);
+            return $"Dövr: {startDay}-{endDay} ({daysActive} gün)";
+        }
+
+        /// <summary>
+        /// Seçilmiş aylar ardıcıldırsa diapazon, deyilsə hər ay ayrıca sadalanır.
+        /// </summary>
+        private static string BuildMonthsLine(IReadOnlyList<Payment> ordered)
+        {
+            var first = ordered[0];
+            var last = ordered[^1];
+            var singleYear = ordered.All(p => p.Year == first.Year);
+
+            if (ordered.Count == 1)
+                return $"Aylar: {MonthNameAzTitle(first.Month)} {first.Year}";
+
+            var keys = ordered.Select(p => p.Year * 12 + (p.Month - 1)).Distinct().OrderBy(k => k).ToList();
+            var contiguous = keys.Count == ordered.Count && keys[^1] - keys[0] == keys.Count - 1;
+
+            if (contiguous)
+                return singleYear
+                    ? $"Aylar: {MonthNameAzTitle(first.Month)}-{MonthNameAzTitle(last.Month)} {first.Year}"
+                    : $"Aylar: {MonthNameAzTitle(first.Month)} {first.Year}-{MonthNameAzTitle(last.Month)} {last.Year}";
+
+            return singleYear
+                ? $"Aylar: {string.Join(", ", ordered.Select(p => MonthNameAzTitle(p.Month)))} {first.Year}"
+                : $"Aylar: {string.Join(", ", ordered.Select(p => $"{MonthNameAzTitle(p.Month)} {p.Year}"))}";
+        }
+
+        private static byte[] RenderReceiptDocument(ReceiptModel model, DateTime nowBaku)
+        {
+            // Çoxaylı çekdə iki nüsxə bir A4-ə sığmır — müəssisə nüsxəsi ayrı səhifəyə keçir (MinHeight yoxdur)
+            var separatePages = model.ShowLineItems;
+
+            return Document.Create(container =>
             {
                 container.Page(page =>
                 {
@@ -645,9 +819,19 @@ namespace App.Business.Services.Implementations
                     page.Content().Column(column =>
                     {
                         column.Spacing(5);
-                        column.Item().MinHeight(320).Element(x => BuildReceiptCopy(x, "Müştəri nüsxəsi"));
-                        column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-                        column.Item().MinHeight(320).Element(x => BuildReceiptCopy(x, "Müəssisə nüsxəsi"));
+
+                        if (separatePages)
+                        {
+                            column.Item().Element(x => BuildReceiptCopy(x, model, "Müştəri nüsxəsi"));
+                            column.Item().PageBreak();
+                            column.Item().Element(x => BuildReceiptCopy(x, model, "Müəssisə nüsxəsi"));
+                        }
+                        else
+                        {
+                            column.Item().MinHeight(320).Element(x => BuildReceiptCopy(x, model, "Müştəri nüsxəsi"));
+                            column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                            column.Item().MinHeight(320).Element(x => BuildReceiptCopy(x, model, "Müəssisə nüsxəsi"));
+                        }
                     });
 
                     page.Footer().Column(footer =>
@@ -657,9 +841,140 @@ namespace App.Business.Services.Implementations
                     });
                 });
             }).GeneratePdf();
-
-            return (pdfBytes, fileName);
         }
+
+        private static void BuildReceiptCopy(IContainer container, ReceiptModel model, string copyTitle)
+        {
+            container.Border(1).BorderColor(Colors.Grey.Lighten1).Padding(9).Column(column =>
+            {
+                column.Spacing(5);
+
+                column.Item().Row(row =>
+                {
+                    row.RelativeItem().Column(left =>
+                    {
+                        left.Item().Text("KINDERGARTEN BAKI").Bold().FontSize(16).FontColor(Colors.Blue.Darken2);
+                        left.Item().Text("RƏSMİ ÖDƏNİŞ ÇEKİ").SemiBold().FontSize(12).FontColor(Colors.Grey.Darken2);
+                        left.Item().Text(copyTitle).SemiBold().FontSize(9).FontColor(Colors.Grey.Darken1);
+                    });
+
+                    if (model.LogoBytes != null)
+                    {
+                        row.ConstantItem(126).AlignRight().Height(74).Image(model.LogoBytes, ImageScaling.FitArea);
+                    }
+                });
+
+                column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+
+                column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Row(row =>
+                {
+                    row.RelativeItem().Column(c =>
+                    {
+                        c.Item().Text($"Çek №: {model.ReceiptNo}").Bold();
+                        c.Item().Text($"Tarix: {model.PaidDateAz}");
+                        c.Item().Text($"Dövr: {model.PeriodRange}");
+                        if (!string.IsNullOrWhiteSpace(model.MonthsLine))
+                            c.Item().Text(model.MonthsLine);
+                    });
+
+                    row.ConstantItem(140).AlignRight().Column(c =>
+                    {
+                        c.Item().Text("Status").FontSize(9).FontColor(Colors.Grey.Darken1);
+                        c.Item().Background(Colors.Blue.Lighten4).Padding(6)
+                            .AlignCenter().Text(model.StatusText).Bold().FontColor(Colors.Blue.Darken3);
+                    });
+                });
+
+                column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Column(c =>
+                {
+                    c.Spacing(4);
+                    c.Item().Text("Ödəyici məlumatı").SemiBold().FontColor(Colors.Grey.Darken2);
+                    c.Item().Text($"Valideyn: {model.ParentFullName}");
+                    c.Item().Text($"Əlaqə: {model.ParentPhone}");
+                    c.Item().Text($"Uşaq: {model.ChildName}");
+                    c.Item().Text($"Qrup: {model.GroupName}");
+                    c.Item().Text($"Kassa: {model.CashboxName} ({model.CashboxType})");
+                });
+
+                column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Table(table =>
+                {
+                    table.ColumnsDefinition(columns =>
+                    {
+                        columns.RelativeColumn(3);
+                        columns.RelativeColumn(2);
+                    });
+
+                    table.Cell().PaddingBottom(4).Text("Açıqlama").SemiBold();
+                    table.Cell().PaddingBottom(4).AlignRight().Text("Məbləğ").SemiBold();
+
+                    // Yalnız çoxaylı çekdə: hər ay üçün ayrıca sətir
+                    if (model.ShowLineItems)
+                    {
+                        foreach (var line in model.Lines)
+                        {
+                            var description = string.IsNullOrWhiteSpace(line.PeriodMarker)
+                                ? line.Description
+                                : $"{line.Description} — {line.PeriodMarker}";
+
+                            table.Cell().PaddingBottom(2).Text(description);
+                            table.Cell().PaddingBottom(2).AlignRight().Text($"{line.Amount:F2} AZN");
+                        }
+
+                        table.Cell().ColumnSpan(2).PaddingBottom(4)
+                            .LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                    }
+
+                    table.Cell().Text("Əsas ödəniş");
+                    table.Cell().AlignRight().Text($"{model.TotalOriginal:F2} AZN");
+
+                    table.Cell().Text("Yekun məbləğ").SemiBold();
+                    table.Cell().AlignRight().Text($"{model.TotalFinal:F2} AZN").SemiBold();
+
+                    table.Cell().Text("Ödənilmiş məbləğ").SemiBold();
+                    table.Cell().AlignRight().Text($"{model.TotalPaid:F2} AZN").SemiBold().FontColor(Colors.Green.Darken2);
+
+                    table.Cell().Text("Qalıq borc");
+                    table.Cell().AlignRight().Text($"{model.TotalRemaining:F2} AZN").FontColor(model.TotalRemaining > 0 ? Colors.Red.Darken1 : Colors.Green.Darken2);
+                });
+
+                if (!string.IsNullOrWhiteSpace(model.Notes))
+                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Text($"Qeyd: {model.Notes}");
+
+                column.Item().PaddingTop(7).Row(row =>
+                {
+                    row.RelativeItem().Text("Qəbul edən: __________________").FontSize(9);
+                    row.RelativeItem().AlignRight().Text("İmza: __________________").FontSize(9);
+                });
+            });
+        }
+
+        /// <summary>Çek şablonuna ötürülən vahid model — həm tək aylıq, həm çoxaylı çek üçün.</summary>
+        private sealed class ReceiptModel
+        {
+            public string ReceiptNo { get; init; } = string.Empty;
+            public string PaidDateAz { get; init; } = string.Empty;
+            public string PeriodRange { get; init; } = string.Empty;
+            public string? MonthsLine { get; init; }
+            public string ParentFullName { get; init; } = string.Empty;
+            public string ParentPhone { get; init; } = string.Empty;
+            public string ChildName { get; init; } = string.Empty;
+            public string GroupName { get; init; } = string.Empty;
+            public string CashboxName { get; init; } = string.Empty;
+            public string CashboxType { get; init; } = string.Empty;
+            public string StatusText { get; init; } = string.Empty;
+            /// <summary>Cədvəldə aylıq sətirlər göstərilsin (yalnız vahid çek)</summary>
+            public bool ShowLineItems { get; init; }
+            public List<ReceiptLine> Lines { get; init; } = new();
+            public decimal TotalOriginal { get; init; }
+            public decimal TotalFinal { get; init; }
+            public decimal TotalPaid { get; init; }
+            public decimal TotalRemaining { get; init; }
+            public string? Notes { get; init; }
+            public byte[]? LogoBytes { get; init; }
+        }
+
+        /// <summary>Çekin bir sətri: ay adı + ili, qeyddəki dövr markeri və həmin ayın yekun məbləği.</summary>
+        private sealed record ReceiptLine(string Description, string? PeriodMarker, decimal Amount);
 
         public async Task DeletePaymentAsync(int paymentId)
         {
@@ -675,7 +990,8 @@ namespace App.Business.Services.Implementations
         /// </summary>
         public async Task<IEnumerable<DebtorListItem>> GetDebtorsAsync()
         {
-            var debts = await _unitOfWork.Payments.GetDebtorsAsync();
+            // Güzəşt qaydası üçün qiymətləndirmə tarixi aşağı ötürülür (D1)
+            var debts = await _unitOfWork.Payments.GetDebtorsAsync(_dt.Now);
             return BuildDebtorList(debts);
         }
 
@@ -844,5 +1160,14 @@ namespace App.Business.Services.Implementations
             12 => "dekabr",
             _ => month.ToString()
         };
+
+        /// <summary>Ay adı baş hərflə — Azərbaycan əlifbasında kiçik "i"-nin böyüyü "İ"-dir.</summary>
+        private static string MonthNameAzTitle(int month)
+        {
+            var name = MonthNameAz(month);
+            if (string.IsNullOrEmpty(name)) return name;
+            var first = name[0] == 'i' ? "İ" : name[..1].ToUpperInvariant();
+            return first + name[1..];
+        }
     }
 }

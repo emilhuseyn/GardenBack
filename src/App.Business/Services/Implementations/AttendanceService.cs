@@ -270,8 +270,12 @@ namespace App.Business.Services.Implementations
             var dayStart = date.ToDateTime(TimeOnly.MinValue);
 
             // Get all active children (not deactivated)
+            // DeactivationDate = uşağın FAKTİKİ son iştirak günü (inclusive) və modal onu gecə yarısı
+            // (00:00) göndərir. ">" işlədilsəydi, çıxış günü hesaba "gəlib" kimi yazıldığı halda
+            // davamiyyət süpürgəsindən düşərdi. ">=" həm 00:00, həm də köhnə saatlı sətirlər üçün
+            // düzgündür: 26.07 09:00 >= 26.07 00:00 → daxil, 27.07 00:00 üçün isə xaric (D-D).
             var allChildren = await _unitOfWork.Children.FindAsync(
-                c => c.DeactivationDate == null || c.DeactivationDate > dayStart);
+                c => c.DeactivationDate == null || c.DeactivationDate >= dayStart);
 
             // Get existing attendance records for target date
             var todayAttendances = await _unitOfWork.Attendances.GetDailyAttendanceAsync(date);

@@ -42,6 +42,17 @@ namespace App.Business.Services.Interfaces
         Task<(byte[] FileBytes, string FileName)> GeneratePaymentReceiptPdfAsync(int paymentId);
 
         /// <summary>
+        /// Bir uşağın seçilmiş ödəniş sətirləri üçün vahid (çoxaylı) PDF çek yaradır.
+        /// Bütün sətirlər eyni uşağa aid olmalıdır.
+        /// </summary>
+        Task<(byte[] FileBytes, string FileName)> GenerateBulkPaymentReceiptPdfAsync(IReadOnlyCollection<int> paymentIds);
+
+        /// <summary>
+        /// Kütləvi ödənişin paket ID-si ilə vahid çeki yenidən yaradır (tarixçədən təkrar çap).
+        /// </summary>
+        Task<(byte[] FileBytes, string FileName)> GenerateBulkPaymentReceiptPdfAsync(Guid batchId);
+
+        /// <summary>
         /// Soft deletes a payment by id.
         /// </summary>
         Task DeletePaymentAsync(int paymentId);
