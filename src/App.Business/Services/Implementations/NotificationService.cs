@@ -27,7 +27,13 @@ namespace App.Business.Services.Implementations
         private readonly string _sofficePath;
 
         // WABA template names
-        private const string TplReminder  = "odenis_xatirlatma_2"; // {{1}} = ödəniş tarixi
+        // F5: _2 DEYİL, _1. Produksiya sübutu: "odenis_xatirlatma_2" Meta-da MARKETING kateqoriyasındadır
+        // və valideynlərə ÇATMIR (marketing şablonları Meta tərəfindən limitlənir/opt-out ilə bloklanır),
+        // "odenis_xatirlatma_1" isə UTILITY + APPROVED-dur və normal çatdırılır.
+        // Hər iki təsdiqlənmiş şablon EYNİ bir gövdə parametri alır ({{1}} = ödəniş tarixi, dd.MM.yyyy),
+        // ona görə bu yalnız bir sabitin dəyişməsidir — payload forması eynidir.
+        // soft10 _2-ni yenidən UTILITY kimi təsdiqləyəndən sonra geri qaytarılmalıdır.
+        private const string TplReminder  = "odenis_xatirlatma_1"; // {{1}} = ödəniş tarixi
         private const string TplPayment   = "odenis_olduqda_1";    // {{1}} = tarix, {{2}} = məbləğ, {{3}} = qalıq borc
         private const string TplOverdue   = "odenis_gecikdikde";   // parametr yoxdur
 
@@ -193,24 +199,29 @@ namespace App.Business.Services.Implementations
             var today = _dt.Now.Date;
 
             // Bildiriş MƏHZ borclu siyahısının oxuduğu sətir dəstindən sürülür (D3/D4).
-            // GetDebtorsAsync ödənilməmiş HƏR ayı qaytarır və güzəşti SƏTİR-SƏTİR tətbiq edir
-            // (cari ay güzəşt bitənə qədər gizli, keçmiş aylar həmişə borc).
             // Əvvəl iş yalnız CARİ ayın sətrinə baxırdı və bu iki səhvi doğururdu:
             //   • sətir ÜMUMİYYƏTLƏ yoxdursa (məs. ayın ortasında qəbul olunmuş uşaq) `payment?.Status`
             //     Paid olmadığı üçün mesaj hər gün gedirdi — halbuki borc sıfırdır;
             //   • keçmiş ayın borcu varsa, amma cari ay ödənilibsə, heç nə göndərilmirdi.
+            // C1: GetDebtorsAsync ARTIQ güzəşt tətbiq etmir (borc siyahıda dərhal görünməlidir),
+            // ona görə gecikmə sərhədi İNDİ BURADA, sətir-sətir tətbiq olunur — mesaj yalnız
+            // gün > DebtGrace.Deadline(bugün, uşağın PaymentDay) olduqda gedir.
+            // Sətirlər artıq yaddaşdadır (repozitori ToListAsync edir və Child-ı Include edir),
+            // ona görə bu filtr nə əlavə sorğu, nə də N+1 yaradır.
             // F4: GƏLƏCƏK ayın sətri gecikmiş sayılmır. Admin aylıq generasiyanı gələcək ay üçün
             // işə sala bilər (endpoint tarixi yoxlamır) — məs. iyulda 2026-08 sətirləri yaranır.
             // Güzəşt yalnız CARİ aya tətbiq olunduğu üçün belə sətirlər dərhal "borc" kimi qayıdır
             // və hələ BAŞLAMAMIŞ ay üçün valideynə hər gün gecikme_wp gedərdi.
-            // GetDebtorsAsync-ə TOXUNMURUQ (borclu siyahısı öz davranışını saxlayır) — sərhəd
-            // yalnız bu bildiriş işindədir.
             var currentMonthIndex = today.Year * 12 + today.Month;
 
-            var debtRows = (await _unitOfWork.Payments.GetDebtorsAsync(_dt.Now))
+            var debtRows = (await _unitOfWork.Payments.GetDebtorsAsync())
                 // Müdafiə: qalıq həqiqətən müsbət olmalıdır (köhnə/uyğunsuz məlumat üçün).
                 .Where(p => p.FinalAmount > p.PaidAmount)
                 .Where(p => p.Year * 12 + p.Month <= currentMonthIndex)
+                // Güzəşt: cari ayın sətri ödəniş günü + DebtGrace.GraceDays keçənə qədər mesaj
+                // doğurmur; keçmiş ayların sətri heç vaxt güzəştdə deyil.
+                .Where(p => p.Child != null
+                         && !DebtGrace.IsWithinGrace(today, p.Child.PaymentDay, p.Month, p.Year))
                 .ToList();
 
             // Uşaq başına BİR mesaj — neçə ay gecikməsindən asılı olmayaraq.
@@ -274,7 +285,24 @@ namespace App.Business.Services.Implementations
             if (!await IsMessagingEnabledAsync())
                 return DisabledResult();
 
-            var debts   = await _unitOfWork.Payments.GetDebtorsAsync(_dt.Now);
+            var today = _dt.Now.Date;
+
+            // F3: C1-dən sonra GetDebtorsAsync GÜZƏŞT TƏTBİQ ETMİR — sətir yarandığı andan borc kimi
+            // qayıdır. Bu əl ilə işə salınan toplu xatırlatma isə birbaşa həmin siyahıdan sürülürdü,
+            // yəni ödəniş günü HƏLƏ GƏLMƏMİŞ valideynə də mesaj gedirdi — üstəlik SendPaymentReminderAsync
+            // ödəniş tarixi kimi BUGÜNÜ yazır (məs. PaymentDay=15 olan valideyn 3 avqustda
+            // "ödəniş tarixi 03.08.2026" mesajı alırdı).
+            // Ona görə gündəlik gecikmə işi (SendPaymentOverdueRemindersAsync) ilə EYNİ sətir-sətir
+            // filtr QRUPLAŞDIRMADAN ƏVVƏL tətbiq olunur: gələcək ayın sətri atılır, cari ayın sətri isə
+            // yalnız güzəşt pəncərəsi bitəndən sonra sayılır. Qalan hər şey olduğu kimidir.
+            var currentMonthIndex = today.Year * 12 + today.Month;
+
+            var debts = (await _unitOfWork.Payments.GetDebtorsAsync())
+                .Where(p => p.Year * 12 + p.Month <= currentMonthIndex)
+                .Where(p => p.Child != null
+                         && !DebtGrace.IsWithinGrace(today, p.Child.PaymentDay, p.Month, p.Year))
+                .ToList();
+
             var grouped = debts.GroupBy(p => p.ChildId).ToList();
             _logger.LogInformation("WABA toplu xatırlatma: {Count} borclu", grouped.Count);
 

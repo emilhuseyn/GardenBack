@@ -47,8 +47,9 @@ namespace App.Business.DTOs.Children
     public class DeactivateChildRequest
     {
         /// <summary>
-        /// Uşağın FAKTİKİ son iştirak günü — həmin gün də hesablanır (D2).
-        /// Boşdursa bugün. Qəbul tarixindən əvvəl və ya gələcək tarix ola bilməz.
+        /// Uşağın ARTIQ GƏLMƏDİYİ İLK gün — həmin gün HESABLANMIR (C2, eksklüziv).
+        /// Məs. 01.08 verilsə avqust ayı 0 gün (0 ₼) olur.
+        /// Boşdursa bugün. Qəbul tarixindən əvvəl və ya sabahdan gec ola bilməz.
         /// </summary>
         public DateTime? EffectiveDate { get; set; }
     }
@@ -124,9 +125,12 @@ namespace App.Business.DTOs.Children
         public decimal FinalAmount { get; set; }
         /// <summary>Sətirdəki real ödəniş (heç vaxt dəyişdirilmir).</summary>
         public decimal PaidAmount { get; set; }
-        /// <summary>Hesablanan dövrün başlanğıc günü.</summary>
+        /// <summary>Hesablanan dövrün başlanğıc günü (daxil).</summary>
         public int PeriodStartDay { get; set; }
-        /// <summary>Hesablanan dövrün son günü (daxil).</summary>
+        /// <summary>
+        /// Hesablanan dövrün SON HESABLANAN günü (daxil) — çıxış tarixinin bir gün əvvəli.
+        /// Uşaq həmin ay heç gəlməyibsə başlanğıcdan kiçik olur (boş aralıq, məs. 1/0).
+        /// </summary>
         public int PeriodEndDay { get; set; }
         /// <summary>Sətir bu əməliyyatla YARADILDI (əvvəllər mövcud deyildi).</summary>
         public bool Created { get; set; }

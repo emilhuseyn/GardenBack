@@ -74,7 +74,27 @@ namespace App.Business.DTOs.Payments
         /// </summary>
         public Guid? PaymentBatchId { get; set; }
 
+        /// <summary>
+        /// Yenidən hesablanan məbləği ARTIQ ödənilmiş məbləğdən AZ çıxan aylar.
+        /// Real pula toxunulmur (ödənilmiş məbləğ olduğu kimi qalır), amma fərq ştaba bildirilir ki,
+        /// geri qaytarma lazım olub-olmadığına özləri qərar versinlər.
+        /// </summary>
+        public List<BulkOverpaidMonth> OverpaidMonths { get; set; } = new();
+
         public List<PaymentResponse> Payments { get; set; } = new();
+    }
+
+    /// <summary>Kütləvi ödənişdə yenidən hesablama nəticəsində artıq ödəniş aşkarlanan ay.</summary>
+    public class BulkOverpaidMonth
+    {
+        public int PaymentId { get; set; }
+        public int Month { get; set; }
+        public int Year { get; set; }
+        /// <summary>Valideynin artıq ödədiyi məbləğ (dəyişdirilmir).</summary>
+        public decimal PaidAmount { get; set; }
+        /// <summary>Yenidən hesablanan yeni məbləğ.</summary>
+        public decimal NewFinalAmount { get; set; }
+        public decimal Difference { get; set; }
     }
 
     /// <summary>

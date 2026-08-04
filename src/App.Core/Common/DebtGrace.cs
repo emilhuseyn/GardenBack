@@ -1,10 +1,17 @@
 namespace App.Core.Common
 {
     /// <summary>
-    /// Borc güzəşti (grace) — ödəniş gününə hələ vaxt varkən sətir borc sayılmır.
-    /// Qayda: uşağın PaymentDay + GraceDays gününə qədər CARİ ayın sətri gizlidir.
-    /// Keçmiş ayların ödənilməmiş sətri həmişə borcdur — onlara güzəşt yoxdur.
-    /// Bütün borc nöqtələri (borclu siyahısı, uşaq detalı, gecikmə bildirişi) yalnız buradan oxumalıdır.
+    /// Borc güzəşti (grace) — ödəniş gününə hələ vaxt varkən valideynə GECİKMƏ MESAJI göndərilmir.
+    /// Qayda: uşağın PaymentDay + GraceDays gününə qədər CARİ ayın sətri hələ gecikmiş sayılmır.
+    /// Keçmiş ayların ödənilməmiş sətri həmişə gecikmişdir — onlara güzəşt yoxdur.
+    ///
+    /// C1 (ştabın qərarı): güzəşt ARTIQ BORCU GİZLƏTMİR. Borclu siyahısı (PaymentRepository.GetDebtorsAsync)
+    /// və uşaq kartının TotalDebt-i (ChildService.GetChildByIdAsync) sətri yarandığı andan göstərir —
+    /// əvvəl ayın əvvəlində "Borclular" tamamilə boş görünürdü və ştab sistemi sınıq sanırdı.
+    /// Bu sinfin YEGANƏ istifadəçisi indi gündəlik WhatsApp işidir:
+    /// NotificationService.SendPaymentOverdueRemindersAsync (sətir-sətir IsWithinGrace).
+    ///
+    /// Arifmetika DƏYİŞMƏYİB — sərhəd əvvəlki kimi sübut olunmuş haldadır.
     /// </summary>
     public static class DebtGrace
     {
@@ -36,6 +43,9 @@ namespace App.Core.Common
         /// Gecikmə bildirişi üçün: güzəşt pəncərəsi tamamilə bitibsə true.
         /// <see cref="IsWithinGrace"/> ilə eyni sərhəddin TAM əksidir — aralarında nə boşluq,
         /// nə də üst-üstə düşmə ola bilməz.
+        /// QEYD: hazırda HEÇ BİR YERDƏN ÇAĞIRILMIR (bildiriş işi ay/il də yoxlamalı olduğu üçün
+        /// <see cref="IsWithinGrace"/> işlədir). Sərhədin ikinci, oxunaqlı ifadəsi kimi saxlanılır —
+        /// silinsə, gələcəkdə kimsə eyni arifmetikanı yenidən, çox güman fərqli yazacaq.
         /// </summary>
         public static bool IsOverdue(DateTime asOf, int paymentDay)
         {

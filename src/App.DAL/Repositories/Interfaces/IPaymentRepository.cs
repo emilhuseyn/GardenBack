@@ -7,10 +7,11 @@ namespace App.DAL.Repositories.Interfaces
     {
         Task<IEnumerable<Payment>> GetPaymentsByChildAsync(int childId);
         /// <summary>
-        /// Aktiv uşaqların borcları. <paramref name="asOf"/> güzəşt qaydasının hesablandığı tarixdir
-        /// (repozitoridə DateTime.Now çağırılmır — tarix həmişə xaricdən verilir).
+        /// Aktiv uşaqların ödənilməmiş sətirləri — TARİX ŞƏRTİ YOXDUR (C1).
+        /// Borc sətir yarandığı andan görünür; gecikmə (DebtGrace) yalnız gündəlik WhatsApp işində
+        /// tətbiq olunur, ona görə burada asOf parametrinə ehtiyac qalmadı.
         /// </summary>
-        Task<IEnumerable<Payment>> GetDebtorsAsync(DateTime asOf);
+        Task<IEnumerable<Payment>> GetDebtorsAsync();
         Task<IEnumerable<Payment>> GetInactiveDebtorsAsync();
         Task<IEnumerable<Payment>> GetMonthlyPaymentsAsync(int month, int year);
         Task<IEnumerable<Payment>> GetDailyCollectionAsync(DateOnly date);

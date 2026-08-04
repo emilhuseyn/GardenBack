@@ -270,12 +270,12 @@ namespace App.Business.Services.Implementations
             var dayStart = date.ToDateTime(TimeOnly.MinValue);
 
             // Get all active children (not deactivated)
-            // DeactivationDate = uşağın FAKTİKİ son iştirak günü (inclusive) və modal onu gecə yarısı
-            // (00:00) göndərir. ">" işlədilsəydi, çıxış günü hesaba "gəlib" kimi yazıldığı halda
-            // davamiyyət süpürgəsindən düşərdi. ">=" həm 00:00, həm də köhnə saatlı sətirlər üçün
-            // düzgündür: 26.07 09:00 >= 26.07 00:00 → daxil, 27.07 00:00 üçün isə xaric (D-D).
+            // C2: DeactivationDate artıq uşağın GƏLMƏDİYİ İLK günüdür (EKSKLÜZİV) və modal onu gecə
+            // yarısı (00:00) göndərir. Ona görə sərhəd ">"-dir: həmin gün uşaq gəlmir, deməli qayıb
+            // da yazılmamalıdır. 05.08 00:00 çıxışı üçün 05.08 xaric (05.08 00:00 > 05.08 00:00 yanlış),
+            // 04.08 isə daxildir. Sərhəd hesabla eynidir: çıxış günü nə hesablanır, nə də qayıb sayılır.
             var allChildren = await _unitOfWork.Children.FindAsync(
-                c => c.DeactivationDate == null || c.DeactivationDate >= dayStart);
+                c => c.DeactivationDate == null || c.DeactivationDate > dayStart);
 
             // Get existing attendance records for target date
             var todayAttendances = await _unitOfWork.Attendances.GetDailyAttendanceAsync(date);

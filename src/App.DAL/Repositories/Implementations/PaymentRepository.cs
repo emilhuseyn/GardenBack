@@ -1,4 +1,3 @@
-using App.Core.Common;
 using App.Core.Entities;
 using App.Core.Enums;
 using App.DAL.Presistence;
@@ -22,32 +21,21 @@ namespace App.DAL.Repositories.Abstractions
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Payment>> GetDebtorsAsync(DateTime asOf)
+        /// <summary>
+        /// Ödənilməmiş bütün sətirlər — GÜZƏŞT FİLTRİ YOXDUR (C1).
+        /// Ştabın qərarı: borc sətir yarandığı andan görünməlidir ("Əslində, borcu göstərsin").
+        /// Əvvəl burada DebtGrace pəncərəsi tətbiq olunurdu və ayın əvvəlində "Borclular" siyahısı
+        /// tamamilə boş görünürdü (məs. 3 avqustda PaymentDay=1 üçün sərhəd 5-dir → hər avqust borcu gizli).
+        /// Gecikmə tətbiq olunan YEGANƏ yer indi gündəlik WhatsApp işidir
+        /// (NotificationService.SendPaymentOverdueRemindersAsync sətir-sətir DebtGrace tətbiq edir).
+        /// </summary>
+        public async Task<IEnumerable<Payment>> GetDebtorsAsync()
         {
-            // Güzəşt pəncərəsi (DebtGrace.GraceDays) — EF metod çağırışını SQL-ə çevirə bilmədiyi üçün
-            // arifmetika burada açıq yazılır, gün sayı isə yenə vahid sabitdən götürülür.
-            var currentMonth = asOf.Month;
-            var currentYear = asOf.Year;
-            var currentDay = asOf.Day;
-
-            // DebtGrace.Deadline sərhədi ifadə ağacında hesablana bilmir (DateTime.DaysInMonth SQL-ə
-            // çevrilmir), ona görə ayın uzunluğu SORĞUDAN ƏVVƏL C#-da hesablanıb parametr kimi ötürülür.
-            // min(PaymentDay + GraceDays, lastGraceDay) ≥ currentDay şərti iki sadə müqayisəyə bərabərdir,
-            // bu isə tam SQL-ə tərcümə olunur (heç bir client-side qiymətləndirmə yoxdur).
-            var lastGraceDay = DateTime.DaysInMonth(currentYear, currentMonth) - 1;
-
             return await DbSet
                 .Where(p => (p.Status == PaymentStatus.Debt || p.Status == PaymentStatus.PartiallyPaid)
                          && p.FinalAmount > 0
                          && (p.Child.DiscountPercentage == null || p.Child.DiscountPercentage < 100)
-                         && p.Child.Status == ChildStatus.Active
-                         // Cari ayın sətri ödəniş günü + güzəşt bitənə qədər borc sayılmır;
-                         // keçmiş ayların sətri isə həmişə borcdur.
-                         // Sərhəd ayın son gününə sıxılır — DebtGrace.IsOverdue ilə eyni gün (D-C).
-                         && !(p.Year == currentYear
-                              && p.Month == currentMonth
-                              && currentDay <= p.Child.PaymentDay + DebtGrace.GraceDays
-                              && currentDay <= lastGraceDay))
+                         && p.Child.Status == ChildStatus.Active)
                 .Include(p => p.Child)
                     .ThenInclude(c => c.Group)
                         .ThenInclude(g => g.Division)

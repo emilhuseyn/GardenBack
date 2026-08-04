@@ -104,10 +104,14 @@ namespace App.Business.Validators
                 .When(x => x.RegistrationDate.HasValue)
                 .WithMessage("Bağçaya qəbul tarixi gələcək tarix ola bilməz.");
 
+            // C2d: çıxış tarixi "artıq gəlmədiyi İLK gün"dür — bu gün gələn uşaq üçün düzgün dəyər SABAHDIR.
+            // Burada YALNIZ kobud sərhəd var (UTC ilə Bakı arasındakı 4 saat fərqi sabahı kəsməsin);
+            // dəqiq qayda (bugün + 1, Bakı vaxtı, qəbul tarixi ilə birlikdə) tək mənbədədir —
+            // ChildService.ValidateEffectiveDate. Profil redaktəsində tarix dəyişəndə həmişə oradan keçir.
             RuleFor(x => x.DeactivationDate)
-                .LessThanOrEqualTo(DateTime.UtcNow)
+                .LessThan(DateTime.UtcNow.Date.AddDays(3))
                 .When(x => x.DeactivationDate.HasValue)
-                .WithMessage("Deaktiv olma tarixi gələcək tarix ola bilməz.");
+                .WithMessage("Deaktiv olma tarixi sabahdan gec ola bilməz.");
 
             RuleFor(x => x)
                 .Must(x => !x.RegistrationDate.HasValue || !x.DeactivationDate.HasValue || x.DeactivationDate.Value >= x.RegistrationDate.Value)

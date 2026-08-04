@@ -129,7 +129,9 @@ namespace App.Business.Services.Implementations
             if (dto.DiscountPercentage.HasValue) child.DiscountPercentage = dto.DiscountPercentage.Value;
             if (dto.PaymentDay.HasValue) child.PaymentDay = dto.PaymentDay.Value;
             if (dto.RegistrationDate.HasValue) child.RegistrationDate = dto.RegistrationDate.Value;
-            if (dto.DeactivationDate.HasValue) child.DeactivationDate = dto.DeactivationDate.Value;
+            // F2: profil redaktəsi də sütuna YALNIZ gecə yarısı yazır — üç yazma nöqtəsinin
+            // (deaktivasiya, toplu deaktivasiya, profil) hamısı eyni formada saxlayır.
+            if (dto.DeactivationDate.HasValue) child.DeactivationDate = dto.DeactivationDate.Value.Date;
             if (dto.ParentFullName != null) child.ParentFullName = dto.ParentFullName;
             if (dto.SecondParentFullName != null) child.SecondParentFullName = dto.SecondParentFullName;
             if (dto.ParentPhone != null) child.ParentPhone = dto.ParentPhone;
@@ -359,14 +361,17 @@ namespace App.Business.Services.Implementations
 
         /// <summary>
         /// Sətrin hesablanan gün sayı — YALNIZ sütunlardan. Sütunlar boşdursa tam ay.
-        /// endDay - startDay + 1 arifmetikası DƏYİŞMİR.
+        /// Sütun bitişi İNKLÜZİVDİR, ona görə arifmetika endDay - startDay + 1-dir.
+        /// C2b: BOŞ dövr (uşaq həmin ay heç gəlməyib) sütunlarda bitiş &lt; başlanğıc kimi saxlanılır
+        /// (məs. 1/0). Aşağı sərhəd 0-dır və nəticə mənfi ola bilmədiyi üçün belə sətir düzgün olaraq
+        /// 0 gün oxunur — köhnə "endDay = startDay" sıxılması onu səhvən 1 gün kimi göstərirdi
+        /// və qiymət dəyişəndə (ResyncUnpaidPaymentsAfterFeeChangeAsync) 0 ₼-lıq ayı diriltmiş olardı.
         /// </summary>
         private static int PeriodDays(Payment payment, int daysInMonth)
         {
             var startDay = Math.Clamp(payment.PeriodStartDay ?? 1, 1, daysInMonth);
-            var endDay = Math.Clamp(payment.PeriodEndDay ?? daysInMonth, 1, daysInMonth);
-            if (endDay < startDay) endDay = startDay;
-            return endDay - startDay + 1;
+            var endDay = Math.Clamp(payment.PeriodEndDay ?? daysInMonth, 0, daysInMonth);
+            return Math.Max(0, endDay - startDay + 1);
         }
 
         /// <summary>
@@ -392,15 +397,12 @@ namespace App.Business.Services.Implementations
             response.AbsentDays = attendances.Count(a => a.Status == AttendanceStatus.Absent);
 
             var payments = await _unitOfWork.Payments.GetPaymentsByChildAsync(id);
-            // Borclu siyahısı ilə eyni güzəşt qaydası (D1) — əks halda UI özü-özünü təkzib edir.
-            // Güzəşt yalnız AKTİV uşağa aiddir ("ödəniş günü hələ gəlməyib"); deaktiv uşağın
-            // çıxış hesabı yekundur, ona görə Deaktivlər siyahısı (GetInactiveDebtorsAsync)
-            // güzəşt tətbiq etmir və burada da tətbiq olunmur (D5).
-            var asOf = _dt.Now;
-            var applyGrace = child.Status != ChildStatus.Inactive;
+            // C1: GÜZƏŞT YOXDUR — borc sətir yarandığı andan görünür (ştabın qərarı).
+            // Borclu siyahısı (GetDebtorsAsync) və Deaktivlər siyahısı (GetInactiveDebtorsAsync) də
+            // eyni qaydadadır, ona görə uşaq kartı ilə siyahılar arasında fərq qalmır (D1/D5).
+            // Uşağın statusuna görə ayrılan köhnə şərt (applyGrace) artıq ölü koddur — silindi.
             response.TotalDebt = payments
-                .Where(p => p.Status != PaymentStatus.Paid
-                         && !(applyGrace && DebtGrace.IsWithinGrace(asOf, child.PaymentDay, p.Month, p.Year)))
+                .Where(p => p.Status != PaymentStatus.Paid)
                 .Sum(p => p.FinalAmount - p.PaidAmount);
 
             return response;
@@ -552,6 +554,16 @@ namespace App.Business.Services.Implementations
 
             if (exitMonthPayment == null || exitMonthPayment.AbsenceConfirmed) return;
 
+            // G3: dövr BOŞDURSA (0 gün) yekunlaşdırMIRIQ. C2-dən sonra çıxış ayı qanuni olaraq
+            // 0 gün ola bilər — məs. 01.09 seçilib ("son gəlmə 31 avqust"), sentyabr 0 ₼-dir.
+            // Uşaq həmin ayın ortasında geri qayıdarsa, ay yenidən hesablana bilməlidir; yekun
+            // möhürü vursaq, aylıq generasiya (mövcud sətrə toxunmur), sonrakı yenidən hesablamalar
+            // (AbsenceConfirmed atlayır) və kütləvi ödəniş (sütunlardan 0 gün oxuyur) — hamısı
+            // ondan yan keçər və uşaq həmin ay üçün heç vaxt hesablanmazdı.
+            // Qorumaq üçün bir şey yoxdur: 0 günlük sətirdə itiriləcək məbləğ də yoxdur.
+            var exitPeriodDays = Math.Max(0, (exitMonthPayment.PeriodEndDay ?? 0) - (exitMonthPayment.PeriodStartDay ?? 1) + 1);
+            if (exitPeriodDays <= 0) return;
+
             // Məbləğ, PaidAmount və PeriodStartDay/PeriodEndDay OLDUĞU KİMİ qalır — yalnız bayraq.
             exitMonthPayment.AbsenceConfirmed = true;
             AppendNote(exitMonthPayment, FinalExitMonthNote);
@@ -561,8 +573,10 @@ namespace App.Business.Services.Implementations
 
         /// <summary>
         /// Creates or adjusts the pro-rated payment for a child leaving mid-month.
-        /// Accounts for both the registration day (if same month) and the exit day,
-        /// so a child who arrives on the 5th and leaves on the 25th is billed for 21 days, not 25.
+        /// C2: çıxış tarixi ARTIQ GƏLMƏDİYİ İLK gündür (EKSKLÜZİV) — həmin gün HESABLANMIR.
+        /// Qeydiyyat tarixi isə İNKLÜZİVDİR (uşaq qeydiyyat günü gəlir), ona görə dövr yarım-açıqdır:
+        /// [startDay, endExclusive) → daysActive = max(0, endExclusive - startDay).
+        /// Məs. 1 avqust seçilsə avqust 0 gün (0 ₼); 5-də qeydiyyat + 26-da çıxış → 21 gün.
         /// F3: çıxış ayının nəticəsi HƏMİŞƏ <paramref name="result"/>.ExitMonth-a yazılır — əməliyyatın
         /// toxunduğu heç bir ay hesabatdan kənarda qalmır (yeni yaradılan sətir də daxil).
         /// </summary>
@@ -570,14 +584,19 @@ namespace App.Business.Services.Implementations
         {
             var month = exitDate.Month;
             var year = exitDate.Year;
-            var exitDay = exitDate.Day;
             var daysInMonth = DateTime.DaysInMonth(year, month);
 
             // If the child registered in the same month, count from registration day; otherwise from day 1.
             var startDay = (child.RegistrationDate.Year == year && child.RegistrationDate.Month == month)
                 ? child.RegistrationDate.Day
                 : 1;
-            var daysActive = Math.Max(0, exitDay - startDay + 1);
+            // Bu metod HƏMİŞƏ çıxış tarixinin öz ayını hesablayır, ona görə endExclusive = çıxış günü.
+            var endExclusive = exitDate.Day;
+            var daysActive = Math.Max(0, endExclusive - startDay);
+            // C2b: SÜTUN İNKLÜZİV qalır — son HESABLANAN gün. 0 günlük dövrdə startDay - 1 olur
+            // (məs. 1 avqust çıxışı → PeriodStartDay=1, PeriodEndDay=0), yəni boş aralıq açıq şəkildə
+            // "bitiş < başlanğıc" kimi yazılır və oxuyan tərəf onu 1 gün kimi qəbul edə bilmir.
+            var lastBilledDay = endExclusive - 1;
 
             // Bill in whole manats — no qəpik fractions in the bill
             var proratedBase = Math.Round(child.MonthlyFee * daysActive / daysInMonth, 0, MidpointRounding.AwayFromZero);
@@ -588,7 +607,11 @@ namespace App.Business.Services.Implementations
                 : proratedBase;
             var finalAmount = Math.Round(rawFinal, 0, MidpointRounding.AwayFromZero);
 
-            var periodNote = $"Dövr: {startDay}-{exitDay} ({daysActive} gün)";
+            // 0 günlük dövrdə "1-0" mənasız görünərdi — marker ("Dövr:") saxlanılır ki,
+            // UpsertPeriodNote köhnə hissəni tapıb əvəz edə bilsin.
+            var periodNote = daysActive == 0
+                ? "Dövr: 0 gün (uşaq bu ay gəlməyib)"
+                : $"Dövr: {startDay}-{lastBilledDay} ({daysActive} gün)";
 
             var existing = (await _unitOfWork.Payments
                 .FindAsync(p => p.ChildId == child.Id && p.Month == month && p.Year == year))
@@ -682,9 +705,9 @@ namespace App.Business.Services.Implementations
 
                 existing.OriginalAmount = proratedBase;
                 existing.FinalAmount = finalAmount;
-                // Dövr SÜTUNLARA yazılır — hesab məntiqinin oxuduğu yeganə yer.
+                // Dövr SÜTUNLARA yazılır — hesab məntiqinin oxuduğu yeganə yer. Bitiş İNKLÜZİVDİR.
                 existing.PeriodStartDay = startDay;
-                existing.PeriodEndDay = exitDay;
+                existing.PeriodEndDay = lastBilledDay;
                 // Sətir yenidən hesablandı — artıq "çıxışa görə sıfırlanmış" deyil.
                 existing.ZeroedByExitDate = null;
                 // Aktiv şəkildə yenidən hesablanan çıxış ayı "təsdiqlənmiş yoxluq" ola bilməz (D2).
@@ -712,7 +735,7 @@ namespace App.Business.Services.Implementations
                     FinalAmount = finalAmount,
                     PaidAmount = existing.PaidAmount,
                     PeriodStartDay = startDay,
-                    PeriodEndDay = exitDay,
+                    PeriodEndDay = lastBilledDay,
                     Created = false,
                     NeedsManualReview = false
                 };
@@ -733,9 +756,9 @@ namespace App.Business.Services.Implementations
                     Status = finalAmount <= 0 ? PaymentStatus.Paid : PaymentStatus.Debt,
                     DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
                     DiscountValue = hasDiscount ? discountPercent : 0,
-                    // Dövr SÜTUNLARDA saxlanılır; qeyd kosmetikdir.
+                    // Dövr SÜTUNLARDA saxlanılır; qeyd kosmetikdir. Bitiş İNKLÜZİVDİR.
                     PeriodStartDay = startDay,
-                    PeriodEndDay = exitDay,
+                    PeriodEndDay = lastBilledDay,
                     Notes = periodNote,
                     RecordedById = "system"
                 };
@@ -755,7 +778,7 @@ namespace App.Business.Services.Implementations
                     FinalAmount = finalAmount,
                     PaidAmount = payment.PaidAmount,
                     PeriodStartDay = startDay,
-                    PeriodEndDay = exitDay,
+                    PeriodEndDay = lastBilledDay,
                     Created = true,
                     NeedsManualReview = false
                 };
@@ -763,14 +786,17 @@ namespace App.Business.Services.Implementations
         }
 
         /// <summary>
-        /// Çıxış tarixini yoxlayır: qəbul tarixindən əvvəl və ya gələcək tarix ola bilməz.
+        /// Çıxış tarixini yoxlayır: qəbul tarixindən əvvəl və ya SABAHDAN gec ola bilməz.
+        /// C2d: tarix "artıq gəlmədiyi İLK gün" olduğu üçün BU GÜN gələn uşağın düzgün tarixi SABAHDIR —
+        /// köhnə "bugündən gec ola bilməz" qaydası belə uşağı yazmağa imkan vermirdi.
         /// </summary>
         private void ValidateEffectiveDate(Child child, DateTime effectiveDate)
         {
             var today = _dt.Now.Date;
+            var maxDate = today.AddDays(1);
 
-            if (effectiveDate.Date > today)
-                throw new Core.Exceptions.ValidationException("Çıxış tarixi gələcək tarix ola bilməz.");
+            if (effectiveDate.Date > maxDate)
+                throw new Core.Exceptions.ValidationException("Çıxış tarixi sabahdan gec ola bilməz.");
 
             if (effectiveDate.Date < child.RegistrationDate.Date)
                 throw new Core.Exceptions.ValidationException(
@@ -814,7 +840,14 @@ namespace App.Business.Services.Implementations
         /// <summary>
         /// Sətir ƏVVƏLKİ çıxış tarixi ilə gün-gün bölünmüş çıxış ayıdırmı? Çıxış tarixi irəli sürüşəndə
         /// həmin ay artıq tam ay olur və tam məbləğə qaytarılmalıdır — əks halda ay yarımçıq qiymətdə donub qalır.
-        /// Dəqiq əlamət SÜTUNDADIR: PeriodEndDay köhnə çıxış gününə bərabərdir və ay tam deyil.
+        /// Dəqiq əlamət SÜTUNDADIR və C2 ilə BİR GÜN SÜRÜŞDÜ: çıxış tarixi indi "artıq gəlmədiyi İLK gün"
+        /// olduğu üçün həmin çıxışın yazdığı İNKLÜZİV PeriodEndDay = prev.Day - 1-dir
+        /// (məs. 11.04 çıxışı → aprel 1-10, PeriodEndDay = 10; 01.08 çıxışı → PeriodEndDay = 0).
+        /// Digər mühafizələr olduğu kimi qalır:
+        ///   • ay/il uyğun gəlməlidir → qeydiyyat ayının sətri (bitiş = ayın sonu) yanlış tutulmur;
+        ///   • bitiş ayın sonundan KİÇİK olmalıdır → tam ay bölünmüş sayılmır. Ayın son gününə qədər
+        ///     gələn uşağın çıxış tarixi onsuz da GƏLƏN ayın 1-idir, ona görə ay/il şərti onu kənarda saxlayır;
+        ///     ayın son gününü göstərən çıxış (məs. 31.08 = 1-30 hesablanır) isə həqiqətən bölünmüş aydır.
         /// </summary>
         private static bool IsProratedByPreviousExit(Payment payment, DateTime? previousExitDate)
         {
@@ -827,7 +860,7 @@ namespace App.Business.Services.Implementations
 
             var daysInMonth = DateTime.DaysInMonth(payment.Year, payment.Month);
             // Ay tam bölünübsə (bitiş = ayın sonu) bölünmə baş verməyib.
-            return payment.PeriodEndDay.Value == prev.Day && payment.PeriodEndDay.Value < daysInMonth;
+            return payment.PeriodEndDay.Value == prev.Day - 1 && payment.PeriodEndDay.Value < daysInMonth;
         }
 
         /// <summary>
@@ -897,7 +930,7 @@ namespace App.Business.Services.Implementations
         /// <summary>
         /// Çıxış tarixi dəyişdikdə uşağın hesablarını yenidən qurur:
         /// (0) əvvəlki (daha erkən) çıxış tarixi ilə sıfırlanmış, amma yeni çıxış ayına QƏDƏRKİ sətirlər bərpa olunur,
-        /// (1) çıxış ayının özü mövcud inclusive gün hesabı ilə yenidən bölünür,
+        /// (1) çıxış ayının özü yarım-açıq [başlanğıc, çıxış günü) hesabı ilə yenidən bölünür (C2),
         /// (2) çıxış ayından SONRAKI sətirlər yerində sıfırlanır (silinmir — unikal indeks
         ///     regenerasiyanı əbədi bloklayardı), Status = Paid olur.
         /// Real pul ödənilmiş sətirlərə toxunulmur — onlar nəticədə qaytarılır ki, geri qaytarma əl ilə edilsin.
@@ -1069,9 +1102,11 @@ namespace App.Business.Services.Implementations
 
             // FindAsync IgnoreQueryFilters() işlədir — onsuz da silinmiş sətri təkrar işləməmək üçün
             // IsDeleted şərti AÇIQ yazılır.
+            // C2: çıxış tarixi EKSKLÜZİVDİR — həmin günün ÖZÜ də uşağın gəlmədiyi ilk gündür,
+            // ona görə süpürgənin o gün yazdığı avtomatik qayıb da saxta sayılır (sərhəd >= oldu).
             var ghostAbsences = (await _unitOfWork.Attendances
                 .FindAsync(a => a.ChildId == child.Id
-                             && a.Date > exitDay
+                             && a.Date >= exitDay
                              && a.RecordedById == AutoAbsentRecordedById
                              && !a.IsDeleted))
                 .ToList();
@@ -1131,15 +1166,20 @@ namespace App.Business.Services.Implementations
         }
 
         /// <summary>
-        /// Deactivates a child. <paramref name="effectiveDate"/> — uşağın faktiki son iştirak günü.
+        /// Deactivates a child. <paramref name="effectiveDate"/> — uşağın ARTIQ GƏLMƏDİYİ İLK gün
+        /// (C2, eksklüziv): həmin gün hesablanmır. Boşdursa bugün — endpoint gövdəsiz də işləyir.
         /// </summary>
         public async Task<DeactivationRecalcResult> DeactivateChildAsync(int id, DateTime? effectiveDate = null)
         {
             var child = await _unitOfWork.Children.GetByIdAsync(id)
                 ?? throw new EntityNotFoundException($"{id} ID-li uşaq tapılmadı.");
 
-            // Tarix verilməyibsə bugün — köhnə davranış olduğu kimi qalır
-            var exitDate = effectiveDate ?? _dt.Now;
+            // Tarix verilməyibsə bugün — köhnə davranış olduğu kimi qalır.
+            // F2: sütun HƏMİŞƏ gecə yarısı saxlanılır. Gövdəsiz çağırışda (EmptyBodyBehavior.Allow)
+            // _dt.Now vaxt hissəsi gətirirdi; AttendanceService sərhədi isə dayStart (00:00) ilə
+            // müqayisə etdiyi üçün çıxış GÜNÜNÜN ÖZÜ filtri keçir və avtomatik qayıb yazılırdı —
+            // halbuki hesab məhz həmin günü artıq xaric edir. .Date iki sərhədi eyniləşdirir.
+            var exitDate = (effectiveDate ?? _dt.Now).Date;
             ValidateEffectiveDate(child, exitDate);
 
             // Təkrar deaktivasiyada köhnə tarix bərpa pəncərəsini determinləşdirir (D1)
@@ -1225,7 +1265,8 @@ namespace App.Business.Services.Implementations
                     var child = await _unitOfWork.Children.GetByIdAsync(id);
                     if (child == null) continue;
 
-                    var exitDate = effectiveDate ?? now;
+                    // F2: tək deaktivasiya ilə eyni qayda — sütun HƏMİŞƏ gecə yarısıdır.
+                    var exitDate = (effectiveDate ?? now).Date;
                     ValidateEffectiveDate(child, exitDate);
 
                     // Təkrar deaktivasiyada köhnə tarix bərpa pəncərəsini determinləşdirir (D1)

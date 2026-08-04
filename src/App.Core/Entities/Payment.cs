@@ -29,8 +29,12 @@ namespace App.Core.Entities
         public int? PeriodStartDay { get; set; }
 
         /// <summary>
-        /// Hesablanan dövrün ay daxilindəki BİTİŞ günü (həmin gün də daxildir).
-        /// Null — tam ay. Gün sayı həmişə PeriodEndDay - PeriodStartDay + 1-dir.
+        /// Hesablanan dövrün ay daxilindəki BİTİŞ günü — SON HESABLANAN gün (həmin gün də daxildir).
+        /// Null — tam ay. Gün sayı həmişə max(0, PeriodEndDay - PeriodStartDay + 1)-dir.
+        /// C2: uşağın çıxış tarixi "artıq gəlmədiyi İLK gün"dür (eksklüziv), ona görə çıxış ayında
+        /// bu sütun çıxış günündən BİR AZ ƏVVƏLdir (çıxış günü - 1). Uşaq həmin ay ümumiyyətlə
+        /// gəlməyibsə aralıq BOŞ olur və sütunlar bunu açıq şəkildə göstərir: bitiş = başlanğıc - 1
+        /// (məs. 1/0). Belə sətri 1 günlük saymaq OLMAZ.
         /// </summary>
         public int? PeriodEndDay { get; set; }
 

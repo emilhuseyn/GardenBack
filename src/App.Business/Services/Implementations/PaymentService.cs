@@ -92,7 +92,10 @@ namespace App.Business.Services.Implementations
                     var discountPercent = child.DiscountPercentage ?? 0;
                     var hasDiscount = discountPercent > 0;
 
-                    // Pro-rate for children who joined mid-month; bill in whole manats (no qəpik)
+                    // Pro-rate for children who joined mid-month; bill in whole manats (no qəpik).
+                    // C2: burada ÇIXIŞ tarixi iştirak etmir (yalnız aktiv uşaqlar üçün işləyir), ona görə
+                    // düstur DƏYİŞMİR — yarım-açıq qaydada endExclusive = daysInMonth + 1 olduğu üçün
+                    // daysInMonth + 1 - startDay ≡ daysInMonth - startDay + 1, PeriodEndDay isə eyni şəkildə daysInMonth.
                     var daysInMonth = DateTime.DaysInMonth(year, month);
                     var startDay = (child.RegistrationDate.Year == year && child.RegistrationDate.Month == month)
                         ? child.RegistrationDate.Day
@@ -213,17 +216,22 @@ namespace App.Business.Services.Implementations
                 var discountPercent = child.DiscountPercentage ?? 0;
                 var hasDiscount = discountPercent > 0;
 
-                // Pro-rate when the child joined and/or left mid-month; bill in whole manats
+                // Pro-rate when the child joined and/or left mid-month; bill in whole manats.
+                // C2: çıxış tarixi ARTIQ GƏLMƏDİYİ İLK gündür (eksklüziv), qeydiyyat tarixi isə inklüziv →
+                // yarım-açıq aralıq [startDay, endExclusive). Çıxış bu ayda deyilsə endExclusive = daysInMonth + 1,
+                // yəni köhnə "daysInMonth - startDay + 1" nəticəsi eynilə qalır.
                 var daysInMonth = DateTime.DaysInMonth(dto.Year, dto.Month);
                 var startDay = (child.RegistrationDate.Year == dto.Year && child.RegistrationDate.Month == dto.Month)
                     ? child.RegistrationDate.Day
                     : 1;
-                var endDay = (child.DeactivationDate.HasValue
+                var endExclusive = (child.DeactivationDate.HasValue
                               && child.DeactivationDate.Value.Year == dto.Year
                               && child.DeactivationDate.Value.Month == dto.Month)
                     ? child.DeactivationDate.Value.Day
-                    : daysInMonth;
-                var daysActive = Math.Max(0, endDay - startDay + 1);
+                    : daysInMonth + 1;
+                var daysActive = Math.Max(0, endExclusive - startDay);
+                // C2b: sütun İNKLÜZİV qalır — son hesablanan gün. 0 günlük dövrdə startDay - 1 olur.
+                var endDay = endExclusive - 1;
                 var isPartialPeriod = startDay != 1 || endDay != daysInMonth;
                 var baseAmount = isPartialPeriod
                     ? Math.Round(child.MonthlyFee * daysActive / daysInMonth, 0, MidpointRounding.AwayFromZero)
@@ -249,7 +257,11 @@ namespace App.Business.Services.Implementations
                     // Dövr SÜTUNLARDA saxlanılır; qeyd yalnız ştabın oxuması üçündür (kosmetik).
                     PeriodStartDay = startDay,
                     PeriodEndDay = endDay,
-                    Notes = isPartialPeriod ? $"Dövr: {startDay}-{endDay} ({daysActive} gün)" : null,
+                    Notes = isPartialPeriod
+                        ? (daysActive == 0
+                            ? "Dövr: 0 gün (uşaq bu ay gəlməyib)"
+                            : $"Dövr: {startDay}-{endDay} ({daysActive} gün)")
+                        : null,
                     RecordedById = recordedById
                 };
 
@@ -328,6 +340,7 @@ namespace App.Business.Services.Implementations
             // Bir kütləvi çağırış = bir paket ID-si; vahid çek bu ID ilə yenidən çap olunur
             var batchId = Guid.NewGuid();
             var processedPayments = new List<Payment>();
+            var overpaidMonths = new List<BulkOverpaidMonth>();
             decimal totalPaid = 0;
             var overridesByMonth = (dto.MonthOverrides ?? new List<MonthPeriodOverride>())
                 .Where(o => o.Month >= 1 && o.Month <= 12)
@@ -364,16 +377,32 @@ namespace App.Business.Services.Implementations
                         ?? ((child.RegistrationDate.Year == dto.Year && child.RegistrationDate.Month == month)
                             ? child.RegistrationDate.Day
                             : 1);
+                    // C2: uşağın DeactivationDate-i ARTIQ GƏLMƏDİYİ İLK gündür (eksklüziv) → son
+                    // hesablanan (inklüziv) gün onun BİR GÜN ƏVVƏLİDİR. Sətrin öz sütunu isə onsuz da
+                    // inklüziv saxlanılır, ona görə ondan gələn dəyər olduğu kimi götürülür.
                     int defaultEnd = existing?.PeriodEndDay
                         ?? ((child.DeactivationDate.HasValue
                              && child.DeactivationDate.Value.Year == dto.Year
                              && child.DeactivationDate.Value.Month == month)
-                            ? child.DeactivationDate.Value.Day
+                            ? child.DeactivationDate.Value.Day - 1
                             : daysInMonth);
 
                     var startDay = Math.Clamp(overrideForMonth?.StartDay ?? defaultStart, 1, daysInMonth);
-                    var endDay = Math.Clamp(overrideForMonth?.EndDay ?? defaultEnd, 1, daysInMonth);
-                    if (endDay < startDay) endDay = startDay;
+
+                    int endDay;
+                    if (overrideForMonth?.EndDay is int overrideEndDay)
+                    {
+                        // Admin ƏL İLƏ aralıq verirsə davranış DƏYİŞMİR: bitiş inklüzivdir və ən azı 1 gün qalır
+                        // (səhv yazılmış "bitiş < başlanğıc" girişi 0 ₼-lıq çek yaratmasın).
+                        endDay = Math.Clamp(overrideEndDay, 1, daysInMonth);
+                        if (endDay < startDay) endDay = startDay;
+                    }
+                    else
+                    {
+                        // Sütundan/çıxış tarixindən gələn bitiş 0 ola bilər (uşaq bu ay heç gəlməyib) —
+                        // 1-ə sıxılsaydı 0 günlük ay səhvən 1 gün kimi hesablanardı.
+                        endDay = Math.Clamp(defaultEnd, 0, daysInMonth);
+                    }
 
                     var daysActive = Math.Max(0, endDay - startDay + 1);
                     var isPartialPeriod = startDay != 1 || endDay != daysInMonth;
@@ -394,7 +423,9 @@ namespace App.Business.Services.Implementations
                     }
 
                     var periodNote = isPartialPeriod
-                        ? $"Dövr: {startDay}-{endDay} ({daysActive} gün)"
+                        ? (daysActive == 0
+                            ? "Dövr: 0 gün (uşaq bu ay gəlməyib)"
+                            : $"Dövr: {startDay}-{endDay} ({daysActive} gün)")
                         : null;
                     if (roundingApplied > 0)
                     {
@@ -447,8 +478,30 @@ namespace App.Business.Services.Implementations
 
                     // If final amount is 0 (e.g. 100% discount), just mark paid without charging anything.
                     var delta = Math.Max(0, payment.FinalAmount - payment.PaidAmount);
-                    payment.PaidAmount = payment.FinalAmount;
-                    payment.LastPaymentAmount = delta > 0 ? delta : payment.FinalAmount;
+
+                    // REAL PUL HEÇ VAXT AŞAĞI YAZILMIR. Yenidən hesablanan məbləğ artıq ödənilmişdən
+                    // az ola bilər (məs. çıxış tarixinə görə ay 0 günə düşüb). Əvvəllər burada
+                    // PaidAmount birbaşa FinalAmount-a bərabərləşdirilirdi və valideynin real ödədiyi
+                    // pul kassadan silinirdi. İndi yalnız YUXARI qalxır; fərq isə ştaba bildirilir.
+                    if (payment.FinalAmount > payment.PaidAmount)
+                    {
+                        payment.PaidAmount = payment.FinalAmount;
+                        payment.LastPaymentAmount = delta;
+                    }
+                    else if (payment.PaidAmount > payment.FinalAmount)
+                    {
+                        overpaidMonths.Add(new BulkOverpaidMonth
+                        {
+                            PaymentId = payment.Id,
+                            Month = payment.Month,
+                            Year = payment.Year,
+                            PaidAmount = payment.PaidAmount,
+                            NewFinalAmount = payment.FinalAmount,
+                            Difference = payment.PaidAmount - payment.FinalAmount
+                        });
+                        AppendNote(payment, $"Artıq ödəniş: {payment.PaidAmount - payment.FinalAmount:F2} ₼ — yoxlanılmalıdır");
+                    }
+
                     payment.Status = PaymentStatus.Paid;
                     payment.PaymentDate = now;
                     payment.CashboxId = dto.CashboxId;
@@ -491,6 +544,10 @@ namespace App.Business.Services.Implementations
             // SMS göndərilərkən xəta olarsa, bulk əməliyyatı pozulmasın.
             foreach (var p in processedPayments)
             {
+                // 0 ₼-lik ay üçün təsdiq göndərilmir — valideynə "0 azn ödəniş qəbul olundu"
+                // mesajı getməsi yanlış və çaşdırıcıdır (məs. çıxış tarixinə görə sıfırlanmış ay).
+                if (p.FinalAmount <= 0) continue;
+
                 try
                 {
                     await _notificationService.SendPaymentConfirmationAsync(p.Id);
@@ -506,6 +563,7 @@ namespace App.Business.Services.Implementations
                 PaidCount = processedPayments.Count,
                 TotalPaid = totalPaid,
                 PaymentBatchId = processedPayments.Count > 0 ? batchId : null,
+                OverpaidMonths = overpaidMonths,
                 Payments = responses
             };
         }
@@ -775,7 +833,10 @@ namespace App.Business.Services.Implementations
             if (startDay <= 1 && endDay >= daysInMonth) return null;
 
             var daysActive = Math.Max(0, endDay - startDay + 1);
-            return $"Dövr: {startDay}-{endDay} ({daysActive} gün)";
+            // C2b: boş aralıq (bitiş < başlanğıc) "1-0" kimi görünməsin.
+            return daysActive == 0
+                ? "Dövr: 0 gün"
+                : $"Dövr: {startDay}-{endDay} ({daysActive} gün)";
         }
 
         /// <summary>
@@ -990,8 +1051,8 @@ namespace App.Business.Services.Implementations
         /// </summary>
         public async Task<IEnumerable<DebtorListItem>> GetDebtorsAsync()
         {
-            // Güzəşt qaydası üçün qiymətləndirmə tarixi aşağı ötürülür (D1)
-            var debts = await _unitOfWork.Payments.GetDebtorsAsync(_dt.Now);
+            // C1: güzəşt YOXDUR — borc sətir yarandığı andan siyahıda görünür.
+            var debts = await _unitOfWork.Payments.GetDebtorsAsync();
             return BuildDebtorList(debts);
         }
 
