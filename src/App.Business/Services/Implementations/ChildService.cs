@@ -556,13 +556,16 @@ namespace App.Business.Services.Implementations
 
             // G3: dövr BOŞDURSA (0 gün) yekunlaşdırMIRIQ. C2-dən sonra çıxış ayı qanuni olaraq
             // 0 gün ola bilər — məs. 01.09 seçilib ("son gəlmə 31 avqust"), sentyabr 0 ₼-dir.
-            // Uşaq həmin ayın ortasında geri qayıdarsa, ay yenidən hesablana bilməlidir; yekun
-            // möhürü vursaq, aylıq generasiya (mövcud sətrə toxunmur), sonrakı yenidən hesablamalar
-            // (AbsenceConfirmed atlayır) və kütləvi ödəniş (sütunlardan 0 gün oxuyur) — hamısı
-            // ondan yan keçər və uşaq həmin ay üçün heç vaxt hesablanmazdı.
-            // Qorumaq üçün bir şey yoxdur: 0 günlük sətirdə itiriləcək məbləğ də yoxdur.
-            var exitPeriodDays = Math.Max(0, (exitMonthPayment.PeriodEndDay ?? 0) - (exitMonthPayment.PeriodStartDay ?? 1) + 1);
-            if (exitPeriodDays <= 0) return;
+            // Belə sətirdə qoruyacaq məbləğ yoxdur; möhür vursaq, sonrakı yenidən hesablamalar
+            // ondan yan keçər və uşaq geri qayıdanda həmin ay bir daha düzəldilə bilməzdi.
+            //
+            // DİQQƏT: dövr sütunları BOŞ (NULL) olanda bu "0 gün" DEMƏK DEYİL — bütün kod bazasında
+            // NULL "TAM AY" mənasını verir (25.07 miqrasiyası da yalnız "Dövr:" markeri olan sətirləri
+            // doldurub, qalanları qəsdən NULL saxlayıb). Ona görə burada mütləq PeriodDays köməkçisi
+            // işlədilir — o, NULL bitişi daysInMonth kimi oxuyur. Əks halda 25.07-dən əvvəlki HƏR
+            // tam-ay sətri səhvən "0 gün" sayılıb möhürsüz qalar və G1 qoruması itərdi.
+            var daysInExitMonth = DateTime.DaysInMonth(exitMonthPayment.Year, exitMonthPayment.Month);
+            if (PeriodDays(exitMonthPayment, daysInExitMonth) <= 0) return;
 
             // Məbləğ, PaidAmount və PeriodStartDay/PeriodEndDay OLDUĞU KİMİ qalır — yalnız bayraq.
             exitMonthPayment.AbsenceConfirmed = true;
