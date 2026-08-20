@@ -866,36 +866,50 @@ namespace App.Business.Services.Implementations
 
         private static byte[] RenderReceiptDocument(ReceiptModel model, DateTime nowBaku)
         {
-            // Çoxaylı çekdə iki nüsxə bir A4-ə sığmır — müəssisə nüsxəsi ayrı səhifəyə keçir (MinHeight yoxdur)
+            // Çoxaylı çekdə iki nüsxə bir A4-ə sığmır — müəssisə nüsxəsi ayrı səhifəyə keçir
             var separatePages = model.ShowLineItems;
+
+            // Tək aylıq çekdə iki nüsxə HƏMİŞƏ bir A4-ə sığmalıdır. Əvvəllər nüsxələr sərbəst
+            // hündürlükdə idi: qeyd sətri (məs. "ПРЕДОПЛАТА НА СЕНТЯБРЬ") və ya uzun ad
+            // əlavə olunan kimi ikinci nüsxə 2-ci vərəqə düşürdü. İndi səhifə sabit hissələrdən
+            // (kənar + futer + ayırıcı) təmizlənib yarıya bölünür, nüsxə isə həmin qutuya
+            // ScaleToFit ilə sıxılır — kompakt ölçülər onsuz da sığır, ScaleToFit yalnız
+            // ekstremal uzun mətndə (bir neçə sətrə keçən ad/qeyd) işə düşən qorumadır.
+            const float pageMargin = 6f;
+            const float footerHeight = 18f;
+            const float copySpacing = 5f;
+            var copyHeight = (PageSizes.A4.Height - pageMargin * 2 - footerHeight - (copySpacing * 2 + 1)) / 2;
 
             return Document.Create(container =>
             {
                 container.Page(page =>
                 {
-                    page.Margin(6);
+                    page.Margin(pageMargin);
                     page.Size(PageSizes.A4);
                     page.DefaultTextStyle(x => x.FontSize(11));
 
                     page.Content().Column(column =>
                     {
-                        column.Spacing(5);
+                        column.Spacing(copySpacing);
 
                         if (separatePages)
                         {
-                            column.Item().Element(x => BuildReceiptCopy(x, model, "Müştəri nüsxəsi"));
+                            column.Item().Element(x => BuildReceiptCopy(x, model, "Müştəri nüsxəsi", false));
                             column.Item().PageBreak();
-                            column.Item().Element(x => BuildReceiptCopy(x, model, "Müəssisə nüsxəsi"));
+                            column.Item().Element(x => BuildReceiptCopy(x, model, "Müəssisə nüsxəsi", false));
                         }
                         else
                         {
-                            column.Item().MinHeight(320).Element(x => BuildReceiptCopy(x, model, "Müştəri nüsxəsi"));
+                            column.Item().Height(copyHeight).ScaleToFit()
+                                .Element(x => BuildReceiptCopy(x, model, "Müştəri nüsxəsi", true));
                             column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-                            column.Item().MinHeight(320).Element(x => BuildReceiptCopy(x, model, "Müəssisə nüsxəsi"));
+                            column.Item().Height(copyHeight).ScaleToFit()
+                                .Element(x => BuildReceiptCopy(x, model, "Müəssisə nüsxəsi", true));
                         }
                     });
 
-                    page.Footer().Column(footer =>
+                    // Futer hündürlüyü SABİTDİR — copyHeight hesabı məhz bu dəyərdən çıxır.
+                    page.Footer().Height(footerHeight).Column(footer =>
                     {
                         footer.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten1);
                         footer.Item().PaddingTop(2).AlignCenter().Text($"Uşaq Bağçası İdarəetmə Sistemi • {nowBaku:dd.MM.yyyy HH:mm}").FontSize(10).FontColor(Colors.Grey.Darken1);
@@ -904,30 +918,41 @@ namespace App.Business.Services.Implementations
             }).GeneratePdf();
         }
 
-        private static void BuildReceiptCopy(IContainer container, ReceiptModel model, string copyTitle)
+        /// <summary>
+        /// Bir nüsxəni qurur. <paramref name="compact"/> — iki nüsxə bir A4-ə yerləşdiyi tək aylıq
+        /// çek üçün daralmış ölçülər (loqo, boşluqlar, daxili paddinq). Şrift ölçüsü DƏYİŞMİR;
+        /// qazanc yalnız boş sahədən götürülür ki, çek eyni cür oxunaqlı qalsın.
+        /// </summary>
+        private static void BuildReceiptCopy(IContainer container, ReceiptModel model, string copyTitle, bool compact)
         {
-            container.Border(1).BorderColor(Colors.Grey.Lighten1).Padding(9).Column(column =>
+            var outerPadding = compact ? 6f : 9f;
+            var boxPadding = compact ? 5f : 7f;
+            var itemSpacing = compact ? 4f : 5f;
+            var logoHeight = compact ? 52f : 74f;
+            var titleSize = compact ? 14f : 16f;
+
+            container.Border(1).BorderColor(Colors.Grey.Lighten1).Padding(outerPadding).Column(column =>
             {
-                column.Spacing(5);
+                column.Spacing(itemSpacing);
 
                 column.Item().Row(row =>
                 {
                     row.RelativeItem().Column(left =>
                     {
-                        left.Item().Text("KINDERGARTEN BAKI").Bold().FontSize(16).FontColor(Colors.Blue.Darken2);
+                        left.Item().Text("KINDERGARTEN BAKI").Bold().FontSize(titleSize).FontColor(Colors.Blue.Darken2);
                         left.Item().Text("RƏSMİ ÖDƏNİŞ ÇEKİ").SemiBold().FontSize(12).FontColor(Colors.Grey.Darken2);
                         left.Item().Text(copyTitle).SemiBold().FontSize(9).FontColor(Colors.Grey.Darken1);
                     });
 
                     if (model.LogoBytes != null)
                     {
-                        row.ConstantItem(126).AlignRight().Height(74).Image(model.LogoBytes, ImageScaling.FitArea);
+                        row.ConstantItem(126).AlignRight().Height(logoHeight).Image(model.LogoBytes, ImageScaling.FitArea);
                     }
                 });
 
                 column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
 
-                column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Row(row =>
+                column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(boxPadding).Row(row =>
                 {
                     row.RelativeItem().Column(c =>
                     {
@@ -941,14 +966,14 @@ namespace App.Business.Services.Implementations
                     row.ConstantItem(140).AlignRight().Column(c =>
                     {
                         c.Item().Text("Status").FontSize(9).FontColor(Colors.Grey.Darken1);
-                        c.Item().Background(Colors.Blue.Lighten4).Padding(6)
+                        c.Item().Background(Colors.Blue.Lighten4).Padding(compact ? 4 : 6)
                             .AlignCenter().Text(model.StatusText).Bold().FontColor(Colors.Blue.Darken3);
                     });
                 });
 
-                column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Column(c =>
+                column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(boxPadding).Column(c =>
                 {
-                    c.Spacing(4);
+                    c.Spacing(compact ? 2 : 4);
                     c.Item().Text("Ödəyici məlumatı").SemiBold().FontColor(Colors.Grey.Darken2);
                     c.Item().Text($"Valideyn: {model.ParentFullName}");
                     c.Item().Text($"Əlaqə: {model.ParentPhone}");
@@ -957,7 +982,7 @@ namespace App.Business.Services.Implementations
                     c.Item().Text($"Kassa: {model.CashboxName} ({model.CashboxType})");
                 });
 
-                column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Table(table =>
+                column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(boxPadding).Table(table =>
                 {
                     table.ColumnsDefinition(columns =>
                     {
@@ -998,10 +1023,18 @@ namespace App.Business.Services.Implementations
                     table.Cell().AlignRight().Text($"{model.TotalRemaining:F2} AZN").FontColor(model.TotalRemaining > 0 ? Colors.Red.Darken1 : Colors.Green.Darken2);
                 });
 
+                // Qeyd 500 simvola qədər ola bilər (sistem özü də ora "Dövr: ...", "Aylıq qiymət
+                // yeniləndi: ..." kimi izlər yazır). Kompakt nüsxədə 2 sətirlə məhdudlaşdırılır ki,
+                // uzun qeyd bütün çeki ScaleToFit ilə kiçiltməsin.
                 if (!string.IsNullOrWhiteSpace(model.Notes))
-                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(7).Text($"Qeyd: {model.Notes}");
+                    column.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(boxPadding)
+                        .Text(text =>
+                        {
+                            if (compact) text.ClampLines(2, "…");
+                            text.Span($"Qeyd: {model.Notes}");
+                        });
 
-                column.Item().PaddingTop(7).Row(row =>
+                column.Item().PaddingTop(compact ? 4 : 7).Row(row =>
                 {
                     row.RelativeItem().Text("Qəbul edən: __________________").FontSize(9);
                     row.RelativeItem().AlignRight().Text("İmza: __________________").FontSize(9);
