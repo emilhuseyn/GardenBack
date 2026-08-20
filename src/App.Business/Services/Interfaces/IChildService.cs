@@ -1,4 +1,4 @@
-using App.Business.DTOs.Children;
+﻿using App.Business.DTOs.Children;
 using App.Core.Common;
 
 namespace App.Business.Services.Interfaces
@@ -29,9 +29,10 @@ namespace App.Business.Services.Interfaces
         Task<PagedResponse<ChildResponse>> GetAllChildrenAsync(ChildFilterRequest filter);
 
         /// <summary>
-        /// Activates a child.
+        /// Activates a child. <paramref name="returnDate"/> is the first day the child attends again
+        /// (inclusive); null means "as of today". The return month is re-billed for that day onward.
         /// </summary>
-        Task ActivateChildAsync(int id);
+        Task<ReactivationResult> ActivateChildAsync(int id, DateTime? returnDate = null);
 
         /// <summary>
         /// Deactivates a child. <paramref name="effectiveDate"/> is the last day the child actually
@@ -50,9 +51,9 @@ namespace App.Business.Services.Interfaces
         Task<IEnumerable<ChildResponse>> SearchChildrenAsync(string term);
 
         /// <summary>
-        /// Activates multiple children at once.
+        /// Activates multiple children at once. <paramref name="returnDate"/> applies to every child.
         /// </summary>
-        Task ActivateChildrenAsync(List<int> ids);
+        Task<List<ReactivationResult>> ActivateChildrenAsync(List<int> ids, DateTime? returnDate = null);
 
         /// <summary>
         /// Deactivates multiple children at once. <paramref name="effectiveDate"/> is applied to every

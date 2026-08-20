@@ -1,4 +1,4 @@
-using App.Business.DTOs.Children;
+﻿using App.Business.DTOs.Children;
 using App.Business.Services.Interfaces;
 using App.Core.Common;
 using Hangfire;
@@ -80,12 +80,14 @@ namespace App.API.Controllers
             return Ok(ApiResponse<ChildResponse>.SuccessResponse(result, "Uşaq məlumatları yeniləndi."));
         }
 
+        // Gövdə boş ola bilər — bu halda uşaq BUGÜNDƏN geri qayıtmış sayılır.
         [HttpPatch("{id}/activate")]
         [Authorize(Policy = "AdminOrAdmission")]
-        public async Task<IActionResult> ActivateChild(int id)
+        public async Task<IActionResult> ActivateChild(int id,
+            [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] ActivateChildRequest? request = null)
         {
-            await _childService.ActivateChildAsync(id);
-            return Ok(ApiResponse<string>.SuccessResponse("Uşaq aktivləşdirildi."));
+            var result = await _childService.ActivateChildAsync(id, request?.ReturnDate);
+            return Ok(ApiResponse<ReactivationResult>.SuccessResponse(result, "Uşaq aktivləşdirildi."));
         }
 
         // Gövdə boş ola bilər — bu halda köhnə davranış: bu gün deaktiv edilir.
@@ -107,11 +109,14 @@ namespace App.API.Controllers
             return Ok(ApiResponse<string>.SuccessResponse("Uşaq silindi."));
         }
 
+        // Gövdə köhnə kimi sadəcə ID massividir, ona görə qayıdış tarixi opsional query parametridir:
+        // ?returnDate=2026-08-19
         [HttpPost("activate-bulk")]
-        public async Task<IActionResult> ActivateChildren([FromBody] List<int> ids)
+        public async Task<IActionResult> ActivateChildren([FromBody] List<int> ids,
+            [FromQuery] DateTime? returnDate = null)
         {
-            await _childService.ActivateChildrenAsync(ids);
-            return Ok(new { message = "Uşaqlar aktiv edildi." });
+            var results = await _childService.ActivateChildrenAsync(ids, returnDate);
+            return Ok(new { message = "Uşaqlar aktiv edildi.", results });
         }
 
         // Gövdə köhnə kimi sadəcə ID massividir (JSON array obyektə bind oluna bilmir),

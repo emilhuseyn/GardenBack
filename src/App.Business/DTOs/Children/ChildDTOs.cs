@@ -55,6 +55,19 @@ namespace App.Business.DTOs.Children
     }
 
     /// <summary>
+    /// Uşağı geri qaytarma sorğusu.
+    /// </summary>
+    public class ActivateChildRequest
+    {
+        /// <summary>
+        /// Uşağın YENİDƏN GƏLDİYİ İLK gün — həmin gün HESABLANIR (İNKLÜZİV, qeydiyyat tarixi ilə eyni məntiq).
+        /// Məs. 19.08 verilsə avqust 19-31 hesablanır. Boşdursa bugün.
+        /// Qəbul tarixindən əvvəl və ya sabahdan gec ola bilməz.
+        /// </summary>
+        public DateTime? ReturnDate { get; set; }
+    }
+
+    /// <summary>
     /// Deaktivləşdirmədən sonra hesabların yenidən qurulmasının nəticəsi.
     /// </summary>
     public class DeactivationRecalcResult
@@ -208,6 +221,63 @@ namespace App.Business.DTOs.Children
         public decimal NewFinalAmount { get; set; }
         /// <summary>Valideyndən əlavə alınmalı fərq.</summary>
         public decimal Difference { get; set; }
+    }
+
+    /// <summary>
+    /// Uşaq geri qayıtdıqdan sonra hesabların vəziyyəti (H1). Deaktivasiya nəticəsi ilə simmetrikdir:
+    /// qayıdış ayı yenidən hesablanır, ondan ƏVVƏLKİ sıfırlanmış aylar "gəlmədiyi ay" kimi
+    /// yekunlaşdırılır, SONRAKI sıfırlanmış aylar isə tam aya bərpa olunur.
+    /// </summary>
+    public class ReactivationResult
+    {
+        public int ChildId { get; set; }
+        public string ChildFullName { get; set; } = string.Empty;
+        /// <summary>Uşağın yenidən gəldiyi İLK gün (daxil).</summary>
+        public DateTime ReturnDate { get; set; }
+        /// <summary>
+        /// Qayıdış ayının nəticəsi: sətir yaradıldı / yenidən hesablandı / toxunulmadı.
+        /// Null yalnız qayıdış ayı üçün heç bir iş görülməyəndə olur.
+        /// </summary>
+        public ReturnMonthOutcome? ReturnMonth { get; set; }
+        /// <summary>
+        /// Qayıdışdan ƏVVƏLKİ, "uşaq bu ay həqiqətən gəlmədi" kimi yekunlaşdırılan aylar (A2).
+        /// Bu sətirlər bir daha bərpa olunmur.
+        /// </summary>
+        public List<ConfirmedAbsenceMonth> ConfirmedMonths { get; set; } = new();
+        /// <summary>Qayıdış ayından SONRAKI, sıfırlanmış vəziyyətdən tam aya qaytarılan aylar.</summary>
+        public List<RestoredMonth> RestoredMonths { get; set; } = new();
+    }
+
+    /// <summary>Geri qayıtma ayının yekun vəziyyəti.</summary>
+    public class ReturnMonthOutcome
+    {
+        public int PaymentId { get; set; }
+        public int Month { get; set; }
+        public int Year { get; set; }
+        /// <summary>Əməliyyatdan SONRAKI yekun məbləğ.</summary>
+        public decimal FinalAmount { get; set; }
+        /// <summary>Sətirdəki real ödəniş (heç vaxt dəyişdirilmir).</summary>
+        public decimal PaidAmount { get; set; }
+        /// <summary>Hesablanan dövrün başlanğıc günü (daxil).</summary>
+        public int PeriodStartDay { get; set; }
+        /// <summary>Hesablanan dövrün son günü (daxil).</summary>
+        public int PeriodEndDay { get; set; }
+        /// <summary>Hesablanan gün sayı — dövr iki hissəyə bölünübsə cəmi göstərir.</summary>
+        public int BilledDays { get; set; }
+        /// <summary>Sətir bu əməliyyatla YARADILDI (əvvəllər mövcud deyildi).</summary>
+        public bool Created { get; set; }
+        /// <summary>Sətrin məbləğinə toxunulmadı — ştab əl ilə yoxlamalıdır.</summary>
+        public bool NeedsManualReview { get; set; }
+        /// <summary>Toxunulmama səbəbi (ştaba göstərilir). Yalnız NeedsManualReview olanda dolur.</summary>
+        public string? Reason { get; set; }
+    }
+
+    /// <summary>Uşaq geri qayıdanda "həqiqətən gəlmədiyi ay" kimi yekunlaşdırılan sətir (A2).</summary>
+    public class ConfirmedAbsenceMonth
+    {
+        public int PaymentId { get; set; }
+        public int Month { get; set; }
+        public int Year { get; set; }
     }
 
     public class ChildResponse
