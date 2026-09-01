@@ -26,6 +26,12 @@ namespace App.DAL.Presistence.Configurations
             builder.Property(x => x.OperationDate)
                 .IsRequired();
 
+            // L1: ödənişdən yaranan jurnal sətri. FK QOYULMUR — ödəniş sətri silinəndə
+            // əməliyyat da xidmət tərəfindən silinir, amma baza səviyyəsində asılılıq
+            // yaratmırıq ki, köhnə/uyğunsuz məlumat miqrasiyanı bloklamasın.
+            builder.Property(x => x.PaymentId).IsRequired(false);
+            builder.HasIndex(x => x.PaymentId);
+
             builder.HasOne(x => x.Cashbox)
                 .WithMany(x => x.Operations)
                 .HasForeignKey(x => x.CashboxId)

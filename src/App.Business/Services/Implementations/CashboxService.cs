@@ -1,4 +1,4 @@
-using App.Business.DTOs.Cashboxes;
+﻿using App.Business.DTOs.Cashboxes;
 using App.Business.Services.Interfaces;
 using App.Core.Entities;
 using App.Core.Enums;
@@ -93,7 +93,7 @@ namespace App.Business.Services.Implementations
             {
                 var operations = await _unitOfWork.CashboxOperations.GetByCashboxAsync(c.Id);
                 var dto = _mapper.Map<CashboxResponse>(c);
-                dto.Balance = CalculateCashboxBalance(c.Payments, operations);
+                dto.Balance = CalculateCashboxBalance(operations);
                 result.Add(dto);
             }
 
@@ -107,7 +107,7 @@ namespace App.Business.Services.Implementations
 
             var operations = await _unitOfWork.CashboxOperations.GetByCashboxAsync(id);
             var dto = _mapper.Map<CashboxResponse>(cashbox);
-            dto.Balance = CalculateCashboxBalance(cashbox.Payments, operations);
+            dto.Balance = CalculateCashboxBalance(operations);
             return dto;
         }
 
@@ -146,12 +146,10 @@ namespace App.Business.Services.Implementations
 
             await _unitOfWork.SaveChangesAsync();
 
-            var monthlyIncome = cashbox.Payments
-                .Where(p => CashDate(p).Month == dto.Month && CashDate(p).Year == dto.Year)
-                .Sum(p => p.PaidAmount);
-
+            // L1: aylıq gəlir ARTIQ jurnaldan oxunur — ödənişlər də ora düşür, ona görə
+            // sətirlərdən ayrıca hesablama YOXDUR (əks halda ikiqat sayılardı).
             var monthlyOperations = await _unitOfWork.CashboxOperations.GetByCashboxAndMonthAsync(cashboxId, dto.Month, dto.Year);
-            var monthlyManualIncome = monthlyOperations
+            var monthlyIncome = monthlyOperations
                 .Where(x => x.Type == CashboxOperationType.Income)
                 .Sum(x => x.Amount);
             var monthlyExpense = monthlyOperations
@@ -165,9 +163,9 @@ namespace App.Business.Services.Implementations
                 Month         = dto.Month,
                 Year          = dto.Year,
                 OpeningBalance = dto.OpeningBalance,
-                MonthlyIncome  = monthlyIncome + monthlyManualIncome,
+                MonthlyIncome  = monthlyIncome,
                 MonthlyExpense = monthlyExpense,
-                TotalBalance   = dto.OpeningBalance + monthlyIncome + monthlyManualIncome - monthlyExpense
+                TotalBalance   = dto.OpeningBalance + monthlyIncome - monthlyExpense
             };
         }
 
@@ -179,12 +177,9 @@ namespace App.Business.Services.Implementations
             var balance = await _unitOfWork.CashboxBalances.GetAsync(cashboxId, month, year);
             var openingBalance = balance?.OpeningBalance ?? 0;
 
-            var monthlyIncome = cashbox.Payments
-                .Where(p => CashDate(p).Month == month && CashDate(p).Year == year)
-                .Sum(p => p.PaidAmount);
-
+            // L1: aylıq gəlir jurnaldan (ödənişlər daxil).
             var monthlyOperations = await _unitOfWork.CashboxOperations.GetByCashboxAndMonthAsync(cashboxId, month, year);
-            var monthlyManualIncome = monthlyOperations
+            var monthlyIncome = monthlyOperations
                 .Where(x => x.Type == CashboxOperationType.Income)
                 .Sum(x => x.Amount);
             var monthlyExpense = monthlyOperations
@@ -198,9 +193,9 @@ namespace App.Business.Services.Implementations
                 Month          = month,
                 Year           = year,
                 OpeningBalance = openingBalance,
-                MonthlyIncome  = monthlyIncome + monthlyManualIncome,
+                MonthlyIncome  = monthlyIncome,
                 MonthlyExpense = monthlyExpense,
-                TotalBalance   = openingBalance + monthlyIncome + monthlyManualIncome - monthlyExpense
+                TotalBalance   = openingBalance + monthlyIncome - monthlyExpense
             };
         }
 
@@ -212,30 +207,27 @@ namespace App.Business.Services.Implementations
             var balances = await _unitOfWork.CashboxBalances.GetByCashboxAsync(cashboxId);
             var balanceDict = balances.ToDictionary(b => (b.Month, b.Year));
 
-            // Ödəniş olan aylar + açılış qalığı yazılmış ayları birləşdir
-            var paymentMonths = cashbox.Payments
-                .Select(p => (CashDate(p).Month, CashDate(p).Year))
+            var allOperations = await _unitOfWork.CashboxOperations.GetByCashboxAsync(cashboxId);
+
+            // L1: aylar jurnaldan gəlir — ödənişlər də orada olduğu üçün heç bir ay itmir.
+            var operationMonths = allOperations
+                .Select(o => (o.OperationDate.Month, o.OperationDate.Year))
                 .Distinct();
 
-            var allMonths = paymentMonths
+            var allMonths = operationMonths
                 .Union(balanceDict.Keys)
                 .OrderByDescending(x => x.Year)
                 .ThenByDescending(x => x.Month);
 
-            var allOperations = await _unitOfWork.CashboxOperations.GetByCashboxAsync(cashboxId);
-
             return allMonths.Select(key =>
             {
                 var openingBalance = balanceDict.TryGetValue(key, out var b) ? b.OpeningBalance : 0;
-                var monthlyIncome  = cashbox.Payments
-                    .Where(p => CashDate(p).Month == key.Month && CashDate(p).Year == key.Year)
-                    .Sum(p => p.PaidAmount);
 
                 var monthlyOps = allOperations
                     .Where(x => x.OperationDate.Month == key.Month && x.OperationDate.Year == key.Year)
                     .ToList();
 
-                var monthlyManualIncome = monthlyOps
+                var monthlyIncome = monthlyOps
                     .Where(x => x.Type == CashboxOperationType.Income)
                     .Sum(x => x.Amount);
 
@@ -250,9 +242,9 @@ namespace App.Business.Services.Implementations
                     Month          = key.Month,
                     Year           = key.Year,
                     OpeningBalance = openingBalance,
-                    MonthlyIncome  = monthlyIncome + monthlyManualIncome,
+                    MonthlyIncome  = monthlyIncome,
                     MonthlyExpense = monthlyExpense,
-                    TotalBalance   = openingBalance + monthlyIncome + monthlyManualIncome - monthlyExpense
+                    TotalBalance   = openingBalance + monthlyIncome - monthlyExpense
                 };
             });
         }
@@ -345,7 +337,7 @@ namespace App.Business.Services.Implementations
 
             // Göndərən kassanın cari balansını hesabla
             var fromOperations = await _unitOfWork.CashboxOperations.GetByCashboxAsync(dto.FromCashboxId);
-            var fromBalance = CalculateCashboxBalance(fromCashbox.Payments, fromOperations);
+            var fromBalance = CalculateCashboxBalance(fromOperations);
 
             if (dto.Amount > fromBalance)
                 throw new ValidationException(
@@ -401,8 +393,8 @@ namespace App.Business.Services.Implementations
                 FromCashboxName        = fromCashbox.Name,
                 ToCashboxName          = toCashbox.Name,
                 Amount                 = dto.Amount,
-                FromCashboxBalanceAfter = CalculateCashboxBalance(fromUpdatedCashbox!.Payments, fromAllOps),
-                ToCashboxBalanceAfter  = CalculateCashboxBalance(toUpdatedCashbox!.Payments, toOperations)
+                FromCashboxBalanceAfter = CalculateCashboxBalance(fromAllOps),
+                ToCashboxBalanceAfter  = CalculateCashboxBalance(toOperations)
             };
         }
 
@@ -423,29 +415,25 @@ namespace App.Business.Services.Implementations
         }
 
         /// <summary>
-        /// Ödənişin kassaya REAL düşdüyü tarix.
+        /// L1: kassa balansı YALNIZ əməliyyat jurnalından hesablanır.
         ///
-        /// K1: bütün aylıq hesablamalar əvvəl <c>CreatedAt</c> işlədirdi — bu isə pulun
-        /// alındığı an DEYİL, yalnız SƏTRİN yarandığı andır (aylıq generasiya işi onu ayın
-        /// 1-i 00:01-də qoyur, qabaqcadan ödəniş isə sətri ödəniş günü yaradır).
-        /// Nəticədə iyulda qabaqcadan ödənilən sentyabr pulu iyul ayının gəlirinə düşürdü və
-        /// ştab "real kassa proqramdakı kassa ilə düz gəlmir" deyirdi. Produksiya ölçüsü:
-        /// aprel 63,960 ₼ ARTIQ, may isə eyni məbləğ AZ görünürdü (103 sətir, 66,522 ₼).
+        /// Əvvəl düstura <c>payments.Sum(PaidAmount)</c> daxil idi. Problem: bir ödəniş sətri
+        /// yalnız BİR <c>CashboxId</c> saxlaya bilir — sonuncunu. Valideyn eyni ayı iki dəfəyə,
+        /// iki fərqli kassaya ödəyəndə sətrin kassası dəyişir və bütün kumulyativ məbləğ yeni
+        /// kassaya keçirdi: köhnə kassa geriyə dönük pul itirir, ştabın əvvəlcədən yazdığı
+        /// sıfırlama sabit qaldığı üçün həmin kassa MƏNFİYƏ düşürdü. Jurnal sətri isə heç vaxt
+        /// dəyişmir, ona görə keçmiş yenidən hesablanmır.
         ///
-        /// <c>PaymentDate</c> pulun alındığı andır — doğru mənbə budur.
-        /// Boş olduğu yeganə hal <c>PaidAmount = 0</c> olan sətirlərdir (heç ödənilməmiş və ya
-        /// 100% endirimli); onlar cəmə onsuz da sıfır əlavə edir, amma heç nə səssizcə
-        /// itməsin deyə <c>CreatedAt</c>-a qayıdırıq.
+        /// Ödənişlərin özü indi <c>PaymentService.AddCashboxIncomeAsync</c> ilə jurnala düşür;
+        /// köhnə sətirlər üçün miqrasiya bir dəfəlik jurnal yazıb (balanslar dəyişmir).
         /// </summary>
-        private static DateTime CashDate(Payment payment) => payment.PaymentDate ?? payment.CreatedAt;
-
-        private static decimal CalculateCashboxBalance(IEnumerable<Payment> payments, IEnumerable<CashboxOperation> operations)
+        private static decimal CalculateCashboxBalance(IEnumerable<CashboxOperation> operations)
         {
-            var paymentIncome = payments.Sum(p => p.PaidAmount);
-            var operationIncome = operations.Where(x => x.Type == CashboxOperationType.Income).Sum(x => x.Amount);
-            var operationExpense = operations.Where(x => x.Type == CashboxOperationType.Expense).Sum(x => x.Amount);
-
-            return paymentIncome + operationIncome - operationExpense;
+            var income  = operations.Where(x => x.Type == CashboxOperationType.Income).Sum(x => x.Amount);
+            var expense = operations.Where(x => x.Type == CashboxOperationType.Expense).Sum(x => x.Amount);
+            return income - expense;
         }
+
+
     }
 }

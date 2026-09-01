@@ -62,6 +62,35 @@ namespace App.Business.Services.Implementations
         }
 
         /// <summary>
+        /// Kassa jurnalına bir ödəniş sətri yazır (L1).
+        ///
+        /// Kassa balansı ARTIQ <c>Payment.PaidAmount</c>-dan hesablanmır. Səbəb: bir ödəniş
+        /// sətri yalnız BİR <c>CashboxId</c> saxlaya bilir — sonuncunu. Valideyn eyni ayı iki
+        /// dəfəyə, iki fərqli kassaya ödəyəndə sətrin kassası dəyişirdi və BÜTÜN kumulyativ
+        /// məbləğ yeni kassaya keçirdi: birinci kassa geriyə dönük pul itirir, ştabın əvvəlcədən
+        /// yazdığı sıfırlama isə yerində qaldığı üçün həmin kassa MƏNFİYƏ düşürdü
+        /// ("səhər -200 birində idi, düzəliş etdim, indi -400 başqasında").
+        ///
+        /// Jurnal sətri dəyişmir: hər ödəniş öz məbləği, öz tarixi və öz kassası ilə qalır,
+        /// ona görə keçmiş heç vaxt yenidən hesablanmır.
+        /// Yazan tərəf SaveChanges çağırmalıdır.
+        /// </summary>
+        private async Task AddCashboxIncomeAsync(int paymentId, int cashboxId, decimal amount, DateTime when, string note)
+        {
+            if (amount <= 0) return;
+
+            await _unitOfWork.CashboxOperations.AddAsync(new CashboxOperation
+            {
+                CashboxId     = cashboxId,
+                PaymentId     = paymentId,
+                Type          = CashboxOperationType.Income,
+                Amount        = amount,
+                OperationDate = when,
+                Note          = note.Length > 500 ? note[..500] : note
+            });
+        }
+
+        /// <summary>
         /// Generates debt records for the current month. Used by Hangfire to avoid
         /// capturing DateTime.Now at job-registration time.
         /// </summary>
@@ -162,6 +191,9 @@ namespace App.Business.Services.Implementations
             {
                 foreach (var payment in payments)
                 {
+                    // L1: jurnala YALNIZ fərq yazılır, tam məbləğ deyil.
+                    var delta = Math.Max(0, payment.FinalAmount - payment.PaidAmount);
+
                     payment.PaidAmount = payment.FinalAmount;
                     payment.LastPaymentAmount = payment.FinalAmount;
                     payment.Status = PaymentStatus.Paid;
@@ -170,6 +202,13 @@ namespace App.Business.Services.Implementations
                     AppendNote(payment, "Kütləvi ödənilmiş (sistem köçürməsi)");
 
                     await _unitOfWork.Payments.UpdateAsync(payment);
+
+                    // Bu əməliyyat kassa SEÇMİR (sistem köçürməsidir). Sətrin əvvəldən kassası
+                    // varsa fərq oraya yazılır — köhnə davranışla eyni; yoxdursa heç bir kassaya
+                    // pul daxil olmayıb, deməli jurnal sətri də olmamalıdır.
+                    if (payment.CashboxId.HasValue)
+                        await AddCashboxIncomeAsync(payment.Id, payment.CashboxId.Value, delta, now,
+                            $"Kütləvi ödənilmiş #{payment.Id} ({payment.Month:D2}.{payment.Year})");
                 }
 
                 await _unitOfWork.SaveChangesAsync();
@@ -295,6 +334,11 @@ namespace App.Business.Services.Implementations
             await _unitOfWork.Payments.UpdateAsync(payment);
             await _unitOfWork.SaveChangesAsync();
 
+            // L1: kassa jurnalına YALNIZ bu əməliyyatda alınan məbləğ yazılır.
+            await AddCashboxIncomeAsync(payment.Id, dto.CashboxId, dto.Amount, payment.PaymentDate!.Value,
+                $"Ödəniş #{payment.Id} ({payment.Month:D2}.{payment.Year})");
+            await _unitOfWork.SaveChangesAsync();
+
             var result = await _unitOfWork.Payments.GetByIdAsync(
                 p => p.Id == payment.Id,
                 p => p.Child,
@@ -341,6 +385,9 @@ namespace App.Business.Services.Implementations
             var batchId = Guid.NewGuid();
             var processedPayments = new List<Payment>();
             var overpaidMonths = new List<BulkOverpaidMonth>();
+            // L1: kassa jurnalı üçün hər sətrin REAL alınan fərqi. Yeni sətirlərin Id-si
+            // SaveChanges-dən sonra yarandığı üçün jurnal sətirləri sonra yazılır.
+            var cashDeltas = new List<(Payment Payment, decimal Delta)>();
             decimal totalPaid = 0;
             var overridesByMonth = (dto.MonthOverrides ?? new List<MonthPeriodOverride>())
                 .Where(o => o.Month >= 1 && o.Month <= 12)
@@ -515,8 +562,17 @@ namespace App.Business.Services.Implementations
                         await _unitOfWork.Payments.UpdateAsync(payment);
 
                     processedPayments.Add(payment);
+                    cashDeltas.Add((payment, delta));
                     totalPaid += delta;
                 }
+
+                await _unitOfWork.SaveChangesAsync();
+
+                // L1: sətirlər indi Id alıb — kassa jurnalını yaz. Hər ay üçün ayrıca sətir,
+                // amma yalnız REAL alınan fərq (delta), kumulyativ məbləğ deyil.
+                foreach (var (p, d) in cashDeltas)
+                    await AddCashboxIncomeAsync(p.Id, dto.CashboxId, d, now,
+                        $"Kütləvi ödəniş #{p.Id} ({p.Month:D2}.{p.Year})");
 
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
@@ -1074,6 +1130,12 @@ namespace App.Business.Services.Implementations
         {
             var payment = await _unitOfWork.Payments.GetByIdAsync(paymentId)
                 ?? throw new EntityNotFoundException($"{paymentId} ID-li ödəniş tapılmadı.");
+
+            // L1: ödəniş silinirsə onun kassa jurnalı sətirləri də getməlidir, əks halda
+            // pul kassada qalır və balans şişir.
+            var linkedOps = await _unitOfWork.CashboxOperations.FindAsync(o => o.PaymentId == paymentId);
+            foreach (var op in linkedOps)
+                await _unitOfWork.CashboxOperations.RemoveAsync(op);
 
             await _unitOfWork.Payments.RemoveAsync(payment);
             await _unitOfWork.SaveChangesAsync();
