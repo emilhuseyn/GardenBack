@@ -147,7 +147,7 @@ namespace App.Business.Services.Implementations
             await _unitOfWork.SaveChangesAsync();
 
             var monthlyIncome = cashbox.Payments
-                .Where(p => p.CreatedAt.Month == dto.Month && p.CreatedAt.Year == dto.Year)
+                .Where(p => CashDate(p).Month == dto.Month && CashDate(p).Year == dto.Year)
                 .Sum(p => p.PaidAmount);
 
             var monthlyOperations = await _unitOfWork.CashboxOperations.GetByCashboxAndMonthAsync(cashboxId, dto.Month, dto.Year);
@@ -180,7 +180,7 @@ namespace App.Business.Services.Implementations
             var openingBalance = balance?.OpeningBalance ?? 0;
 
             var monthlyIncome = cashbox.Payments
-                .Where(p => p.CreatedAt.Month == month && p.CreatedAt.Year == year)
+                .Where(p => CashDate(p).Month == month && CashDate(p).Year == year)
                 .Sum(p => p.PaidAmount);
 
             var monthlyOperations = await _unitOfWork.CashboxOperations.GetByCashboxAndMonthAsync(cashboxId, month, year);
@@ -214,7 +214,7 @@ namespace App.Business.Services.Implementations
 
             // Ödəniş olan aylar + açılış qalığı yazılmış ayları birləşdir
             var paymentMonths = cashbox.Payments
-                .Select(p => (p.CreatedAt.Month, p.CreatedAt.Year))
+                .Select(p => (CashDate(p).Month, CashDate(p).Year))
                 .Distinct();
 
             var allMonths = paymentMonths
@@ -228,7 +228,7 @@ namespace App.Business.Services.Implementations
             {
                 var openingBalance = balanceDict.TryGetValue(key, out var b) ? b.OpeningBalance : 0;
                 var monthlyIncome  = cashbox.Payments
-                    .Where(p => p.CreatedAt.Month == key.Month && p.CreatedAt.Year == key.Year)
+                    .Where(p => CashDate(p).Month == key.Month && CashDate(p).Year == key.Year)
                     .Sum(p => p.PaidAmount);
 
                 var monthlyOps = allOperations
@@ -421,6 +421,23 @@ namespace App.Business.Services.Implementations
                 TransferDate     = t.TransferDate
             });
         }
+
+        /// <summary>
+        /// Ödənişin kassaya REAL düşdüyü tarix.
+        ///
+        /// K1: bütün aylıq hesablamalar əvvəl <c>CreatedAt</c> işlədirdi — bu isə pulun
+        /// alındığı an DEYİL, yalnız SƏTRİN yarandığı andır (aylıq generasiya işi onu ayın
+        /// 1-i 00:01-də qoyur, qabaqcadan ödəniş isə sətri ödəniş günü yaradır).
+        /// Nəticədə iyulda qabaqcadan ödənilən sentyabr pulu iyul ayının gəlirinə düşürdü və
+        /// ştab "real kassa proqramdakı kassa ilə düz gəlmir" deyirdi. Produksiya ölçüsü:
+        /// aprel 63,960 ₼ ARTIQ, may isə eyni məbləğ AZ görünürdü (103 sətir, 66,522 ₼).
+        ///
+        /// <c>PaymentDate</c> pulun alındığı andır — doğru mənbə budur.
+        /// Boş olduğu yeganə hal <c>PaidAmount = 0</c> olan sətirlərdir (heç ödənilməmiş və ya
+        /// 100% endirimli); onlar cəmə onsuz da sıfır əlavə edir, amma heç nə səssizcə
+        /// itməsin deyə <c>CreatedAt</c>-a qayıdırıq.
+        /// </summary>
+        private static DateTime CashDate(Payment payment) => payment.PaymentDate ?? payment.CreatedAt;
 
         private static decimal CalculateCashboxBalance(IEnumerable<Payment> payments, IEnumerable<CashboxOperation> operations)
         {
