@@ -319,11 +319,16 @@ namespace App.Business.Services.Implementations
             // qaydası işləyir. Əks halda ştabın qeydləri və "Dövr:" izi səssizcə silinirdi.
             AppendNote(payment, dto.Notes);
 
+            // G1: bir aylıq GÜZƏŞT. Yalnız FinalAmount azalır — OriginalAmount TOXUNULMUR,
+            // ona görə "nə qədər olmalı idi / nə qədər güzəşt edildi / nə qədər ödənildi"
+            // sətrin özündən çıxarıla bilir (güzəşt = OriginalAmount - FinalAmount).
+            // Uşağın MonthlyFee-si dəyişmir, deməli nə keçmiş aylar, nə də gələcək aylar
+            // təsirlənmir — ştabın əvvəlki üsulunun (qiyməti dəyişmək) əsas zərəri bu idi.
             if (dto.RoundingDiscount.HasValue && dto.RoundingDiscount.Value > 0)
             {
                 var roundingAmt = Math.Min(dto.RoundingDiscount.Value, payment.FinalAmount);
                 payment.FinalAmount = Math.Max(0, payment.FinalAmount - roundingAmt);
-                AppendNote(payment, $"Yuvarlaqlaşdırma endirimi: {roundingAmt:F2} ₼");
+                AppendNote(payment, $"Güzəşt: {roundingAmt:F2} ₼");
             }
 
             if (payment.PaidAmount >= payment.FinalAmount)
