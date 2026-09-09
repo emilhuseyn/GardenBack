@@ -1,4 +1,4 @@
-using App.Business.Services.Interfaces;
+﻿using App.Business.Services.Interfaces;
 using App.Core.Exceptions.Commons;
 using App.DAL.UnitOfWork;
 using Microsoft.Extensions.Hosting;
@@ -328,7 +328,7 @@ namespace App.Business.Services.Implementations
 
             var newPara = new Paragraph(doc);
             newPara.AppendText(value);
-            ApplyParagraphFont(newPara, "Times New Roman");
+            ApplyParagraphFont(newPara, ResolveFontName(anchorPara));
             if (underline) AddUnderline(newPara);
             InsertAt(parent, idx, newPara);
         }
@@ -395,7 +395,7 @@ namespace App.Business.Services.Implementations
                 {
                     prevPara.ChildObjects.Clear();
                     prevPara.AppendText(parentName);
-                    ApplyParagraphFont(prevPara, "Times New Roman");
+                    ApplyParagraphFont(prevPara, ResolveFontName(anchorPara));
                     AddUnderline(prevPara);
                     return;
                 }
@@ -406,7 +406,7 @@ namespace App.Business.Services.Implementations
                     // Ad forma kimi öz xəttinin üzərində otursun (altında üfüqi xətt).
                     var newPara = new Paragraph(doc);
                     newPara.AppendText(parentName);
-                    ApplyParagraphFont(newPara, "Times New Roman");
+                    ApplyParagraphFont(newPara, ResolveFontName(anchorPara));
                     AddUnderline(newPara);
                     InsertAt(parent, idx, newPara);
                 }
@@ -462,15 +462,15 @@ namespace App.Business.Services.Implementations
                     // Boş abzas — uşaq adını yaz (forma kimi altında xətt)
                     nextPara.ChildObjects.Clear();
                     nextPara.AppendText(childName);
-                    ApplyParagraphFont(nextPara, "Times New Roman");
+                    ApplyParagraphFont(nextPara, ResolveFontName(anchorPara));
                     AddUnderline(nextPara);
                 }
-                else if (!nextPara.Text.TrimStart().StartsWith("ogluna(", StringComparison.OrdinalIgnoreCase))
+                else if (!Regex.IsMatch(nextPara.Text.TrimStart(), @"^o[gğ]luna\s*\(", RegexOptions.IgnoreCase))
                 {
                     // Hələ doldurulmayıb, boş abzas yox → yeni abzas əlavə et
                     var newPara = new Paragraph(doc);
                     newPara.AppendText(childName);
-                    ApplyParagraphFont(newPara, "Times New Roman");
+                    ApplyParagraphFont(newPara, ResolveFontName(anchorPara));
                     AddUnderline(newPara);
                     InsertAt(parent, idx + 1, newPara);
                 }
@@ -480,7 +480,7 @@ namespace App.Business.Services.Implementations
                 // Sonrakı element paragraph deyil → insert et
                 var newPara = new Paragraph(doc);
                 newPara.AppendText(childName);
-                ApplyParagraphFont(newPara, "Times New Roman");
+                ApplyParagraphFont(newPara, ResolveFontName(anchorPara));
                 AddUnderline(newPara);
                 InsertAt(parent, idx + 1, newPara);
             }
@@ -538,7 +538,7 @@ namespace App.Business.Services.Implementations
                 {
                     nextPara.ChildObjects.Clear();
                     nextPara.AppendText(value);
-                    ApplyParagraphFont(nextPara, "Times New Roman");
+                    ApplyParagraphFont(nextPara, ResolveFontName(anchorPara));
                     if (underline) AddUnderline(nextPara);
                     return;
                 }
@@ -546,7 +546,7 @@ namespace App.Business.Services.Implementations
 
             var newPara = new Paragraph(doc);
             newPara.AppendText(value);
-            ApplyParagraphFont(newPara, "Times New Roman");
+            ApplyParagraphFont(newPara, ResolveFontName(anchorPara));
             if (underline) AddUnderline(newPara);
             InsertAt(parent, idx + 1, newPara);
         }
@@ -689,11 +689,26 @@ namespace App.Business.Services.Implementations
                         if (!match.Success) continue;
 
                         run.Text = runText[..match.Index] + value + runText[(match.Index + match.Length)..];
-                        run.CharacterFormat.FontName = "Times New Roman";
                         return;
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Anchor abzasının şriftini qaytarır. Əlavə edilən ad-soyad sətirləri ətrafdakı
+        /// mətnlə eyni şriftdə olsun deyə lazımdır: Razılaşmanın AZ sütunu "A3 Arial AzLat",
+        /// EN sütunu isə Times New Roman ilə yazılıb — sabit şrift yazmaq AZ tərəfdə
+        /// gözlə görünən uyğunsuzluq yaradırdı.
+        /// </summary>
+        private static string ResolveFontName(Paragraph reference, string fallback = "Times New Roman")
+        {
+            foreach (var run in reference.ChildObjects.OfType<TextRange>())
+            {
+                var name = run.CharacterFormat.FontName;
+                if (!string.IsNullOrWhiteSpace(name)) return name;
+            }
+            return fallback;
         }
 
         private static void ApplyParagraphFont(Paragraph paragraph, string fontName)
