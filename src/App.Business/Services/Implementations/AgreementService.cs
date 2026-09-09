@@ -67,7 +67,8 @@ namespace App.Business.Services.Implementations
             doc.LoadFromStream(input, FileFormat.Doc);
 
             // ─────────────────────────────────────────────────────────────────────
-            // 2026 şablonu — bütün Razılaşma mətni 2 sütunlu cədvəlin içindədir
+            // 2026/2027 şablonu (09.09.2026 versiyası) — bütün Razılaşma mətni 2 sütunlu
+            // cədvəlin içindədir
             // (sol xana = AZ, sağ xana = EN). Yer-tutucular regex ilə YERİNDƏ
             // (doc.Replace) əvəz olunur ki, abzas daxili sətir keçidləri (manual line
             // break) və formatlaşma pozulmasın. FreeSpire Replace(Regex,string) $-qrup
@@ -75,63 +76,46 @@ namespace App.Business.Services.Implementations
             // ─────────────────────────────────────────────────────────────────────
 
             // ── AZ ──────────────────────────────────────────────────────────────
-            // Yuxarı tarix:  «  »_______ 2026 il
-            RegexReplace(doc, @"«\s*»_{3,}\s*202\d\s*il", $"«{day}» {monthAz} {year} il");
-            // Müqavilə №:  "Tarixli _______ N°- li Müqaviləyə 1 saylı Əlavə"
+            // Şəhər tarixi:  «___» ____ 2026 - ci il
+            // DİQQƏT: yuxarı tarixdən ƏVVƏL işlənməlidir — hər ikisi «__»___202X ilə
+            // başlayır, fərq yalnız sondakı "- ci il" hissəsidir.
+            RegexReplace(doc, @"«_{2,}»\s*_{3,}\s*202\d\s*-\s*ci\s+il", $"«{day}» {monthAz} {year} - ci il");
+            // Yuxarı tarix:  «__» ___ 2026 il
+            RegexReplace(doc, @"«_{2,}»\s*_{3,}\s*202\d\s*il", $"«{day}» {monthAz} {year} il");
+            // Müqavilə №:  "Tarixli ____________ N°- li Müqaviləyə 1 saylı Əlavə"
             RegexReplace(doc, @"Tarixli\s+_{3,}\s*N°", $"Tarixli {contractNumber} N°", RegexOptions.IgnoreCase);
-            // Şəhər tarixi:  «          » 2026 - ci il
-            RegexReplace(doc, @"«\s+»\s*202\d\s*-\s*ci\s+il", $"«{day}» {monthAz} {year} - ci il");
-            // Aylıq haqq:  (_______) manat təşkil edir
-            RegexReplace(doc, @"\(\s*_{3,}\s*\)\s*manat\s+təşkilı?\s*edir", $"({fee}) manat təşkil edir", RegexOptions.IgnoreCase);
-            // Ödəniş tarixi:  "____"________202___ tarixinə qədər
-            RegexReplace(doc, "[“\"]_{2,}[”\"][_\\s]*202_{1,4}\\s*tarixinə\\s+qədər",
-                $"“{day}” {monthAz} {year} tarixinə qədər", RegexOptions.IgnoreCase);
-            // Yaş qrupu:  ogluna( qızına)      yaş
-            RegexReplace(doc, @"ogluna\(\s*qızına\)\s+yaş", $"ogluna( qızına) {ageGroup} yaş", RegexOptions.IgnoreCase);
-            // Direktor (AZ): köhnə → yeni (imza hissəsi artıq A.M.Mahmudova-dır)
-            RegexReplace(doc, @"Əliyeva Aytən Hafiz qızının", "Mahmudova Aysel Mehman qızının", RegexOptions.IgnoreCase);
+            // Aylıq haqq:  hər ay üçün  ____ manat təşkil edir
+            RegexReplace(doc, @"_{3,}\s*manat\s+təşkil", $"{fee} manat təşkil", RegexOptions.IgnoreCase);
+            // Yaş qrupu:  oğluna (qızına)   _____ yaş
+            RegexReplace(doc, @"o[gğ]luna\s*\(\s*qızına\)\s*_{2,}\s*yaş", $"oğluna (qızına) {ageGroup} yaş", RegexOptions.IgnoreCase);
             // Valideyn adı (AZ): «Valideyn»-dən sonrakı abzasa
             FillParentNameAz(doc, parentName);
             // Uşaq adı (AZ): "Arasında övladı"-dan sonrakı boş abzasa
             FillChildNameAz(doc, childName);
+            // İmza bloku (AZ): «Valideyn» sətrindən sonrakı "____" xətti valideynin adıdır
+            // (2026/2027 şablonunda köhnə "A.S.A." yer-tutucusu alt xətlə əvəz olunub)
+            FillNextUnderscoreLine(doc, "«Valideyn»", parentName);
 
             // ── EN ──────────────────────────────────────────────────────────────
-            // Direktor (EN): köhnə → yeni
-            RegexReplace(doc, "its Director Aytan Hafiz Aliyeva", "its Director Aysel Mehman Mahmudova", RegexOptions.IgnoreCase);
-            // "Dated: “” __________ 2026"
-            RegexReplace(doc, "Dated:\\s*[“\"][”\"]\\s*_{3,}\\s*202\\d", $"Dated: “{day}” {monthEn} {year}", RegexOptions.IgnoreCase);
-            // Appendix №+tarix:  "Agreement No. ______ dated “” __________ 2026"
-            RegexReplace(doc, "Agreement No\\.\\s+_{3,}\\s+dated\\s+[“\"][”\"]\\s*_{3,}\\s*202\\d",
+            // "Dated: “___” ____ 2026"  — şəhər tarixindən ƏVVƏL, çünki onun şablonu
+            // şəhər tarixinin şablonunu da ehtiva edir.
+            RegexReplace(doc, "Dated:\\s*[“\"]_{2,}[”\"]\\s*_{3,}\\s*202\\d", $"Dated: “{day}” {monthEn} {year}", RegexOptions.IgnoreCase);
+            // Appendix №+tarix:  "Appendix No. 1 to Agreement No._______dated _______"
+            RegexReplace(doc, @"Agreement No\.\s*_{3,}\s*dated\s+_{3,}",
                 $"Agreement No. {contractNumber} dated “{day}” {monthEn} {year}", RegexOptions.IgnoreCase);
-            // Şəhər tarixi:  "___" __________ 2026
+            // Şəhər tarixi:  “___” ____ 2026
             RegexReplace(doc, "[“\"]_{2,}[”\"]\\s*_{3,}\\s*202\\d", $"“{day}” {monthEn} {year}", RegexOptions.IgnoreCase);
-            // Yaş qrupu (EN):  (son/daughter) in the ______ age group
+            // Yaş qrupu (EN):  (son/daughter) in the ___ age group
             RegexReplace(doc, @"\(son/daughter\)\s+in\s+the\s+_{2,}\s+age\s+group", $"(son/daughter) in the {ageGroup} age group", RegexOptions.IgnoreCase);
-            // Aylıq haqq (EN):  is (___) AZN
-            RegexReplace(doc, @"is\s+\(\s*_{3,}\s*\)\s+AZN", $"is ({fee}) AZN", RegexOptions.IgnoreCase);
-            // Ödəniş tarixi (EN):  must be paid in full by “_” __________ 202__
-            RegexReplace(doc, "must be paid in full by [“\"]_{1,}[”\"][_\\s]+202_{1,4}",
-                $"must be paid in full by “{day}” {monthEn} {year}", RegexOptions.IgnoreCase);
+            // Aylıq haqq (EN):  is _____ AZN
+            RegexReplace(doc, @"is\s+_{3,}\s*AZN", $"is {fee} AZN", RegexOptions.IgnoreCase);
             // Valideyn adı (EN): "(Full name of the parent...)" əvvəlinə
             FillNameBeforeAnchor(doc, "(Full name of the parent or legal representative)", parentNameEn, underline: true);
             // Uşaq adı (EN): "...to their child:" sonrakı boş abzasa
             FillNameAfterAnchor(doc, "preschool educational services to their child", childNameEn, underline: true);
-
-            // ── İmza/rekvizit hissəsi: valideynin ad-soyadı ─────────────────────
-            // İmza blokunda «Bağça» tərəfində direktorun adı (A.M.Mahmudova) var;
-            // «Valideyn» tərəfində isə yalnız yer-tutucu vardı — faktiki adı yazırıq.
-            // AZ: «Valideyn» altındakı "A.S.A." (Ad Soyad Ata adı) → faktiki ad
-            RegexReplace(doc, @"A\.S\.A\.", parentName);
-            // EN: "Parent" altındakı "Full Name" → faktiki ad. Case-sensitive ki,
-            // mətndəki "(Full name of the parent...)" başlığına toxunmasın.
-            RegexReplace(doc, "Full Name", parentNameEn);
-
-            // ── EN — köhnə "COVENANT" remnant (Word render etmir) təhlükəsiz doldurulur ──
-            RegexReplace(doc, "Aytan Aliyeva Hafiz", "Aysel Mehman Mahmudova", RegexOptions.IgnoreCase);
-            RegexReplace(doc, @"_{5,}\s+in order to render", $"{parentNameEn} in order to render", RegexOptions.IgnoreCase);
-            RegexReplace(doc, @"child,\s+_{5,}\s+in\s+the\s+age\s+group\s+of", $"child, {childNameEn}  in  the age group of", RegexOptions.IgnoreCase);
-            RegexReplace(doc, @"age group of\s+_{2,}\s+and based", $"age group of {ageGroup} and based", RegexOptions.IgnoreCase);
-            RegexReplace(doc, @"\(\s*_{3,}\s*\)\s+AZN\s+for\s+each\s+month", $"({fee}) AZN for each month", RegexOptions.IgnoreCase);
+            // İmza bloku (EN): “Parent” sətrindən sonrakı "____" xətti valideynin adıdır
+            // (2026/2027 şablonunda köhnə "Full Name" yer-tutucusu alt xətlə əvəz olunub)
+            FillNextUnderscoreLine(doc, "“Parent”", parentNameEn);
 
             using var output = new MemoryStream();
             doc.SaveToStream(output, FileFormat.Doc);
@@ -384,8 +368,10 @@ namespace App.Business.Services.Implementations
         // ── Valideyn adını (AZ) "(Valideyninvə...)" abzasından əvvəl əlavə et ──
         private static void FillParentNameAz(Document doc, string parentName)
         {
-            // "(Valideyninvə ya qanuni nümayəndənin S.A.A.)" olan abzası tap
-            var selections = doc.FindAllString("(Valideyninvə ya qanuni", false, false);
+            // "(Valideynin və ya qanuni nümayəndənin S.A.A.)" olan abzası tap.
+            // Anchor sabit hissədən götürülüb — şablonun köhnə ("Valideyninvə") və
+            // düzəldilmiş ("Valideynin və") yazılışının hər ikisində işləyir.
+            var selections = doc.FindAllString("qanuni nümayəndənin", false, false);
             if (selections == null || selections.Length == 0)
                 return;
 
@@ -402,6 +388,17 @@ namespace App.Business.Services.Implementations
             if (prevObj is Paragraph prevPara)
             {
                 var prevText = prevPara.Text?.TrimEnd() ?? "";
+
+                // 2026/2027 şablonu: ad üçün BOŞ abzas saxlanılıb (köhnə nümunə ad silinib,
+                // yerinə heç nə yazılmayıb) → adı birbaşa həmin abzasa yaz.
+                if (string.IsNullOrWhiteSpace(prevText))
+                {
+                    prevPara.ChildObjects.Clear();
+                    prevPara.AppendText(parentName);
+                    ApplyParagraphFont(prevPara, "Times New Roman");
+                    AddUnderline(prevPara);
+                    return;
+                }
 
                 // Əvvəlki abzas «Valideyn» ilə bitir → valideyn adı hələ əlavə olunmayıb
                 if (prevText.EndsWith("«Valideyn»"))
@@ -645,6 +642,57 @@ namespace App.Business.Services.Implementations
                 prevPara.ChildObjects.Clear();
                 prevPara.AppendText(updated);
                 ApplyParagraphFont(prevPara, "Times New Roman");
+            }
+        }
+
+        /// <summary>
+        /// Mətni <paramref name="exactText"/> ilə TAM üst-üstə düşən abzası tapır və ondan
+        /// SONRAKI ilk alt xətt ("____") abzasını <paramref name="value"/> ilə doldurur.
+        /// İmza blokundakı ad sətri üçün lazımdır: «Valideyn» / “Parent” başlığı ilə ad
+        /// xətti arasında boş abzaslar olduğuna görə FillPreviousUnderscoreLine tutmur.
+        /// Tam bərabərlik yoxlanışı mətn içindəki eyni sözə (məs. 5-ci bənddəki «Valideyn»)
+        /// toxunmağın qarşısını alır. İdempotentdir.
+        /// </summary>
+        private static void FillNextUnderscoreLine(Document doc, string exactText, string value, int lookAhead = 8)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return;
+
+            var selections = doc.FindAllString(exactText, false, false);
+            if (selections == null || selections.Length == 0) return;
+
+            foreach (TextSelection selection in selections)
+            {
+                var range = selection.GetAsOneRange();
+                if (range.Owner is not Paragraph anchorPara) continue;
+                if (!string.Equals(anchorPara.Text?.Trim(), exactText, StringComparison.Ordinal)) continue;
+
+                var parent = anchorPara.Owner;
+                var idx = IndexInParent(parent, anchorPara);
+                if (idx < 0) continue;
+
+                for (var i = idx + 1; i <= idx + lookAhead; i++)
+                {
+                    if (GetChildAt(parent, i) is not Paragraph p) continue;
+
+                    var text = p.Text ?? string.Empty;
+                    if (text.Contains(value, StringComparison.OrdinalIgnoreCase)) return; // artıq yazılıb
+                    if (!text.Contains('_')) continue;
+
+                    // Yalnız İLK alt xətt qrupu əvəz olunur: EN imza blokunda ad xətti və
+                    // imza xətti EYNİ abzasdadır, arada sətir keçidi (Break) var. Abzası
+                    // yenidən qurmaq əvəzinə run səviyyəsində yazırıq ki, keçid və ikinci
+                    // xətt yerində qalsın.
+                    foreach (var run in p.ChildObjects.OfType<TextRange>())
+                    {
+                        var runText = run.Text ?? string.Empty;
+                        var match = Regex.Match(runText, "_{2,}");
+                        if (!match.Success) continue;
+
+                        run.Text = runText[..match.Index] + value + runText[(match.Index + match.Length)..];
+                        run.CharacterFormat.FontName = "Times New Roman";
+                        return;
+                    }
+                }
             }
         }
 
