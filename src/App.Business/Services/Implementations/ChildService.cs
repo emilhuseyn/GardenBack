@@ -246,8 +246,17 @@ namespace App.Business.Services.Implementations
         /// </summary>
         private async Task ResyncUnpaidPaymentsAfterFeeChangeAsync(Child child)
         {
+            // 100% endirimlə generasiya olunan ay 0/0 və avtomatik Paid yaranır. Endirim götürüləndə
+            // həmin sətir "ödənilib" sayılıb atlanırdı və ay 0 ₼-da donub qalırdı (ştab ödəniş yaza bilmirdi).
+            // Yalnız CARİ və GƏLƏCƏK aylar: keçmiş pulsuz ay qəsdən verilmiş ola bilər, geriyə borc yaratmırıq.
+            var currentIndex = MonthIndex(_dt.Now.Year, _dt.Now.Month);
             var openPayments = (await _unitOfWork.Payments
-                .FindAsync(p => p.ChildId == child.Id && p.Status != PaymentStatus.Paid))
+                .FindAsync(p => p.ChildId == child.Id
+                             && (p.Status != PaymentStatus.Paid
+                                 || (p.FinalAmount == 0 && p.PaidAmount == 0
+                                     && p.DiscountType == DiscountType.Percentage && p.DiscountValue >= 100
+                                     && p.ZeroedByExitDate == null && !p.AbsenceConfirmed))))
+                .Where(p => p.Status != PaymentStatus.Paid || MonthIndex(p.Year, p.Month) >= currentIndex)
                 .ToList();
 
             if (openPayments.Count == 0) return;
