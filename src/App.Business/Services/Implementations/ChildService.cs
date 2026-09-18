@@ -86,6 +86,8 @@ namespace App.Business.Services.Implementations
             await _unitOfWork.Children.AddAsync(child);
             await _unitOfWork.SaveChangesAsync();
 
+            await CreateRegistrationMonthPaymentAsync(child);
+
             await _unitOfWork.GroupLogs.AddAsync(new GroupLog
             {
                 GroupId = child.GroupId,
@@ -102,6 +104,43 @@ namespace App.Business.Services.Implementations
                 c => c.Group.Division);
 
             return _mapper.Map<ChildResponse>(created);
+        }
+
+        /// <summary>
+        /// Qəbul ayının hesabını DƏRHAL yaradır. Aylıq generasiya yalnız ayın 1-də, həmin an aktiv
+        /// olan uşaqlar üçün işləyir, ona görə ayın ortasında qəbul edilən uşağın cari ayı boş qalırdı:
+        /// nə ödəniş cədvəlində məbləğ görünürdü, nə də uşaq borclular siyahısına düşürdü (siyahı
+        /// yalnız MÖVCUD sətirlərdən qurulur). Dövr [qeydiyyat günü, ayın sonu] və məbləğ bölgüsü
+        /// generasiya ilə eynidir. SaveChanges çağıran metodun üzərindədir.
+        /// </summary>
+        private async Task CreateRegistrationMonthPaymentAsync(Child child)
+        {
+            var registration = child.RegistrationDate;
+            var daysInMonth = DateTime.DaysInMonth(registration.Year, registration.Month);
+            var startDay = Math.Clamp(registration.Day, 1, daysInMonth);
+            var daysActive = daysInMonth - startDay + 1;
+
+            var (originalAmount, finalAmount, hasDiscount, discountPercent) =
+                BillPartialMonth(child, daysActive, daysInMonth);
+
+            await _unitOfWork.Payments.AddAsync(new Payment
+            {
+                ChildId = child.Id,
+                Month = registration.Month,
+                Year = registration.Year,
+                OriginalAmount = originalAmount,
+                FinalAmount = finalAmount,
+                PaidAmount = 0,
+                LastPaymentAmount = null,
+                // Məbləğ 0-dırsa (100% endirim) ödəniş gözlənilmir — generasiya ilə eyni qayda.
+                Status = finalAmount <= 0 ? PaymentStatus.Paid : PaymentStatus.Debt,
+                DiscountType = hasDiscount ? DiscountType.Percentage : DiscountType.None,
+                DiscountValue = hasDiscount ? discountPercent : 0,
+                PeriodStartDay = startDay,
+                PeriodEndDay = daysInMonth,
+                Notes = startDay > 1 ? $"Dövr: {startDay}-{daysInMonth} ({daysActive} gün)" : null,
+                RecordedById = "system"
+            });
         }
 
         /// <summary>
@@ -743,7 +782,11 @@ namespace App.Business.Services.Implementations
             }
 
             // D1: real pul ödənilmiş sətrin məbləğini avtomatik yenidən yazmırıq — ştab qərar verir.
-            if (existing.PaidAmount > 0)
+            // H2 İSTİSNASI: sətirdə HEÇ BİR hesab yoxdursa (FinalAmount 0 — məs. 0 günlük çıxış ayı,
+            // yaxud avans ödənişi düşmüş sıfırlanmış ay) qorunacaq məbləğ də yoxdur. Belə sətir
+            // yenidən hesablanmalıdır: əks halda uşağın qayıtdığı ay 0 ₼-da donur, cədvəldə
+            // "Ödənişsiz" görünür və ştab nə hesabı, nə də ödənişi düzəldə bilir.
+            if (existing.PaidAmount > 0 && existing.FinalAmount > 0)
             {
                 // Məbləğə toxunmuruq, AMMA sıfırlama açarını da köhnə çıxışda saxlamırıq: uşağın
                 // artıq çıxış tarixi yoxdur və PaymentService qapısı (FinalAmount == 0 &&
@@ -813,7 +856,10 @@ namespace App.Business.Services.Implementations
             // Sətir yenidən hesablandı: nə "çıxışa görə sıfırlanmış", nə də "təsdiqlənmiş yoxluq"dur.
             existing.ZeroedByExitDate = null;
             existing.AbsenceConfirmed = false;
-            existing.Status = finalAmount <= 0 ? PaymentStatus.Paid : PaymentStatus.Debt;
+            // H2: sətirdə avans ödəniş ola bilər — status məbləğlə ödənişin nisbətindən çıxarılır.
+            existing.Status =
+                finalAmount <= 0 || existing.PaidAmount >= finalAmount ? PaymentStatus.Paid :
+                existing.PaidAmount > 0 ? PaymentStatus.PartiallyPaid : PaymentStatus.Debt;
 
             RemoveZeroedNote(existing);
             RemoveFinalizationNotes(existing);
@@ -1389,7 +1435,13 @@ namespace App.Business.Services.Implementations
                 // MÖHÜRLƏMİRİK — əks halda səhv yazılıb sonra düzəldilən çıxış tarixi həmin ayları
                 // "bərpa oluna bilən" hala qaytarar və tam aya çevirib fantom borc yazardı.
                 // G2: ay heç bir siyahıya düşmədiyi üçün ştab onun ATLANDIĞINI görmürdü — indi görür.
-                if (payment.AbsenceConfirmed)
+                //
+                // G4 İSTİSNASI: ödənişi OLMAYAN yekunlaşdırılmış ay toxunulmaz deyil. Ştab çıxış
+                // tarixini GERİ düzəldəndə ("uşaq mayda getdi") bağlanmış epizodun gün-gün bölünmüş
+                // çıxış ayı uydurma borc kimi qalırdı və onu düzəltməyin başqa yolu yox idi.
+                // Yeni çıxış tarixindən SONRAKI ayda uşaq gəlməyib, deməli ödənilməmiş hesab da
+                // qalmamalıdır. Real pul ödənilmiş sətir aşağıda olduğu kimi qorunur.
+                if (payment.AbsenceConfirmed && payment.PaidAmount > 0)
                 {
                     result.SkippedConfirmedMonths.Add(new SkippedConfirmedMonth
                     {
@@ -1432,6 +1484,14 @@ namespace App.Business.Services.Implementations
                 var alreadyZeroed = payment.OriginalAmount == 0
                     && payment.FinalAmount == 0
                     && payment.Status == PaymentStatus.Paid;
+
+                // G4: sıfırlanan sətir artıq "yekunlaşdırılmış" sayılmır — yoxsa çıxış tarixi sonra
+                // İRƏLİ düzəldiləndə bərpa dövrü ona toxunmazdı və ay 0-da donub qalardı.
+                if (payment.AbsenceConfirmed)
+                {
+                    payment.AbsenceConfirmed = false;
+                    RemoveFinalizationNotes(payment);
+                }
 
                 payment.OriginalAmount = 0;
                 payment.FinalAmount = 0;
