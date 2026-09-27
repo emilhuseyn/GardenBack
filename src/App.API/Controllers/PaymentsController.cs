@@ -160,6 +160,18 @@ namespace App.API.Controllers
             return Ok(ApiResponse<PaymentResponse>.SuccessResponse(result, "Endirim tətbiq edildi."));
         }
 
+        // Administrator + Mühasib - uşağın seçilmiş aylarının borcunu silmə (kassaya pul yazılmır)
+        [HttpPost("child/{childId}/write-off")]
+        public async Task<IActionResult> WriteOffDebt(int childId, [FromBody] WriteOffDebtRequest dto)
+        {
+            var fullName = $"{User.FindFirstValue(ClaimTypes.GivenName)} {User.FindFirstValue(ClaimTypes.Surname)}".Trim();
+            var userName = string.IsNullOrEmpty(fullName) ? User.FindFirstValue(ClaimTypes.NameIdentifier)! : fullName;
+            var result = await _paymentService.WriteOffDebtAsync(childId, dto, userName);
+            return Ok(ApiResponse<WriteOffDebtResponse>.SuccessResponse(
+                result,
+                $"{result.WrittenOffCount} ay üzrə {result.TotalWrittenOff:F0} ₼ borc silindi."));
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePayment(int id)
         {

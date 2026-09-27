@@ -111,6 +111,19 @@ namespace App.Business.DTOs.Payments
         public decimal DiscountValue { get; set; }
     }
 
+    /// <summary>Bir uşağın seçilmiş aylarının qalıq borcunu silmə (bağışlama) sorğusu.</summary>
+    public class WriteOffDebtRequest
+    {
+        public List<int> PaymentIds { get; set; } = new();
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    public class WriteOffDebtResponse
+    {
+        public int WrittenOffCount { get; set; }
+        public decimal TotalWrittenOff { get; set; }
+    }
+
     public class PaymentResponse
     {
         public int Id { get; set; }
@@ -143,6 +156,9 @@ namespace App.Business.DTOs.Payments
 
         /// <summary>Hesablanan dövrün BİTİŞ günü (daxil). Null — tam ay.</summary>
         public int? PeriodEndDay { get; set; }
+
+        /// <summary>"Borcu sil" ilə bağışlanan məbləğ. 0 - borc silinməyib.</summary>
+        public decimal WrittenOffAmount { get; set; }
     }
 
     public class DebtorListItem

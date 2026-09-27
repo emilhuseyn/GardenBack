@@ -25,6 +25,8 @@ namespace App.DAL.Presistence.Configurations
             builder.Property(p => p.ZeroedByExitDate).IsRequired(false);
             // Reaktivasiyada təsdiqlənmiş yoxluq — bir daha sıfırlanmır/borca çevrilmir (D2)
             builder.Property(p => p.AbsenceConfirmed).IsRequired().HasDefaultValue(false);
+            // "Borcu sil" ilə bağışlanan məbləğ - 0 silinmə olmayıb deməkdir
+            builder.Property(p => p.WrittenOffAmount).HasColumnType("decimal(18,2)");
             // Audit sahəsi — FK yoxdur, yalnız string kimi saxlanılır
             builder.Property(p => p.RecordedById).HasMaxLength(128).IsRequired(false);
 

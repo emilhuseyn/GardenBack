@@ -57,6 +57,14 @@ namespace App.Core.Entities
         /// </summary>
         public bool AbsenceConfirmed { get; set; }
 
+        /// <summary>
+        /// Ştabın "Borcu sil" əməliyyatı ilə bağışlanan məbləğ (cəmi). 0 - borc silinməyib.
+        /// Silinəndə FinalAmount = PaidAmount olur, OriginalAmount toxunulmur, kassaya pul yazılmır.
+        /// Sütun doludursa çıxış/qayıdış yenidən hesablamaları sətrin məbləğinə toxunmur:
+        /// əks halda ay yenidən bölünəndə və ya tam aya qaytarılanda silinmiş borc geri qayıdardı.
+        /// </summary>
+        public decimal WrittenOffAmount { get; set; }
+
         /// <summary>Audit sahəsi — FK deyil, yalnız user ID saxlanılır</summary>
         public string? RecordedById { get; set; }
 

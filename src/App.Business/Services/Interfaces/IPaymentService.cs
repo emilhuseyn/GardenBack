@@ -104,6 +104,12 @@ namespace App.Business.Services.Interfaces
         Task<int> BulkMarkAsPaidAsync(int month, int year, string userId);
 
         /// <summary>
+        /// Uşağın seçilmiş aylarının qalıq borcunu silir (bağışlayır). Kassaya pul yazılmır,
+        /// valideynə mesaj getmir; sətir ödənilmiş sayılır və gecikmə xatırlatması dayanır.
+        /// </summary>
+        Task<WriteOffDebtResponse> WriteOffDebtAsync(int childId, WriteOffDebtRequest dto, string userName);
+
+        /// <summary>
         /// Calculates the final amount after discount.
         /// </summary>
         decimal CalculateFinalAmount(decimal original, DiscountType type, decimal value);

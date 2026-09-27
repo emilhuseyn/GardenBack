@@ -294,7 +294,8 @@ namespace App.Business.Services.Implementations
                              && (p.Status != PaymentStatus.Paid
                                  || (p.FinalAmount == 0 && p.PaidAmount == 0
                                      && p.DiscountType == DiscountType.Percentage && p.DiscountValue >= 100
-                                     && p.ZeroedByExitDate == null && !p.AbsenceConfirmed))))
+                                     && p.ZeroedByExitDate == null && !p.AbsenceConfirmed
+                                     && p.WrittenOffAmount == 0))))
                 .Where(p => p.Status != PaymentStatus.Paid || MonthIndex(p.Year, p.Month) >= currentIndex)
                 .ToList();
 
@@ -781,6 +782,14 @@ namespace App.Business.Services.Implementations
                 return;
             }
 
+            // Borcu əl ilə silinmiş ay: yenidən hesablansa silinən borc geri qayıdardı - ştab qərar verir.
+            if (existing.WrittenOffAmount > 0)
+            {
+                result.ReturnMonth = BuildUntouchedReturnMonth(existing, daysInMonth,
+                    "Ayın borcu silinib - məbləğ avtomatik dəyişdirilmədi");
+                return;
+            }
+
             // D1: real pul ödənilmiş sətrin məbləğini avtomatik yenidən yazmırıq — ştab qərar verir.
             // H2 İSTİSNASI: sətirdə HEÇ BİR hesab yoxdursa (FinalAmount 0 — məs. 0 günlük çıxış ayı,
             // yaxud avans ödənişi düşmüş sıfırlanmış ay) qorunacaq məbləğ də yoxdur. Belə sətir
@@ -1052,6 +1061,26 @@ namespace App.Business.Services.Implementations
                     };
                     AppendNote(existing, $"Artıq ödəniş: {existing.PaidAmount - finalAmount:F0} ₼ geri qaytarılmalıdır");
                     await _unitOfWork.Payments.UpdateAsync(existing);
+                }
+
+                // Borcu əl ilə silinmiş ay: yenidən bölünsə silinən borc geri qayıdardı. Məbləğə
+                // toxunulmur, ay ştaba əl ilə yoxlama üçün göstərilir (artıq ödəniş yuxarıda bildirilib).
+                if (existing.WrittenOffAmount > 0)
+                {
+                    result.ExitMonth = new ExitMonthOutcome
+                    {
+                        PaymentId = existing.Id,
+                        Month = month,
+                        Year = year,
+                        FinalAmount = existing.FinalAmount,
+                        PaidAmount = existing.PaidAmount,
+                        PeriodStartDay = existing.PeriodStartDay ?? startDay,
+                        PeriodEndDay = existing.PeriodEndDay ?? daysInMonth,
+                        Created = false,
+                        NeedsManualReview = true,
+                        Reason = "Ayın borcu silinib - məbləğ avtomatik dəyişdirilmədi"
+                    };
+                    return;
                 }
 
                 // Yalnız REAL pul ödənilmiş sətrin MƏBLƏĞİNƏ toxunmuruq (D1). Sırf Status == Paid kifayət deyil:
@@ -1405,6 +1434,9 @@ namespace App.Business.Services.Implementations
                     continue;
                 }
 
+                // Borcu əl ilə silinmiş ay tam aya qaytarılmır - əks halda silinən borc geri qayıdardı.
+                if (payment.WrittenOffAmount > 0) continue;
+
                 // (a) əvvəlki çıxışla sıfırlanmış ay, (b) əvvəlki çıxış ayı — indi tam ay olub.
                 if (!wasZeroed && !IsProratedByPreviousExit(payment, previousExitDate)) continue;
 
@@ -1477,6 +1509,10 @@ namespace App.Business.Services.Implementations
                     await _unitOfWork.Payments.UpdateAsync(payment);
                     continue;
                 }
+
+                // Borcu əl ilə silinmiş ayda ödəniləcək hesab onsuz da qalmayıb. Sıfırlansaydı, sonrakı
+                // bərpa (çıxış tarixi irəli düzəliş, qayıdış) onu tam aya qaytarıb silinən borcu geri gətirərdi.
+                if (payment.WrittenOffAmount > 0) continue;
 
                 // F1: artıq sıfırlanmış sətri ATLAMIRIQ. Əvvəllər burada 'continue' vardı və sətir
                 // KÖHNƏ çıxış tarixi ilə qalırdı; növbəti düzəlişdə həmin tarix uyğun gəlmədiyi üçün

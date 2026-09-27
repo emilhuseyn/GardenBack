@@ -37,6 +37,17 @@ namespace App.Business.Validators
         }
     }
 
+    public class WriteOffDebtValidator : AbstractValidator<WriteOffDebtRequest>
+    {
+        public WriteOffDebtValidator()
+        {
+            RuleFor(x => x.PaymentIds).NotEmpty().WithMessage("Ən azı bir ay seçilməlidir.");
+            RuleFor(x => x.Reason)
+                .NotEmpty().WithMessage("Səbəb tələb olunur.")
+                .MaximumLength(200).WithMessage("Səbəb 200 simvoldan uzun ola bilməz.");
+        }
+    }
+
     public class DiscountRequestValidator : AbstractValidator<DiscountRequest>
     {
         public DiscountRequestValidator()

@@ -1146,6 +1146,51 @@ namespace App.Business.Services.Implementations
             await _unitOfWork.SaveChangesAsync();
         }
 
+        public async Task<WriteOffDebtResponse> WriteOffDebtAsync(int childId, WriteOffDebtRequest dto, string userName)
+        {
+            var ids = dto.PaymentIds.Distinct().ToList();
+
+            _ = await _unitOfWork.Children.GetByIdAsync(childId)
+                ?? throw new EntityNotFoundException($"{childId} ID-li uşaq tapılmadı.");
+
+            var payments = (await _unitOfWork.Payments
+                .FindAsync(p => p.ChildId == childId && ids.Contains(p.Id)))
+                .ToList();
+
+            if (payments.Count != ids.Count)
+                throw new Core.Exceptions.ValidationException("Seçilmiş aylardan bəziləri bu uşağa aid deyil.");
+
+            var debtRows = payments.Where(p => p.FinalAmount > p.PaidAmount).ToList();
+            if (debtRows.Count == 0)
+                throw new Core.Exceptions.ValidationException("Seçilmiş aylarda silinəcək borc yoxdur.");
+
+            var reason = dto.Reason.Trim();
+            var date = $"{_dt.Now:dd.MM.yyyy}";
+            decimal total = 0;
+
+            foreach (var payment in debtRows)
+            {
+                // OriginalAmount toxunulmur - "olmalı idi / silindi / ödənildi" sətrin özündən oxunur.
+                // PaidAmount, kassa, PaymentDate dəyişmir: bu əməliyyatda pul alınmayıb.
+                var remaining = payment.FinalAmount - payment.PaidAmount;
+                payment.WrittenOffAmount += remaining;
+                payment.FinalAmount = payment.PaidAmount;
+                payment.Status = PaymentStatus.Paid;
+                AppendNote(payment, $"Borc silindi: {remaining:F0} ₼ ({date}, {userName}) - {reason}");
+
+                await _unitOfWork.Payments.UpdateAsync(payment);
+                total += remaining;
+            }
+
+            await _unitOfWork.SaveChangesAsync();
+
+            return new WriteOffDebtResponse
+            {
+                WrittenOffCount = debtRows.Count,
+                TotalWrittenOff = total
+            };
+        }
+
         /// <summary>
         /// Gets all children with unpaid debts.
         /// </summary>
