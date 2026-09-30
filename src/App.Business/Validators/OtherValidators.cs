@@ -2,6 +2,7 @@ using App.Business.DTOs.Divisions;
 using App.Business.DTOs.Payments;
 using App.Business.DTOs.Attendance;
 using App.Business.DTOs.Cashboxes;
+using App.Core.Services;
 using FluentValidation;
 
 namespace App.Business.Validators
@@ -93,7 +94,7 @@ namespace App.Business.Validators
 
     public class CashboxOperationValidator : AbstractValidator<CashboxOperationRequest>
     {
-        public CashboxOperationValidator()
+        public CashboxOperationValidator(IDateTimeService dt)
         {
             RuleFor(x => x.Amount)
                 .GreaterThan(0).WithMessage("Məbləğ 0-dan böyük olmalıdır.");
@@ -102,8 +103,11 @@ namespace App.Business.Validators
                 .MaximumLength(500)
                 .When(x => x.Note != null);
 
+            // Klient Bakı YERLİ vaxtını göndərir (UTC deyil). UtcNow ilə müqayisə bugünkü əməliyyatı
+            // 4 saat "gələcək" sayıb rədd edirdi. Gün səviyyəsində yoxlanılır ki, kompüterin saatı
+            // bir neçə dəqiqə irəlidirsə də bugünkü əməliyyat keçsin.
             RuleFor(x => x.OperationDate)
-                .LessThanOrEqualTo(DateTime.UtcNow)
+                .Must(d => d!.Value.Date <= dt.Today)
                 .When(x => x.OperationDate.HasValue)
                 .WithMessage("Əməliyyat tarixi gələcək tarix ola bilməz.");
         }
