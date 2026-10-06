@@ -15,8 +15,13 @@ namespace App.Core.Common
     /// </summary>
     public static class DebtGrace
     {
-        /// <summary>Ödəniş günündən sonra verilən əlavə gün sayı. Tək mənbə — heç yerdə təkrar yazılmır.</summary>
-        public const int GraceDays = 4;
+        /// <summary>
+        /// Ödəniş günündən sonra verilən əlavə gün sayı. Tək mənbə — heç yerdə təkrar yazılmır.
+        /// 05.10.2026 (ştabın qərarı): güzəşt LƏĞV edildi (4 → 0). Qayda indi belədir:
+        /// ödəniş günü keçib, pul gəlməyibsə, valideynə ertəsi gündən başlayaraq ödəyənə
+        /// qədər HƏR GÜN gecikmə mesajı gedir.
+        /// </summary>
+        public const int GraceDays = 0;
 
         /// <summary>
         /// Güzəştin SON günü — həm gizlətmə, həm də bildiriş bu YEGANƏ sərhəddən oxuyur (D-C).
@@ -30,7 +35,8 @@ namespace App.Core.Common
 
         /// <summary>
         /// Verilən ay/il sətri <paramref name="asOf"/> tarixinə görə hələ güzəşt içindədirsə true.
-        /// Məs. PaymentDay=1 → ayın 1-5-i gizli, 6-dan görünür; PaymentDay=6 → 1-10 gizli, 11-dən görünür.
+        /// GraceDays=0 ilə: PaymentDay=1 → yalnız ayın 1-i susur, 2-dən mesaj gedir;
+        /// PaymentDay=5 → 1-5 susur, 6-dan mesaj gedir.
         /// Keçmiş ayın ödənilməmiş sətri heç vaxt güzəştdə deyil — həmişə borcdur.
         /// </summary>
         public static bool IsWithinGrace(DateTime asOf, int paymentDay, int paymentMonth, int paymentYear)
